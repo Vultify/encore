@@ -23,6 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Song recognition planned as its own phase on the roadmap.
 - The library is saved in a local SQLite database and loads when Encore opens.
 - Adding a folder again skips songs that haven't changed and re-reads ones that have.
+- Playback: play a song from the list by double-clicking it or with the play button on its cover. The rest of the list plays after it, including songs added while it plays.
+- Player dock controls: play and pause, previous (restarts the song after the first 3 seconds), next, a seekable progress line, elapsed and total time, and a volume slider with mute.
+- The Now playing stage shows the current song's cover, title, and artist.
+- Space plays and pauses.
+- A notice when a song's file has moved or been deleted, then playback skips to the next song.
 
 ### Fixed
 - A late progress message could replace the "Added songs" notice after an import finished.

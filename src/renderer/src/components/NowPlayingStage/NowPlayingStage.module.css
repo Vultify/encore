@@ -35,6 +35,12 @@
   overflow: hidden;
 }
 
+.cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .ringOuter,
 .ringInner,
 .ringDot {
@@ -73,6 +79,10 @@
 }
 
 .title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   font-size: 40px;
   line-height: 1.05;
   font-weight: 800;

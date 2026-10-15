@@ -74,3 +74,8 @@ export const ARTWORK_SCHEME = 'encore-art'
 export const ARTWORK_ID = /^[a-f0-9]{40}\.(jpg|png|webp|gif|bmp)$/
 
 export const artworkUrl = (id: string): string => `${ARTWORK_SCHEME}://local/${id}`
+
+// Songs stream to the player through this scheme by library id, so the interface never reads arbitrary files.
+export const MEDIA_SCHEME = 'encore-media'
+
+export const mediaUrl = (trackId: number): string => `${MEDIA_SCHEME}://track/${trackId}`

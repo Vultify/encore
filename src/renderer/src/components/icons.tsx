@@ -111,6 +111,20 @@ export const VolumeIcon = (p: IconProps) => (
   </Icon>
 )
 
+export const VolumeMutedIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" />
+    <path d="m16 9.5 5 5M21 9.5l-5 5" />
+  </Icon>
+)
+
+export const PauseIcon = (p: IconProps) => (
+  <Icon {...p} stroke="none">
+    <rect x="6.5" y="5" width="4" height="14" rx="1.2" fill="currentColor" />
+    <rect x="13.5" y="5" width="4" height="14" rx="1.2" fill="currentColor" />
+  </Icon>
+)
+
 export const PopOutIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M14 4h6v6" />

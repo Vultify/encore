@@ -19,8 +19,8 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 - [x] Read song tags and album art (MP3, FLAC, WAV, M4A)
 - [x] Fallbacks for untagged songs: artist and title from "Artist - Title" file names, cover from a cover.jpg or folder.jpg beside the song
 - [x] Save the library in a local SQLite database
-- [ ] Play, pause, seek, volume, previous, and next
-- [ ] Progress and time in the player dock
+- [x] Play, pause, seek, volume, previous, and next
+- [x] Progress and time in the player dock
 
 ## Phase 3: Library and playlists
 - [ ] Library tabs: Playlists, Albums, Artists, Local files

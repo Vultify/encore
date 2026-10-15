@@ -61,6 +61,7 @@
 }
 
 .trackArt {
+  position: relative;
   flex: none;
   display: flex;
   align-items: center;
@@ -77,6 +78,34 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* The play button sits over the cover and shows on hover, on focus, and for the current song. */
+.trackPlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 8, 10, 0.55);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.trackRow:hover .trackPlay,
+.trackPlay:focus-visible,
+.trackRow[aria-current='true'] .trackPlay {
+  opacity: 1;
+}
+
+.trackPlay:focus-visible {
+  outline-offset: -2px;
+}
+
+.trackRow[aria-current='true'] .trackTitle {
+  color: var(--accent);
+  transition: color var(--color-fade);
 }
 
 .trackText {

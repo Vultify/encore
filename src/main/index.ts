@@ -2,7 +2,7 @@ import { app, type BrowserWindow, type Tray } from 'electron'
 import { createMainWindow, registerWindowControls, revealWindow } from './window'
 import { createTray } from './tray'
 import { registerLibraryHandlers } from './library'
-import { handleArtworkProtocol, registerArtworkScheme } from './library/artwork'
+import { handleProtocols, registerSchemes } from './protocols'
 import { closeLibrary, openLibrary } from './library/database'
 
 let mainWindow: BrowserWindow | null = null
@@ -12,7 +12,7 @@ let quitting = false
 // Tests point Encore at a throwaway data folder so they never touch the real library.
 if (process.env.ENCORE_DATA_DIR) app.setPath('userData', process.env.ENCORE_DATA_DIR)
 
-registerArtworkScheme()
+registerSchemes()
 
 // Only one Encore runs at a time. Launching it again brings the open one forward.
 if (!app.requestSingleInstanceLock()) {
@@ -28,7 +28,7 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(() => {
     openLibrary()
-    handleArtworkProtocol()
+    handleProtocols()
     registerWindowControls(() => mainWindow)
     registerLibraryHandlers()
     mainWindow = createMainWindow(() => quitting)

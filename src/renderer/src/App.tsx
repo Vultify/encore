@@ -6,6 +6,7 @@ import { PlayerDock } from './components/PlayerDock/PlayerDock'
 import { DropOverlay } from './components/DropOverlay/DropOverlay'
 import { Toast } from './components/Toast/Toast'
 import { useFileDrop } from './hooks/useFileDrop'
+import { player, usePlayer } from './player/player'
 import { songCount } from './lib/format'
 import { HomeView } from './views/HomeView'
 import { LibraryView, type LibraryTab } from './views/LibraryView'
@@ -22,6 +23,24 @@ export default function App() {
   // Progress messages can arrive after the import has already finished, so only show them while it runs.
   const importRunning = useRef(false)
   const clearNotice = useCallback(() => setNotice(null), [])
+
+  const { failed } = usePlayer()
+
+  useEffect(() => {
+    if (failed) setNotice(`Couldn't play ${failed.title}. The file may have moved.`)
+  }, [failed])
+
+  // Space plays and pauses, unless it's typing or pressing a focused control.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.code !== 'Space' || event.repeat) return
+      if ((event.target as HTMLElement).closest('input, textarea, button, [contenteditable]')) return
+      event.preventDefault()
+      player.toggle()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   // Loads the saved library when Encore opens.
   useEffect(() => {

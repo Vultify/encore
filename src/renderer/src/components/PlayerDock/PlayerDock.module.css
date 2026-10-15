@@ -16,7 +16,6 @@
   box-shadow:
     0 0 50px -8px rgba(var(--accent-rgb), 0.3),
     0 24px 48px -14px rgba(0, 0, 0, 0.7);
-  overflow: hidden;
   transition: border-color var(--color-fade), box-shadow var(--color-fade);
 }
 
@@ -28,6 +27,13 @@
   border-radius: 50%;
   background: linear-gradient(145deg, #1c1c22, #111115);
   border: 1px solid var(--border-strong);
+  overflow: hidden;
+}
+
+.cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .coverRing {
@@ -110,15 +116,126 @@
 
 .time {
   flex: 0 0 auto;
+  min-width: 82px;
+  text-align: center;
   font-size: 11.5px;
   color: var(--text-muted);
 }
 
+/* Volume: the slider floats above the button while it's hovered or focused. */
+.volume {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.volumePopover {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  padding-bottom: 14px;
+  transform: translate(-50%, 6px);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.15s ease,
+    transform 0.2s var(--ease),
+    visibility 0s linear 0.15s;
+}
+
+.volume:hover .volumePopover,
+.volume:focus-within .volumePopover {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+  transition-delay: 0s;
+}
+
+.volumeSlider {
+  display: block;
+  width: 44px;
+  height: 132px;
+  padding: 16px 0;
+  margin: 0;
+  border-radius: var(--radius-pill);
+  background: var(--surface-dock);
+  border: 1px solid var(--border-strong);
+  backdrop-filter: blur(28px);
+  box-shadow: 0 16px 32px -12px rgba(0, 0, 0, 0.7);
+  writing-mode: vertical-lr;
+  direction: rtl;
+  appearance: none;
+  cursor: pointer;
+}
+
+.volumeSlider::-webkit-slider-runnable-track {
+  width: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to top, var(--accent) var(--fill), rgba(255, 255, 255, 0.14) var(--fill));
+}
+
+.volumeSlider::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-left: -5px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.volumeSlider:focus-visible {
+  outline: 2px solid var(--accent);
+}
+
+/* Seek: a thin line along the straight part of the bottom edge, clear of the rounded ends.
+   It thickens under the pointer, and a faint track shows the song's full length. */
+.seekTrack {
+  position: absolute;
+  left: 40px;
+  right: 40px;
+  bottom: 0;
+  height: 14px;
+}
+
+.seekTrack::before,
 .progress {
   position: absolute;
   left: 0;
   bottom: 0;
   height: 2px;
+  border-radius: 2px;
+  transition: height 0.15s ease;
+}
+
+.seekTrack::before {
+  content: '';
+  right: 0;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.progress {
   background: var(--accent);
-  transition: background var(--color-fade);
+  transition:
+    background var(--color-fade),
+    height 0.15s ease;
+}
+
+.seekTrack:has(.seek:hover:not(:disabled))::before,
+.seekTrack:has(.seek:hover:not(:disabled)) .progress,
+.seekTrack:has(.seek:focus-visible)::before,
+.seekTrack:has(.seek:focus-visible) .progress {
+  height: 4px;
+}
+
+.seek {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.seek:disabled {
+  pointer-events: none;
 }

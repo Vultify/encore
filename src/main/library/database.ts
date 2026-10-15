@@ -115,6 +115,14 @@ export function allTracks(): Track[] {
   return rows.map(toTrack)
 }
 
+// The file behind a library song, or null for an unknown id.
+export function trackFile(id: number): { path: string; format: AudioFormat } | null {
+  const row = library().prepare("SELECT location, format FROM tracks WHERE source = 'local' AND id = ?").get(id) as
+    | { location: string; format: AudioFormat }
+    | undefined
+  return row ? { path: row.location, format: row.format } : null
+}
+
 // Looks up the songs already in the library by path, with the file details they were read from.
 export function storedTracks(paths: string[]): Map<string, StoredTrack> {
   const statement = library().prepare("SELECT * FROM tracks WHERE source = 'local' AND location_key = ?")
