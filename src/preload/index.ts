@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
+import { contextBridge, ipcRenderer, webUtils, type IpcRendererEvent } from 'electron'
 import { Channels, type EncoreApi } from '../shared/api'
 
 const api: EncoreApi = {
@@ -12,6 +12,10 @@ const api: EncoreApi = {
       ipcRenderer.on(Channels.maximizedChanged, handler)
       return () => ipcRenderer.removeListener(Channels.maximizedChanged, handler)
     }
+  },
+  library: {
+    pathForFile: (file) => webUtils.getPathForFile(file),
+    scanPaths: (paths) => ipcRenderer.invoke(Channels.scanPaths, paths)
   }
 }
 

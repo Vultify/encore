@@ -17,3 +17,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Home, Library, and Search views with empty states.
 - Encore logo, app icon, and tray icon.
 - Automated app tests with Playwright.
+- Drag and drop songs or whole folders anywhere in the window. Encore finds every MP3, FLAC, WAV, and M4A inside and lists them under Local files.

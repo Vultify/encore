@@ -41,6 +41,9 @@ export function createMainWindow(shouldQuit: () => boolean): BrowserWindow {
     return { action: 'deny' }
   })
 
+  // A file dropped outside the drop handler would otherwise replace the app with that file.
+  win.webContents.on('will-navigate', (event) => event.preventDefault())
+
   if (process.env.ELECTRON_RENDERER_URL) {
     win.loadURL(process.env.ELECTRON_RENDERER_URL)
   } else {

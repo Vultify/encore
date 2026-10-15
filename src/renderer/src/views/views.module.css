@@ -37,6 +37,78 @@
   color: var(--text-muted);
 }
 
+.fileList {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0 -10px;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.fileRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 56px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease;
+}
+
+.fileRow:hover {
+  background: var(--surface-hover);
+}
+
+.fileIcon {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+}
+
+.fileText {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.fileName,
+.fileFolder {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileName {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.fileFolder {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.fileFormat {
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .search {
   flex: 1 1 auto;
   display: flex;

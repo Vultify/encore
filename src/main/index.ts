@@ -1,6 +1,7 @@
 import { app, type BrowserWindow, type Tray } from 'electron'
 import { createMainWindow, registerWindowControls, revealWindow } from './window'
 import { createTray } from './tray'
+import { registerLibraryHandlers } from './library/scan'
 
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
@@ -19,6 +20,7 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(() => {
     registerWindowControls(() => mainWindow)
+    registerLibraryHandlers()
     mainWindow = createMainWindow(() => quitting)
     tray = createTray({
       show: () => revealWindow(mainWindow),

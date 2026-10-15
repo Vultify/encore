@@ -15,7 +15,7 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 - [x] Private GitHub repo and first push
 
 ## Phase 2: Local music
-- [ ] Drag and drop files and folders anywhere in the window
+- [x] Drag and drop files and folders anywhere in the window
 - [ ] Read song tags and album art (MP3, FLAC, WAV, M4A)
 - [ ] Save the library in a local SQLite database
 - [ ] Play, pause, seek, volume, previous, and next
