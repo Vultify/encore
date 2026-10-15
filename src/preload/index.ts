@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils, type IpcRendererEvent } from 'electron'
-import { Channels, type EncoreApi } from '../shared/api'
+import { Channels, type EncoreApi, type ImportProgress } from '../shared/api'
 
 const api: EncoreApi = {
   window: {
@@ -15,7 +15,12 @@ const api: EncoreApi = {
   },
   library: {
     pathForFile: (file) => webUtils.getPathForFile(file),
-    scanPaths: (paths) => ipcRenderer.invoke(Channels.scanPaths, paths)
+    importPaths: (paths) => ipcRenderer.invoke(Channels.importPaths, paths),
+    onImportProgress: (listener) => {
+      const handler = (_event: IpcRendererEvent, progress: ImportProgress): void => listener(progress)
+      ipcRenderer.on(Channels.importProgress, handler)
+      return () => ipcRenderer.removeListener(Channels.importProgress, handler)
+    }
   }
 }
 

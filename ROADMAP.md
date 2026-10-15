@@ -16,7 +16,8 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 
 ## Phase 2: Local music
 - [x] Drag and drop files and folders anywhere in the window
-- [ ] Read song tags and album art (MP3, FLAC, WAV, M4A)
+- [x] Read song tags and album art (MP3, FLAC, WAV, M4A)
+- [x] Fallbacks for untagged songs: artist and title from "Artist - Title" file names, cover from a cover.jpg or folder.jpg beside the song
 - [ ] Save the library in a local SQLite database
 - [ ] Play, pause, seek, volume, previous, and next
 - [ ] Progress and time in the player dock
@@ -27,13 +28,22 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 - [ ] Add songs to playlists, plus Liked Songs
 - [ ] Search across songs, artists, albums, and playlists
 
-## Phase 4: Playback experience
+## Phase 4: Song recognition
+- [ ] AcoustID app key (needs Caleb's free AcoustID account), stored in `.env`
+- [ ] Bundle Chromaprint to fingerprint songs by their sound
+- [ ] "Identify songs" button that looks up untagged songs on AcoustID and MusicBrainz in the background, with progress
+- [ ] Review screen to accept or skip each match before anything is saved
+- [ ] Save accepted tags and Cover Art Archive covers in Encore's library
+- [ ] Optional "Save to file" that writes the tags into the song file itself
+- [ ] Later: setting to identify new untagged songs automatically
+
+## Phase 5: Playback experience
 - [ ] Shuffle and repeat (off, all, one)
 - [ ] Queue and Up next panel
 - [ ] Now playing view
 - [ ] Adaptive accent color pulled from the playing album art, teal at rest
 
-## Phase 5: Desktop integration
+## Phase 6: Desktop integration
 - [ ] Close to the system tray and keep playing
 - [ ] Tray menu: show Encore, mini player, play/pause, next, quit
 - [ ] Mini player window: glass pill at the bottom center of the screen
@@ -41,14 +51,14 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 - [ ] Keyboard media keys
 - [ ] Remember window size, volume, and last song
 
-## Phase 6: Spotify
+## Phase 7: Spotify
 - [ ] Spotify developer app (needs Caleb's Spotify login)
 - [ ] Sign in with Spotify and keep the session
 - [ ] Import playlists and Liked Songs into the library
 - [ ] Play Spotify songs inside Encore (Premium, Web Playback SDK)
 - [ ] Spotify and local songs side by side in one library and queue
 
-## Phase 7: Polish and 1.0.0
+## Phase 8: Polish and 1.0.0
 - [ ] Animations, empty states, and loading states
 - [ ] Settings: keybind, accent color, music folders, Spotify account
 - [ ] App icon and Windows installer
@@ -62,4 +72,5 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 
 ## Notes
 - **Music sources are plug-ins.** Local files, Spotify, and later Apple Music all follow one shared source interface, so adding a source never touches the rest of the app.
-- **Spotify playback inside Encore needs copy protection support (Widevine).** Plain Electron doesn't include it, so Phase 6 switches to the castlabs build of Electron, which does. If that turns out to be blocked, the fallback is Encore controlling the Spotify app in the background through Spotify Connect.
+- **Spotify playback inside Encore needs copy protection support (Widevine).** Plain Electron doesn't include it, so Phase 7 switches to the castlabs build of Electron, which does. If that turns out to be blocked, the fallback is Encore controlling the Spotify app in the background through Spotify Connect.
+- **Song recognition never overwrites files on its own.** Matches are reviewed first and saved inside Encore. Writing tags into the file is a separate choice per song.

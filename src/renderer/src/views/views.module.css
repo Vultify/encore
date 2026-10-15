@@ -37,7 +37,7 @@
   color: var(--text-muted);
 }
 
-.fileList {
+.trackList {
   flex: 1 1 auto;
   min-height: 0;
   margin: 0 -10px;
@@ -46,33 +46,40 @@
   overflow-y: auto;
 }
 
-.fileRow {
+.trackRow {
   display: flex;
   align-items: center;
   gap: 14px;
-  height: 56px;
+  height: 58px;
   padding: 0 10px;
   border-radius: var(--radius-sm);
   transition: background 0.15s ease;
 }
 
-.fileRow:hover {
+.trackRow:hover {
   background: var(--surface-hover);
 }
 
-.fileIcon {
+.trackArt {
   flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
+  overflow: hidden;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-muted);
 }
 
-.fileText {
+.trackArt img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.trackText {
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
@@ -80,24 +87,24 @@
   gap: 3px;
 }
 
-.fileName,
-.fileFolder {
+.trackTitle,
+.trackSub {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.fileName {
+.trackTitle {
   font-size: 14px;
   font-weight: 600;
 }
 
-.fileFolder {
+.trackSub {
   font-size: 12px;
   color: var(--text-muted);
 }
 
-.fileFormat {
+.trackFormat {
   flex: none;
   padding: 3px 8px;
   border-radius: 6px;
@@ -107,6 +114,14 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.trackTime {
+  flex: none;
+  width: 52px;
+  text-align: right;
+  font-size: 13px;
+  color: var(--text-muted);
 }
 
 .search {

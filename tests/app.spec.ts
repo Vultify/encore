@@ -1,12 +1,13 @@
-import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test'
+import { expect, test, type ElectronApplication, type Page } from '@playwright/test'
+import { launchEncore } from './launch'
 
 let app: ElectronApplication
 let page: Page
 
 test.beforeEach(async () => {
-  app = await electron.launch({ args: ['.'] })
-  page = await app.firstWindow()
-  await page.waitForLoadState('domcontentloaded')
+  const encore = await launchEncore()
+  app = encore.app
+  page = encore.page
 })
 
 test.afterEach(async () => {

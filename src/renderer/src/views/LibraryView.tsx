@@ -1,6 +1,8 @@
-import type { LocalFile } from '@shared/api'
+import { useMemo } from 'react'
+import { artworkUrl, type Track } from '@shared/api'
 import { EmptyState, Panel } from '@/components/Panel/Panel'
 import { MusicIcon, UploadIcon } from '@/components/icons'
+import { formatDuration } from '@/lib/format'
 import styles from './views.module.css'
 
 export const LIBRARY_TABS = ['Playlists', 'Albums', 'Artists', 'Local files'] as const
@@ -9,10 +11,10 @@ export type LibraryTab = (typeof LIBRARY_TABS)[number]
 interface LibraryViewProps {
   tab: LibraryTab
   onTabChange: (tab: LibraryTab) => void
-  localFiles: LocalFile[]
+  tracks: Track[]
 }
 
-export function LibraryView({ tab, onTabChange, localFiles }: LibraryViewProps) {
+export function LibraryView({ tab, onTabChange, tracks }: LibraryViewProps) {
   const header = (
     <>
       <div className={styles.tabs} role="tablist" aria-label="Library sections">
@@ -37,8 +39,8 @@ export function LibraryView({ tab, onTabChange, localFiles }: LibraryViewProps) 
 
   return (
     <Panel label="Library" header={header}>
-      {tab === 'Local files' && localFiles.length > 0 ? (
-        <LocalFileList files={localFiles} />
+      {tab === 'Local files' && tracks.length > 0 ? (
+        <TrackList tracks={tracks} />
       ) : (
         <EmptyState icon={<UploadIcon size={26} />} title="Your library is empty">
           Drag songs or whole folders anywhere in this window to add them. MP3, FLAC, WAV, and M4A all work.
@@ -48,20 +50,41 @@ export function LibraryView({ tab, onTabChange, localFiles }: LibraryViewProps) 
   )
 }
 
-// Plain file list until tags are read. Each row shows the file name, its folder, and its format.
-function LocalFileList({ files }: { files: LocalFile[] }) {
+const text = (value: string | null): string => value?.toLocaleLowerCase() ?? '￿'
+
+// Album order: by artist, then album, then disc and track number, with untagged songs last.
+function byAlbum(a: Track, b: Track): number {
   return (
-    <ul className={styles.fileList} aria-label="Local files">
-      {files.map((file) => (
-        <li key={file.path} className={styles.fileRow} title={file.path}>
-          <span className={styles.fileIcon}>
-            <MusicIcon size={16} />
+    text(a.albumArtist ?? a.artist).localeCompare(text(b.albumArtist ?? b.artist)) ||
+    text(a.album).localeCompare(text(b.album)) ||
+    (a.discNumber ?? 1) - (b.discNumber ?? 1) ||
+    (a.trackNumber ?? Infinity) - (b.trackNumber ?? Infinity) ||
+    a.title.localeCompare(b.title)
+  )
+}
+
+function TrackList({ tracks }: { tracks: Track[] }) {
+  const sorted = useMemo(() => [...tracks].sort(byAlbum), [tracks])
+
+  return (
+    <ul className={styles.trackList} aria-label="Local files">
+      {sorted.map((track) => (
+        <li key={track.path} className={styles.trackRow} title={track.path}>
+          <span className={styles.trackArt}>
+            {track.artworkId ? (
+              <img src={artworkUrl(track.artworkId)} alt="" loading="lazy" draggable={false} />
+            ) : (
+              <MusicIcon size={16} />
+            )}
           </span>
-          <span className={styles.fileText}>
-            <span className={styles.fileName}>{file.name}</span>
-            <span className={styles.fileFolder}>{file.folder}</span>
+          <span className={styles.trackText}>
+            <span className={styles.trackTitle}>{track.title}</span>
+            <span className={styles.trackSub}>
+              {[track.artist ?? 'Unknown artist', track.album].filter(Boolean).join(' · ')}
+            </span>
           </span>
-          <span className={styles.fileFormat}>{file.format}</span>
+          <span className={styles.trackFormat}>{track.format}</span>
+          <span className={styles.trackTime}>{formatDuration(track.duration)}</span>
         </li>
       ))}
     </ul>
