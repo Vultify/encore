@@ -1,0 +1,28 @@
+.app {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* The soft color bleed behind the album. It follows the accent color. */
+.glow {
+  position: absolute;
+  left: -12%;
+  top: -8%;
+  width: 70%;
+  height: 110%;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(var(--accent-rgb), 0.18), transparent);
+  transition: background var(--color-fade);
+}
+
+.content {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  gap: 40px;
+  padding: 20px 40px 132px;
+}

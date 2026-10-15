@@ -4,6 +4,7 @@ node_modules/
 # Build output
 out/
 dist/
+*.tsbuildinfo
 release/
 
 # Secrets
@@ -18,3 +19,7 @@ CLAUDE.md
 *.log
 .DS_Store
 Thumbs.db
+
+# Test output
+test-results/
+playwright-report/

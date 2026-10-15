@@ -10,6 +10,16 @@ Encore is my own desktop music player for Windows. I built it because I wanted a
 - Closing the window keeps it running in the system tray.
 - Ctrl + Alt + Space pops up a mini player at the bottom of my screen.
 
+## Running it
+Needs Node 24.
+
+```
+npm install
+npm run dev
+```
+
+`npm test` checks the types, builds the app, and runs the app tests.
+
 ## Status
 In development. See `ROADMAP.md` for progress.
 

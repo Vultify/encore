@@ -8,11 +8,11 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 - [x] Project folder, roadmap, README, license, changelog
 
 ## Phase 1: Foundation
-- [ ] Scaffold the app with Electron, React, TypeScript, and Vite
-- [ ] Frameless window with a custom title bar (minimize, maximize, close to tray)
-- [ ] Design tokens: colors, spacing, radii, and the Manrope font bundled locally
-- [ ] Stage layout shell: top nav pill, now playing stage, library panel, player dock
-- [ ] Private GitHub repo and first push
+- [x] Scaffold the app with Electron, React, TypeScript, and Vite
+- [x] Frameless window with a custom title bar (minimize, maximize, close to tray)
+- [x] Design tokens: colors, spacing, radii, and the Manrope font bundled locally
+- [x] Stage layout shell: top nav pill, now playing stage, library panel, player dock
+- [x] Private GitHub repo and first push
 
 ## Phase 2: Local music
 - [ ] Drag and drop files and folders anywhere in the window
