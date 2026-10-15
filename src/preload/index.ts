@@ -15,6 +15,7 @@ const api: EncoreApi = {
   },
   library: {
     pathForFile: (file) => webUtils.getPathForFile(file),
+    getTracks: () => ipcRenderer.invoke(Channels.getTracks),
     importPaths: (paths) => ipcRenderer.invoke(Channels.importPaths, paths),
     onImportProgress: (listener) => {
       const handler = (_event: IpcRendererEvent, progress: ImportProgress): void => listener(progress)

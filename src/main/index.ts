@@ -3,6 +3,7 @@ import { createMainWindow, registerWindowControls, revealWindow } from './window
 import { createTray } from './tray'
 import { registerLibraryHandlers } from './library'
 import { handleArtworkProtocol, registerArtworkScheme } from './library/artwork'
+import { closeLibrary, openLibrary } from './library/database'
 
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
@@ -23,8 +24,10 @@ if (!app.requestSingleInstanceLock()) {
   app.on('before-quit', () => {
     quitting = true
   })
+  app.on('will-quit', closeLibrary)
 
   app.whenReady().then(() => {
+    openLibrary()
     handleArtworkProtocol()
     registerWindowControls(() => mainWindow)
     registerLibraryHandlers()

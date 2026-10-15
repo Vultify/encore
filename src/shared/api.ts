@@ -11,8 +11,9 @@ export type AudioFormat = 'mp3' | 'flac' | 'wav' | 'm4a'
 
 export const AUDIO_FORMATS: readonly AudioFormat[] = ['mp3', 'flac', 'wav', 'm4a']
 
-// A song with its tags read. Missing tags are null, except title, which falls back to the file name.
+// A song in the library. Missing tags are null, except title, which falls back to the file name.
 export interface Track {
+  id: number
   path: string
   format: AudioFormat
   title: string
@@ -24,6 +25,17 @@ export interface Track {
   year: number | null
   duration: number | null
   artworkId: string | null
+  addedAt: number
+}
+
+// A song read from disk that hasn't been saved to the library yet.
+export type NewTrack = Omit<Track, 'id' | 'addedAt'>
+
+export interface ImportResult {
+  // Every supported song found in what was dropped, new or not.
+  found: number
+  added: Track[]
+  updated: Track[]
 }
 
 export interface ImportProgress {
@@ -34,8 +46,9 @@ export interface ImportProgress {
 export interface LibraryControls {
   // Turns a dropped File into its path on disk. Returns an empty string for files that aren't on disk.
   pathForFile: (file: File) => string
-  // Finds every supported song in the given files and folders and reads its tags and cover art.
-  importPaths: (paths: string[]) => Promise<Track[]>
+  getTracks: () => Promise<Track[]>
+  // Finds every supported song in the given files and folders, reads new or changed ones, and saves them.
+  importPaths: (paths: string[]) => Promise<ImportResult>
   onImportProgress: (listener: (progress: ImportProgress) => void) => () => void
 }
 
@@ -51,6 +64,7 @@ export const Channels = {
   closeToTray: 'window:close-to-tray',
   isMaximized: 'window:is-maximized',
   maximizedChanged: 'window:maximized-changed',
+  getTracks: 'library:get-tracks',
   importPaths: 'library:import-paths',
   importProgress: 'library:import-progress'
 } as const

@@ -19,10 +19,14 @@ export default function App() {
   const [tracks, setTracks] = useState<Track[]>([])
   const [notice, setNotice] = useState<string | null>(null)
   const [importing, setImporting] = useState(false)
-  const knownPaths = useRef(new Set<string>())
   // Progress messages can arrive after the import has already finished, so only show them while it runs.
   const importRunning = useRef(false)
   const clearNotice = useCallback(() => setNotice(null), [])
+
+  // Loads the saved library when Encore opens.
+  useEffect(() => {
+    window.encore.library.getTracks().then(setTracks)
+  }, [])
 
   useEffect(
     () =>
@@ -32,26 +36,37 @@ export default function App() {
     []
   )
 
-  // Reads the music in what was dropped, adds anything new, and shows it in Local files.
+  // Reads the music in what was dropped, saves anything new or changed, and shows it in Local files.
   const addDroppedFiles = useCallback(async (files: File[]) => {
     const paths = files.map((file) => window.encore.library.pathForFile(file)).filter(Boolean)
     importRunning.current = true
     setImporting(true)
     setNotice('Looking for music')
-    const found = paths.length > 0 ? await window.encore.library.importPaths(paths).catch(() => []) : []
+    const result = await window.encore.library.importPaths(paths).catch(() => null)
     importRunning.current = false
     setImporting(false)
 
-    if (found.length === 0) {
+    if (!result) {
+      setNotice('Something went wrong adding those songs')
+      return
+    }
+    if (result.found === 0) {
       setNotice('No MP3, FLAC, WAV, or M4A files in what you dropped')
       return
     }
 
-    const known = knownPaths.current
-    const fresh = found.filter((track) => !known.has(track.path.toLowerCase()))
-    fresh.forEach((track) => known.add(track.path.toLowerCase()))
-    if (fresh.length > 0) setTracks((current) => [...current, ...fresh])
-    setNotice(fresh.length > 0 ? `Added ${songCount(fresh.length)}` : 'Those songs are already in your library')
+    const { added, updated } = result
+    if (added.length > 0 || updated.length > 0) {
+      const changed = new Map(updated.map((track) => [track.id, track]))
+      setTracks((current) => [...current.map((track) => changed.get(track.id) ?? track), ...added])
+    }
+    setNotice(
+      added.length > 0
+        ? `Added ${songCount(added.length)}`
+        : updated.length > 0
+          ? `Updated ${songCount(updated.length)}`
+          : 'Those songs are already in your library'
+    )
     setView('library')
     setLibraryTab('Local files')
   }, [])

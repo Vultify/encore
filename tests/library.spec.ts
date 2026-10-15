@@ -1,23 +1,23 @@
 /// <reference lib="dom" />
 /// <reference lib="dom.iterable" />
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { expect, test, type ElectronApplication, type Page } from '@playwright/test'
-import { launchEncore } from './launch'
-import type { EncoreApi, Track } from '../src/shared/api'
+import { launchEncore, makeDataDir } from './launch'
+import type { EncoreApi, ImportResult } from '../src/shared/api'
 import { makeMp3, makeWav } from './fixtures/audio'
 
 let app: ElectronApplication
 let page: Page
-let musicDir: string
 let dataDir: string
+let musicDir: string
+let cover: Buffer
 
 // A small music folder: a tagged album with a cover, an untagged WAV, broken files, and files Encore should skip.
 test.beforeAll(() => {
   musicDir = mkdtempSync(join(tmpdir(), 'encore-music-'))
-  dataDir = mkdtempSync(join(tmpdir(), 'encore-data-'))
-  const cover = readFileSync('resources/icon.png')
+  cover = readFileSync('resources/icon.png')
   const album = { artist: 'The Testers', album: 'Night Drive', year: '2024', cover }
 
   mkdirSync(join(musicDir, 'Album', 'Disc 2'), { recursive: true })
@@ -38,13 +38,14 @@ test.beforeAll(() => {
 
 test.afterAll(() => {
   rmSync(musicDir, { recursive: true, force: true })
-  rmSync(dataDir, { recursive: true, force: true })
 })
 
+// Every test starts with an empty library.
 test.beforeEach(async () => {
-  const encore = await launchEncore(dataDir)
+  const encore = await launchEncore()
   app = encore.app
   page = encore.page
+  dataDir = encore.dataDir
 })
 
 test.afterEach(async () => {
@@ -75,7 +76,7 @@ async function dropFiles(paths: string[], events = ['dragenter', 'dragover', 'dr
   }, events)
 }
 
-const importPaths = (paths: string[]): Promise<Track[]> =>
+const importPaths = (paths: string[]): Promise<ImportResult> =>
   page.evaluate((list) => (window as unknown as { encore: EncoreApi }).encore.library.importPaths(list), paths)
 
 test('shows the drop overlay while files are dragged over the window', async () => {
@@ -127,8 +128,10 @@ test('dropping only non-music files says nothing was found', async () => {
 })
 
 test('importing a folder reads every song in every subfolder', async () => {
-  const tracks = await importPaths([musicDir, musicDir])
-  const byFile = Object.fromEntries(tracks.map((track) => [track.path.slice(musicDir.length + 1), track]))
+  const { found, added, updated } = await importPaths([musicDir, musicDir])
+  expect(found).toBe(7)
+  expect(updated).toEqual([])
+  const byFile = Object.fromEntries(added.map((track) => [track.path.slice(musicDir.length + 1), track]))
   expect(Object.keys(byFile).sort()).toEqual([
     'Album\\01 First.mp3',
     'Album\\02 Second.mp3',
@@ -161,12 +164,61 @@ test('importing a folder reads every song in every subfolder', async () => {
 })
 
 test('untagged songs get artist and title from the file name and the cover from their folder', async () => {
-  const [video, plain] = await importPaths([join(musicDir, 'Downloads')])
+  const {
+    added: [video, plain]
+  } = await importPaths([join(musicDir, 'Downloads')])
 
   expect(plain).toMatchObject({ artist: 'Real Friends', title: 'Late Nights In My Car', trackNumber: null })
   expect(video).toMatchObject({ artist: 'Artist Two', title: 'Song Name', trackNumber: 7 })
   expect(plain.artworkId).toMatch(/^[a-f0-9]{40}\.png$/)
   expect(video.artworkId).toBe(plain.artworkId)
+})
+
+test('the library is still there after Encore restarts', async () => {
+  const savedDir = makeDataDir()
+  try {
+    await app.close()
+    for (const round of ['first', 'second']) {
+      const encore = await launchEncore(savedDir)
+      app = encore.app
+      page = encore.page
+
+      if (round === 'first') await dropFiles(songs('Album/01 First.mp3', 'Album/02 Second.mp3', 'Loose.wav'))
+      await page.getByRole('tab', { name: 'Local files' }).click()
+      const rows = page.getByRole('list', { name: 'Local files' }).getByRole('listitem')
+      await expect(rows).toHaveCount(3)
+      await expect(rows.nth(0)).toContainText('First Song')
+      await expect.poll(() => rows.nth(0).locator('img').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0)
+
+      if (round === 'first') await app.close()
+    }
+  } finally {
+    await app.close()
+    rmSync(savedDir, { recursive: true, force: true })
+  }
+})
+
+test('importing again skips unchanged songs and re-reads changed ones', async () => {
+  const changingDir = mkdtempSync(join(tmpdir(), 'encore-changing-'))
+  const song = join(changingDir, 'Changing.mp3')
+  try {
+    writeFileSync(song, makeMp3(2, { title: 'Old Title', artist: 'Someone' }))
+    const first = await importPaths([changingDir])
+    expect(first.added).toHaveLength(1)
+
+    const again = await importPaths([changingDir])
+    expect(again).toMatchObject({ found: 1, added: [], updated: [] })
+
+    // A retagged file has a new size and modified time, so it's read again and keeps its id.
+    writeFileSync(song, makeMp3(2, { title: 'New Title', artist: 'Someone' }))
+    utimesSync(song, new Date(), new Date(Date.now() + 5000))
+    const changed = await importPaths([changingDir])
+    expect(changed.added).toEqual([])
+    expect(changed.updated).toHaveLength(1)
+    expect(changed.updated[0]).toMatchObject({ id: first.added[0].id, title: 'New Title' })
+  } finally {
+    rmSync(changingDir, { recursive: true, force: true })
+  }
 })
 
 test('the artwork scheme only serves artwork files', async () => {

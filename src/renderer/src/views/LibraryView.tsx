@@ -69,7 +69,7 @@ function TrackList({ tracks }: { tracks: Track[] }) {
   return (
     <ul className={styles.trackList} aria-label="Local files">
       {sorted.map((track) => (
-        <li key={track.path} className={styles.trackRow} title={track.path}>
+        <li key={track.id} className={styles.trackRow} title={track.path}>
           <span className={styles.trackArt}>
             {track.artworkId ? (
               <img src={artworkUrl(track.artworkId)} alt="" loading="lazy" draggable={false} />

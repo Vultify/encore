@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Song tags and cover art: title, artist, album, track number, year, and length, with progress while a big folder is read.
 - Untagged songs get their artist and title from "Artist - Title" file names, and their cover from a cover or folder image beside them.
 - Song recognition planned as its own phase on the roadmap.
+- The library is saved in a local SQLite database and loads when Encore opens.
+- Adding a folder again skips songs that haven't changed and re-reads ones that have.
 
 ### Fixed
 - A late progress message could replace the "Added songs" notice after an import finished.

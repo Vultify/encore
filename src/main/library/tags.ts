@@ -1,6 +1,6 @@
 import { basename, dirname, extname } from 'node:path'
 import { parseFile, selectCover } from 'music-metadata'
-import type { Track } from '../../shared/api'
+import type { NewTrack } from '../../shared/api'
 import type { AudioFile } from './scan'
 import { saveArtwork } from './artwork'
 import { guessFromName } from './fallbacks'
@@ -12,9 +12,9 @@ const positive = (value: number | null | undefined): number | null => (value && 
 export async function readTrack(
   { path, format }: AudioFile,
   folderCover: (folder: string) => Promise<string | null>
-): Promise<Track> {
+): Promise<NewTrack> {
   const fileTitle = basename(path, extname(path))
-  const track: Track = {
+  const track: NewTrack = {
     path,
     format,
     title: fileTitle,
