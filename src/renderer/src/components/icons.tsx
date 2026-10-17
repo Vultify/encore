@@ -118,6 +118,12 @@ export const VolumeMutedIcon = (p: IconProps) => (
   </Icon>
 )
 
+export const BackIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M15 5l-7 7 7 7" />
+  </Icon>
+)
+
 export const PauseIcon = (p: IconProps) => (
   <Icon {...p} stroke="none">
     <rect x="6.5" y="5" width="4" height="14" rx="1.2" fill="currentColor" />

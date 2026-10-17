@@ -1,0 +1,28 @@
+/* A full-height page inside the library panel. */
+.page {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* Pages with more than one section scroll as a whole. */
+.scroll {
+  overflow-y: auto;
+  margin-right: -12px;
+  padding-right: 12px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}

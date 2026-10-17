@@ -1,0 +1,135 @@
+.list {
+  margin: 0 -10px;
+  padding: 0;
+  list-style: none;
+}
+
+/* A contained list fills the space it's given and scrolls on its own. */
+.contained {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 58px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease;
+}
+
+.row:hover {
+  background: var(--surface-hover);
+}
+
+.art {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+}
+
+.art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The play button sits over the cover and shows on hover, on focus, and for the current song. */
+.play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 8, 10, 0.55);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.row:hover .play,
+.play:focus-visible,
+.row[aria-current='true'] .play {
+  opacity: 1;
+}
+
+.play:focus-visible {
+  outline-offset: -2px;
+}
+
+.row[aria-current='true'] .title {
+  color: var(--accent);
+  transition: color var(--color-fade);
+}
+
+.text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.title,
+.sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.format {
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.time {
+  flex: none;
+  width: 52px;
+  text-align: right;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Album pages show the track number in place of the cover. */
+.number {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.numbered .art {
+  background: transparent;
+}
+
+.numbered .row:hover .number,
+.numbered .row[aria-current='true'] .number {
+  opacity: 0;
+}

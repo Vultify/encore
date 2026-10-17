@@ -9,7 +9,7 @@ import { useFileDrop } from './hooks/useFileDrop'
 import { player, usePlayer } from './player/player'
 import { songCount } from './lib/format'
 import { HomeView } from './views/HomeView'
-import { LibraryView, type LibraryTab } from './views/LibraryView'
+import { LibraryView, type LibraryTab } from './views/library/LibraryView'
 import { SearchView } from './views/SearchView'
 import styles from './App.module.css'
 

@@ -1,0 +1,113 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 20px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  position: relative;
+  min-width: 0;
+  container-type: inline-size;
+}
+
+.open {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+
+.cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #1c1c22, #111115);
+  color: var(--text-faint);
+  box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.6);
+  transition: transform 0.25s var(--ease);
+}
+
+.grid[data-round='true'] .cover {
+  border-radius: 50%;
+}
+
+.cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.open:hover .cover {
+  transform: translateY(-2px);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 2px;
+  min-width: 0;
+}
+
+.grid[data-round='true'] .text {
+  align-items: center;
+  text-align: center;
+}
+
+.title,
+.subtitle {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.title {
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* The play button rises into the cover's bottom corner on hover or focus. The cover is a square as wide as the card. */
+.play {
+  position: absolute;
+  right: 10px;
+  top: calc(100cqw - 54px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.7);
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 0.15s ease,
+    transform 0.2s var(--ease),
+    background var(--color-fade);
+}
+
+.item:hover .play,
+.play:focus-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.play:hover {
+  transform: scale(1.06);
+}

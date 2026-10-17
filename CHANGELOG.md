@@ -28,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The Now playing stage shows the current song's cover, title, and artist.
 - Space plays and pauses.
 - A notice when a song's file has moved or been deleted, then playback skips to the next song.
+- Albums tab: a grid of album covers. Each album opens to its songs in track order, with a Play button. Compilations stay together as one album.
+- Artists tab: a grid of artists. Each artist opens to their albums and all their songs.
+- Roadmap: remove from library and missing file labels added to Phase 3. Song recognition now searches by artist and title first, with sound matching as a backup.
 
 ### Fixed
 - A late progress message could replace the "Added songs" notice after an import finished.
