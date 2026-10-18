@@ -4,15 +4,13 @@ import { CoverGrid, type CoverItem } from '@/components/CoverGrid/CoverGrid'
 import { NameDialog } from '@/components/Dialog/Dialog'
 import { PlusIcon } from '@/components/icons'
 import { collectionSummary } from '@/lib/library'
-import { likedTracks, nextPlaylistName, playlistArtwork, playlistTracks } from '@/lib/playlists'
+import { LIKED_KEY, likedTracks, nextPlaylistName, playlistArtwork, playlistKey, playlistTracks } from '@/lib/playlists'
 import { player } from '@/player/player'
 import { library, useLibrary } from '@/store/library'
 import { LIKED_QUEUE, LikedCover, LikedPage, PlaylistPage, playlistQueue } from './PlaylistPage'
 import styles from './library.module.css'
 
-const LIKED = 'liked'
 const NEW = 'new'
-const playlistKey = (id: number): string => `playlist:${id}`
 
 interface PlaylistsTabProps {
   tracks: Track[]
@@ -29,12 +27,12 @@ export function PlaylistsTab({ tracks, openKey, onOpen, onBack }: PlaylistsTabPr
   const tracksById = useMemo(() => new Map(tracks.map((track) => [track.id, track])), [tracks])
   const liked = useMemo(() => likedTracks(tracks), [tracks])
 
-  if (openKey === LIKED) return <LikedPage tracks={tracks} onBack={onBack} />
+  if (openKey === LIKED_KEY) return <LikedPage tracks={tracks} onBack={onBack} />
   const open = playlists.find((playlist) => playlistKey(playlist.id) === openKey)
   if (open) return <PlaylistPage key={open.id} playlist={open} tracksById={tracksById} onBack={onBack} />
 
   const items: CoverItem[] = [
-    { key: LIKED, title: 'Liked Songs', subtitle: collectionSummary(liked), artworkId: null, cover: <LikedCover />, playable: liked.length > 0 },
+    { key: LIKED_KEY, title: 'Liked Songs', subtitle: collectionSummary(liked), artworkId: null, cover: <LikedCover />, playable: liked.length > 0 },
     ...playlists.map((playlist): CoverItem => {
       const songs = playlistTracks(playlist, tracksById).tracks
       return {
@@ -69,7 +67,7 @@ export function PlaylistsTab({ tracks, openKey, onOpen, onBack }: PlaylistsTabPr
   }
 
   const play = (key: string): void => {
-    if (key === LIKED) return player.playQueue(liked, 0, LIKED_QUEUE)
+    if (key === LIKED_KEY) return player.playQueue(liked, 0, LIKED_QUEUE)
     const playlist = playlists.find((candidate) => playlistKey(candidate.id) === key)
     if (playlist) player.playQueue(playlistTracks(playlist, tracksById).tracks, 0, playlistQueue(playlist.id))
   }

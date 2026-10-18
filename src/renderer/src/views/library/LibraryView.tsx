@@ -1,12 +1,12 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { CoverGrid } from '@/components/CoverGrid/CoverGrid'
 import { EmptyState, Panel } from '@/components/Panel/Panel'
 import { TrackList } from '@/components/TrackList/TrackList'
 import { MusicIcon, UploadIcon } from '@/components/icons'
 import { songCount } from '@/lib/format'
-import { byAlbum, groupAlbums, groupArtists } from '@/lib/library'
+import { byAlbum } from '@/lib/library'
 import { player } from '@/player/player'
-import { useLibrary } from '@/store/library'
+import { useLibraryGroups } from '@/hooks/useLibraryGroups'
 import { AlbumPage, albumQueue } from './AlbumPage'
 import { ArtistPage, artistQueue } from './ArtistPage'
 import { PlaylistsTab } from './PlaylistsTab'
@@ -16,22 +16,24 @@ import styles from './library.module.css'
 export const LIBRARY_TABS = ['Playlists', 'Albums', 'Artists', 'Local files'] as const
 export type LibraryTab = (typeof LIBRARY_TABS)[number]
 
-interface LibraryViewProps {
+// Where the library is: a tab, and the album, artist, or playlist page open in it, if any.
+export interface LibraryLocation {
   tab: LibraryTab
-  onTabChange: (tab: LibraryTab) => void
+  key: string | null
 }
 
-export function LibraryView({ tab, onTabChange }: LibraryViewProps) {
-  const { tracks } = useLibrary()
-  const albums = useMemo(() => groupAlbums(tracks), [tracks])
-  const artists = useMemo(() => groupArtists(tracks, albums), [tracks, albums])
+interface LibraryViewProps {
+  location: LibraryLocation
+  onNavigate: (location: LibraryLocation) => void
+}
+
+export function LibraryView({ location, onNavigate }: LibraryViewProps) {
+  const { tab, key: openKey } = location
+  const { tracks, albums, artists } = useLibraryGroups()
   const localFiles = useMemo(() => [...tracks].sort(byAlbum), [tracks])
 
-  // The page that's open, remembered per tab so switching tabs goes back to the grid.
-  const [opened, setOpened] = useState<{ tab: LibraryTab; key: string } | null>(null)
-  const openKey = opened?.tab === tab ? opened.key : null
-  const open = (key: string): void => setOpened({ tab, key })
-  const close = (): void => setOpened(null)
+  const open = (key: string): void => onNavigate({ tab, key })
+  const close = (): void => onNavigate({ tab, key: null })
 
   const header = (
     <>
@@ -42,10 +44,7 @@ export function LibraryView({ tab, onTabChange }: LibraryViewProps) {
             role="tab"
             aria-selected={tab === name}
             className={shared.tab}
-            onClick={() => {
-              close()
-              onTabChange(name)
-            }}
+            onClick={() => onNavigate({ tab: name, key: null })}
           >
             {name}
           </button>

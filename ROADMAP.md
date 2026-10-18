@@ -26,7 +26,7 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 - [x] Library tabs: Playlists, Albums, Artists, Local files
 - [x] Create, rename, reorder, and delete playlists
 - [x] Add songs to playlists, plus Liked Songs
-- [ ] Search across songs, artists, albums, and playlists
+- [x] Search across songs, artists, albums, and playlists
 - [ ] Remove from library (right-click a song). Only removes it from Encore, never deletes the file
 - [ ] Songs whose file is missing show greyed out with "File not found"
 

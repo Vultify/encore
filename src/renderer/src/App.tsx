@@ -10,14 +10,17 @@ import { library } from './store/library'
 import { clearNotice, notify, useNotice } from './store/notice'
 import { songCount } from './lib/format'
 import { HomeView } from './views/HomeView'
-import { LibraryView, type LibraryTab } from './views/library/LibraryView'
+import { LibraryView, type LibraryLocation } from './views/library/LibraryView'
 import { SearchView } from './views/SearchView'
 import styles from './App.module.css'
 
 // The Stage layout: album on the left, the current view in a glass panel on the right, player dock floating below.
 export default function App() {
   const [view, setView] = useState<View>('library')
-  const [libraryTab, setLibraryTab] = useState<LibraryTab>('Playlists')
+  const [location, setLocation] = useState<LibraryLocation>({ tab: 'Playlists', key: null })
+  // Kept here so a search is still there after visiting another view.
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchFocus, setSearchFocus] = useState(0)
   const notice = useNotice()
   // Progress messages can arrive after the import has already finished, so only show them while it runs.
   const importRunning = useRef(false)
@@ -28,9 +31,15 @@ export default function App() {
     if (failed) notify(`Couldn't play ${failed.title}. The file may have moved.`)
   }, [failed])
 
-  // Space plays and pauses, unless it's typing or pressing a focused control.
+  // Space plays and pauses, unless it's typing or pressing a focused control. Ctrl + F opens search.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.ctrlKey && event.key.toLowerCase() === 'f') {
+        event.preventDefault()
+        setView('search')
+        setSearchFocus((count) => count + 1)
+        return
+      }
       if (event.code !== 'Space' || event.repeat) return
       if ((event.target as HTMLElement).closest('input, textarea, button, [contenteditable]')) return
       event.preventDefault()
@@ -82,10 +91,15 @@ export default function App() {
           : 'Those songs are already in your library'
     )
     setView('library')
-    setLibraryTab('Local files')
+    setLocation({ tab: 'Local files', key: null })
   }, [])
 
   const dragging = useFileDrop(addDroppedFiles)
+
+  const goToLibrary = useCallback((next: LibraryLocation) => {
+    setLocation(next)
+    setView('library')
+  }, [])
 
   return (
     <div className={styles.app}>
@@ -94,8 +108,8 @@ export default function App() {
       <main className={styles.content}>
         <NowPlayingStage />
         {view === 'home' && <HomeView />}
-        {view === 'library' && <LibraryView tab={libraryTab} onTabChange={setLibraryTab} />}
-        {view === 'search' && <SearchView />}
+        {view === 'library' && <LibraryView location={location} onNavigate={setLocation} />}
+        {view === 'search' && <SearchView query={searchQuery} onQueryChange={setSearchQuery} onNavigate={goToLibrary} focusRequest={searchFocus} />}
       </main>
       <PlayerDock />
       <Toast message={notice.message} persist={notice.persist} onDone={clearNotice} />

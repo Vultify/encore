@@ -34,7 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Liked Songs: like a song from the heart in the player dock or from a song's menu. Liked songs show a small heart in every list.
 - Song menu on right-click or the ⋯ button: Like, Add to playlist (including a new one, named up front), and Remove from this playlist.
 - Text selection uses the accent color.
+- Search across songs, artists, albums, and playlists. Matches the start of any word, ignores case and accents, and ranks exact titles first. Results open their page in the library or play right away.
+- Ctrl + F opens search from anywhere.
 - Roadmap: remove from library and missing file labels added to Phase 3. Song recognition now searches by artist and title first, with sound matching as a backup.
 
 ### Fixed
 - A late progress message could replace the "Added songs" notice after an import finished.
+- Tall pages could squeeze the title bar shorter.

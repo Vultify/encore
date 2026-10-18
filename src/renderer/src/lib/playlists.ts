@@ -1,5 +1,9 @@
 import type { Playlist, Track } from '@shared/api'
 
+// How the Playlists tab names each page it can open.
+export const LIKED_KEY = 'liked'
+export const playlistKey = (id: number): string => `playlist:${id}`
+
 // "Playlist 1", "Playlist 2"... using the first number not already taken.
 export function nextPlaylistName(playlists: Playlist[]): string {
   const taken = new Set(playlists.map((playlist) => playlist.name.toLowerCase()))
