@@ -93,6 +93,11 @@
   color: #fff;
 }
 
+.like[aria-pressed='true'] {
+  color: var(--accent);
+  transition: color var(--color-fade);
+}
+
 .play {
   flex: 0 0 auto;
   display: flex;

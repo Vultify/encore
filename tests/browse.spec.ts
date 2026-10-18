@@ -116,7 +116,7 @@ test('switching tabs closes an open page', async () => {
   await library.getByRole('tab', { name: 'Albums' }).click()
   await library.getByRole('button', { name: /^Night Drive/ }).click()
   await library.getByRole('tab', { name: 'Playlists' }).click()
-  await expect(library.getByText('No playlists yet')).toBeVisible()
+  await expect(library.getByRole('list', { name: 'Playlists' })).toContainText('Liked Songs')
 
   await library.getByRole('tab', { name: 'Albums' }).click()
   await expect(library.getByRole('list', { name: 'Albums' })).toBeVisible()

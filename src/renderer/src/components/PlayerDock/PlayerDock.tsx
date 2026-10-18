@@ -2,7 +2,9 @@ import type { CSSProperties } from 'react'
 import { artworkUrl } from '@shared/api'
 import { player, usePlayer } from '@/player/player'
 import { formatDuration } from '@/lib/format'
+import { library, useLibrary } from '@/store/library'
 import {
+  HeartIcon,
   NextIcon,
   PauseIcon,
   PlayIcon,
@@ -21,6 +23,9 @@ export function PlayerDock() {
   const idle = !track
   const progress = duration > 0 ? Math.min(position / duration, 1) : 0
   const level = muted ? 0 : volume
+  // The player holds a copy of the song from when it started, so the liked state comes from the library.
+  const { tracks } = useLibrary()
+  const liked = Boolean(track && tracks.find((candidate) => candidate.id === track.id)?.likedAt)
 
   return (
     <div className={styles.dock} role="region" aria-label="Player">
@@ -32,6 +37,16 @@ export function PlayerDock() {
         <span className={styles.title}>{track?.title ?? 'Not playing'}</span>
         <span className={styles.artist}>{track ? (track.artist ?? 'Unknown artist') : 'Pick a song to start'}</span>
       </span>
+
+      <button
+        className={`${styles.iconButton} ${styles.like}`}
+        aria-label={liked ? 'Remove from Liked Songs' : 'Like'}
+        aria-pressed={liked}
+        disabled={idle}
+        onClick={() => track && library.setLiked([track.id], !liked)}
+      >
+        <HeartIcon size={18} filled={liked} />
+      </button>
 
       <div className={styles.controls}>
         {/* Shuffle and repeat arrive with the playback experience phase. */}

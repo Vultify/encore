@@ -1,5 +1,4 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import type { Track } from '@shared/api'
 import { CoverGrid } from '@/components/CoverGrid/CoverGrid'
 import { EmptyState, Panel } from '@/components/Panel/Panel'
 import { TrackList } from '@/components/TrackList/TrackList'
@@ -7,8 +6,10 @@ import { MusicIcon, UploadIcon } from '@/components/icons'
 import { songCount } from '@/lib/format'
 import { byAlbum, groupAlbums, groupArtists } from '@/lib/library'
 import { player } from '@/player/player'
+import { useLibrary } from '@/store/library'
 import { AlbumPage, albumQueue } from './AlbumPage'
 import { ArtistPage, artistQueue } from './ArtistPage'
+import { PlaylistsTab } from './PlaylistsTab'
 import shared from '../views.module.css'
 import styles from './library.module.css'
 
@@ -18,15 +19,15 @@ export type LibraryTab = (typeof LIBRARY_TABS)[number]
 interface LibraryViewProps {
   tab: LibraryTab
   onTabChange: (tab: LibraryTab) => void
-  tracks: Track[]
 }
 
-export function LibraryView({ tab, onTabChange, tracks }: LibraryViewProps) {
+export function LibraryView({ tab, onTabChange }: LibraryViewProps) {
+  const { tracks } = useLibrary()
   const albums = useMemo(() => groupAlbums(tracks), [tracks])
   const artists = useMemo(() => groupArtists(tracks, albums), [tracks, albums])
   const localFiles = useMemo(() => [...tracks].sort(byAlbum), [tracks])
 
-  // The album or artist page that's open, remembered per tab so switching tabs goes back to the grid.
+  // The page that's open, remembered per tab so switching tabs goes back to the grid.
   const [opened, setOpened] = useState<{ tab: LibraryTab; key: string } | null>(null)
   const openKey = opened?.tab === tab ? opened.key : null
   const open = (key: string): void => setOpened({ tab, key })
@@ -68,9 +69,7 @@ export function LibraryView({ tab, onTabChange, tracks }: LibraryViewProps) {
 
     if (tab === 'Playlists') {
       return (
-        <EmptyState icon={<MusicIcon size={26} />} title="No playlists yet">
-          Playlists you make will live here.
-        </EmptyState>
+        <PlaylistsTab tracks={tracks} openKey={openKey} onOpen={open} onBack={close} />
       )
     }
 

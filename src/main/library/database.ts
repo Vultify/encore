@@ -24,7 +24,23 @@ const MIGRATIONS = [
     file_modified INTEGER,
     added_at INTEGER NOT NULL,
     UNIQUE (source, location_key)
-  )`
+  )`,
+  `ALTER TABLE tracks ADD COLUMN liked_at INTEGER;
+  CREATE TABLE playlists (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  );
+  CREATE TABLE playlist_entries (
+    id INTEGER PRIMARY KEY,
+    playlist_id INTEGER NOT NULL REFERENCES playlists (id) ON DELETE CASCADE,
+    track_id INTEGER NOT NULL REFERENCES tracks (id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    added_at INTEGER NOT NULL
+  );
+  CREATE INDEX playlist_entries_in_order ON playlist_entries (playlist_id, position);`
 ]
 
 // The file details used to tell whether a song changed since it was last read.
@@ -54,6 +70,7 @@ interface TrackRow {
   file_size: number | null
   file_modified: number | null
   added_at: number
+  liked_at: number | null
 }
 
 // Windows paths ignore case, so lookups use a lowercased copy.
@@ -72,7 +89,8 @@ const toTrack = (row: TrackRow): Track => ({
   year: row.year,
   duration: row.duration,
   artworkId: row.artwork_id,
-  addedAt: row.added_at
+  addedAt: row.added_at,
+  likedAt: row.liked_at
 })
 
 let db: DatabaseSync | null = null
@@ -80,15 +98,10 @@ let db: DatabaseSync | null = null
 function migrate(database: DatabaseSync): void {
   const { user_version: version } = database.prepare('PRAGMA user_version').get() as { user_version: number }
   for (let next = version; next < MIGRATIONS.length; next++) {
-    database.exec('BEGIN')
-    try {
+    transaction(() => {
       database.exec(MIGRATIONS[next])
       database.exec(`PRAGMA user_version = ${next + 1}`)
-      database.exec('COMMIT')
-    } catch (error) {
-      database.exec('ROLLBACK')
-      throw error
-    }
+    }, database)
   }
 }
 
@@ -105,9 +118,22 @@ export function closeLibrary(): void {
   db = null
 }
 
-function library(): DatabaseSync {
+export function library(): DatabaseSync {
   if (!db) throw new Error('The library database is not open')
   return db
+}
+
+// Runs a group of changes as one unit: all of them land, or none do.
+export function transaction<T>(work: () => T, database: DatabaseSync = library()): T {
+  database.exec('BEGIN')
+  try {
+    const result = work()
+    database.exec('COMMIT')
+    return result
+  } catch (error) {
+    database.exec('ROLLBACK')
+    throw error
+  }
 }
 
 export function allTracks(): Track[] {
@@ -150,20 +176,27 @@ export function saveTracks(entries: { track: NewTrack; stamp: FileStamp }[]): Tr
   `)
 
   const now = Date.now()
-  const saved: Track[] = []
-  database.exec('BEGIN')
-  try {
-    for (const { track: t, stamp } of entries) {
+  return transaction(() =>
+    entries.map(({ track: t, stamp }) => {
       const row = upsert.get(
         t.path, locationKey(t.path), t.format, t.title, t.artist, t.album, t.albumArtist, t.trackNumber,
         t.discNumber, t.year, t.duration, t.artworkId, stamp.size, stamp.modified, now
       ) as unknown as TrackRow
-      saved.push(toTrack(row))
-    }
-    database.exec('COMMIT')
-  } catch (error) {
-    database.exec('ROLLBACK')
-    throw error
-  }
-  return saved
+      return toTrack(row)
+    })
+  )
+}
+
+// Likes or unlikes songs and returns them as they are now.
+export function setLiked(trackIds: number[], liked: boolean): Track[] {
+  const update = library().prepare(
+    "UPDATE tracks SET liked_at = CASE WHEN ? THEN coalesce(liked_at, ?) ELSE NULL END WHERE source = 'local' AND id = ? RETURNING *"
+  )
+  const now = Date.now()
+  return transaction(() =>
+    trackIds.flatMap((id) => {
+      const row = update.get(liked ? 1 : 0, now, id) as TrackRow | undefined
+      return row ? [toTrack(row)] : []
+    })
+  )
 }

@@ -111,3 +111,26 @@
 .play:hover {
   transform: scale(1.06);
 }
+
+/* Reordering: a line beside the tile shows which side the dragged one will land on. */
+.item[draggable='true'] {
+  cursor: grab;
+}
+
+.item[data-drop]::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 3px;
+  height: 100cqw;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.item[data-drop='before']::after {
+  left: -9px;
+}
+
+.item[data-drop='after']::after {
+  right: -9px;
+}

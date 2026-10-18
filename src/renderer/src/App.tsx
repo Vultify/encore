@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { Track } from '@shared/api'
 import { TitleBar, type View } from './components/TitleBar/TitleBar'
 import { NowPlayingStage } from './components/NowPlayingStage/NowPlayingStage'
 import { PlayerDock } from './components/PlayerDock/PlayerDock'
@@ -7,6 +6,8 @@ import { DropOverlay } from './components/DropOverlay/DropOverlay'
 import { Toast } from './components/Toast/Toast'
 import { useFileDrop } from './hooks/useFileDrop'
 import { player, usePlayer } from './player/player'
+import { library } from './store/library'
+import { clearNotice, notify, useNotice } from './store/notice'
 import { songCount } from './lib/format'
 import { HomeView } from './views/HomeView'
 import { LibraryView, type LibraryTab } from './views/library/LibraryView'
@@ -17,17 +18,14 @@ import styles from './App.module.css'
 export default function App() {
   const [view, setView] = useState<View>('library')
   const [libraryTab, setLibraryTab] = useState<LibraryTab>('Playlists')
-  const [tracks, setTracks] = useState<Track[]>([])
-  const [notice, setNotice] = useState<string | null>(null)
-  const [importing, setImporting] = useState(false)
+  const notice = useNotice()
   // Progress messages can arrive after the import has already finished, so only show them while it runs.
   const importRunning = useRef(false)
-  const clearNotice = useCallback(() => setNotice(null), [])
 
   const { failed } = usePlayer()
 
   useEffect(() => {
-    if (failed) setNotice(`Couldn't play ${failed.title}. The file may have moved.`)
+    if (failed) notify(`Couldn't play ${failed.title}. The file may have moved.`)
   }, [failed])
 
   // Space plays and pauses, unless it's typing or pressing a focused control.
@@ -42,15 +40,17 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
-  // Loads the saved library when Encore opens.
+  // Loads the saved library and playlists when Encore opens.
   useEffect(() => {
-    window.encore.library.getTracks().then(setTracks)
+    library.load()
   }, [])
 
   useEffect(
     () =>
       window.encore.library.onImportProgress(({ done, total }) => {
-        if (importRunning.current && done < total) setNotice(`Reading songs ${done.toLocaleString()} of ${total.toLocaleString()}`)
+        if (importRunning.current && done < total) {
+          notify(`Reading songs ${done.toLocaleString()} of ${total.toLocaleString()}`, { persist: true })
+        }
       }),
     []
   )
@@ -59,27 +59,22 @@ export default function App() {
   const addDroppedFiles = useCallback(async (files: File[]) => {
     const paths = files.map((file) => window.encore.library.pathForFile(file)).filter(Boolean)
     importRunning.current = true
-    setImporting(true)
-    setNotice('Looking for music')
+    notify('Looking for music', { persist: true })
     const result = await window.encore.library.importPaths(paths).catch(() => null)
     importRunning.current = false
-    setImporting(false)
 
     if (!result) {
-      setNotice('Something went wrong adding those songs')
+      notify('Something went wrong adding those songs')
       return
     }
     if (result.found === 0) {
-      setNotice('No MP3, FLAC, WAV, or M4A files in what you dropped')
+      notify('No MP3, FLAC, WAV, or M4A files in what you dropped')
       return
     }
 
+    library.applyImport(result)
     const { added, updated } = result
-    if (added.length > 0 || updated.length > 0) {
-      const changed = new Map(updated.map((track) => [track.id, track]))
-      setTracks((current) => [...current.map((track) => changed.get(track.id) ?? track), ...added])
-    }
-    setNotice(
+    notify(
       added.length > 0
         ? `Added ${songCount(added.length)}`
         : updated.length > 0
@@ -99,11 +94,11 @@ export default function App() {
       <main className={styles.content}>
         <NowPlayingStage />
         {view === 'home' && <HomeView />}
-        {view === 'library' && <LibraryView tab={libraryTab} onTabChange={setLibraryTab} tracks={tracks} />}
+        {view === 'library' && <LibraryView tab={libraryTab} onTabChange={setLibraryTab} />}
         {view === 'search' && <SearchView />}
       </main>
       <PlayerDock />
-      <Toast message={notice} persist={importing} onDone={clearNotice} />
+      <Toast message={notice.message} persist={notice.persist} onDone={clearNotice} />
       <DropOverlay visible={dragging} />
     </div>
   )

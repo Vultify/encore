@@ -30,6 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A notice when a song's file has moved or been deleted, then playback skips to the next song.
 - Albums tab: a grid of album covers. Each album opens to its songs in track order, with a Play button. Compilations stay together as one album.
 - Artists tab: a grid of artists. Each artist opens to their albums and all their songs.
+- Playlists: create, name, rename, delete (with a confirm step), and drag into any order. Songs inside a playlist can be dragged into a new order too.
+- Liked Songs: like a song from the heart in the player dock or from a song's menu. Liked songs show a small heart in every list.
+- Song menu on right-click or the ⋯ button: Like, Add to playlist (including a new one, named up front), and Remove from this playlist.
+- Text selection uses the accent color.
 - Roadmap: remove from library and missing file labels added to Phase 3. Song recognition now searches by artist and title first, with sound matching as a backup.
 
 ### Fixed

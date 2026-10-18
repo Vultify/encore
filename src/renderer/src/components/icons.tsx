@@ -118,6 +118,43 @@ export const VolumeMutedIcon = (p: IconProps) => (
   </Icon>
 )
 
+export const HeartIcon = ({ filled = false, ...p }: IconProps & { filled?: boolean }) => (
+  <Icon {...p}>
+    <path
+      d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 7.5 2.5C19.5 15.4 12 20 12 20z"
+      fill={filled ? 'currentColor' : 'none'}
+    />
+  </Icon>
+)
+
+export const PlusIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 5v14M5 12h14" />
+  </Icon>
+)
+
+export const PencilIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z" />
+    <path d="m13.5 6.5 4 4" />
+  </Icon>
+)
+
+export const TrashIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4.5 7h15M9.5 7V4.8h5V7" />
+    <path d="M6.5 7l.9 12.2a1.5 1.5 0 0 0 1.5 1.3h6.2a1.5 1.5 0 0 0 1.5-1.3L17.5 7" />
+  </Icon>
+)
+
+export const MoreIcon = (p: IconProps) => (
+  <Icon {...p} stroke="none">
+    <circle cx="5.5" cy="12" r="1.8" fill="currentColor" />
+    <circle cx="12" cy="12" r="1.8" fill="currentColor" />
+    <circle cx="18.5" cy="12" r="1.8" fill="currentColor" />
+  </Icon>
+)
+
 export const BackIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M15 5l-7 7 7 7" />

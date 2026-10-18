@@ -26,10 +26,27 @@ export interface Track {
   duration: number | null
   artworkId: string | null
   addedAt: number
+  // When the song was liked, or null if it isn't.
+  likedAt: number | null
 }
 
 // A song read from disk that hasn't been saved to the library yet.
-export type NewTrack = Omit<Track, 'id' | 'addedAt'>
+export type NewTrack = Omit<Track, 'id' | 'addedAt' | 'likedAt'>
+
+// One spot in a playlist. A song can appear more than once, so each spot has its own id.
+export interface PlaylistEntry {
+  id: number
+  trackId: number
+  addedAt: number
+}
+
+export interface Playlist {
+  id: number
+  name: string
+  entries: PlaylistEntry[]
+  createdAt: number
+  updatedAt: number
+}
 
 export interface ImportResult {
   // Every supported song found in what was dropped, new or not.
@@ -50,12 +67,28 @@ export interface LibraryControls {
   // Finds every supported song in the given files and folders, reads new or changed ones, and saves them.
   importPaths: (paths: string[]) => Promise<ImportResult>
   onImportProgress: (listener: (progress: ImportProgress) => void) => () => void
+  setLiked: (trackIds: number[], liked: boolean) => Promise<Track[]>
+}
+
+// Every call that changes a playlist returns all playlists as they are afterward, in order.
+export interface PlaylistControls {
+  list: () => Promise<Playlist[]>
+  create: (name: string, trackIds?: number[]) => Promise<{ created: Playlist; playlists: Playlist[] }>
+  rename: (playlistId: number, name: string) => Promise<Playlist[]>
+  remove: (playlistId: number) => Promise<Playlist[]>
+  reorder: (playlistIds: number[]) => Promise<Playlist[]>
+  addTracks: (playlistId: number, trackIds: number[]) => Promise<Playlist[]>
+  removeEntries: (playlistId: number, entryIds: number[]) => Promise<Playlist[]>
+  moveEntry: (playlistId: number, entryId: number, toIndex: number) => Promise<Playlist[]>
 }
 
 export interface EncoreApi {
   window: WindowControls
   library: LibraryControls
+  playlists: PlaylistControls
 }
+
+export const PLAYLIST_NAME_MAX = 100
 
 // IPC channel names shared by the main process and the preload script.
 export const Channels = {
@@ -66,7 +99,16 @@ export const Channels = {
   maximizedChanged: 'window:maximized-changed',
   getTracks: 'library:get-tracks',
   importPaths: 'library:import-paths',
-  importProgress: 'library:import-progress'
+  importProgress: 'library:import-progress',
+  setLiked: 'library:set-liked',
+  listPlaylists: 'playlists:list',
+  createPlaylist: 'playlists:create',
+  renamePlaylist: 'playlists:rename',
+  removePlaylist: 'playlists:remove',
+  reorderPlaylists: 'playlists:reorder',
+  addToPlaylist: 'playlists:add-tracks',
+  removeFromPlaylist: 'playlists:remove-entries',
+  movePlaylistEntry: 'playlists:move-entry'
 } as const
 
 // Cover art is served to the interface through this private scheme, one file per unique image.
