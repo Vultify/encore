@@ -52,6 +52,14 @@ const api: EncoreApi = {
     onProgress: (listener) => listen(Channels.identifyProgress, listener),
     apply: (trackId, candidateId) => ipcRenderer.invoke(Channels.identifyApply, trackId, candidateId),
     restore: (trackId) => ipcRenderer.invoke(Channels.identifyRestore, trackId)
+  },
+  remote: {
+    report: (nowPlaying) => ipcRenderer.send(Channels.nowPlaying, nowPlaying),
+    onCommand: (listener) => listen(Channels.playerCommand, listener)
+  },
+  settings: {
+    getPlayer: () => ipcRenderer.invoke(Channels.getPlayerSettings),
+    savePlayer: (preferences) => ipcRenderer.send(Channels.savePlayerSettings, preferences)
   }
 }
 

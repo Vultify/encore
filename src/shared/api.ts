@@ -141,11 +141,59 @@ export interface PlaylistControls {
   moveEntry: (playlistId: number, entryId: number, toIndex: number) => Promise<Playlist[]>
 }
 
+// What's playing, in brief, for the tray and the mini player. The main window reports it whenever it changes.
+export interface NowPlaying {
+  trackId: number | null
+  title: string
+  artist: string | null
+  artworkId: string | null
+  playing: boolean
+  hasNext: boolean
+}
+
+export type PlayerCommand = 'toggle' | 'next' | 'previous'
+
+// Where listening left off, so Encore reopens on the same song with the rest of its list still queued.
+export interface PlayerSession {
+  sourceKey: string
+  sourceName: string
+  // The list's songs in their own order, and the play order as positions in that list.
+  sourceIds: number[]
+  order: number[]
+  cursor: number
+  // Songs added with Play next or Add to queue, still waiting.
+  queuedIds: number[]
+  // The song that was playing, whether it came from the queue rather than the list, and how far into it, in seconds.
+  trackId: number
+  fromQueue: boolean
+  position: number
+  shuffle: boolean
+  repeat: 'off' | 'all' | 'one'
+}
+
+export interface PlayerPreferences {
+  volume: number
+  muted: boolean
+  session: PlayerSession | null
+}
+
+export interface RemoteControls {
+  report: (nowPlaying: NowPlaying) => void
+  onCommand: (listener: (command: PlayerCommand) => void) => () => void
+}
+
+export interface SettingsControls {
+  getPlayer: () => Promise<PlayerPreferences>
+  savePlayer: (preferences: PlayerPreferences) => void
+}
+
 export interface EncoreApi {
   window: WindowControls
   library: LibraryControls
   playlists: PlaylistControls
   identify: IdentifyControls
+  remote: RemoteControls
+  settings: SettingsControls
 }
 
 export const PLAYLIST_NAME_MAX = 100
@@ -178,7 +226,11 @@ export const Channels = {
   identifyResult: 'identify:result',
   identifyProgress: 'identify:progress',
   identifyApply: 'identify:apply',
-  identifyRestore: 'identify:restore'
+  identifyRestore: 'identify:restore',
+  nowPlaying: 'player:now-playing',
+  playerCommand: 'player:command',
+  getPlayerSettings: 'settings:get-player',
+  savePlayerSettings: 'settings:save-player'
 } as const
 
 // Cover art is served to the interface through this private scheme, one file per unique image.

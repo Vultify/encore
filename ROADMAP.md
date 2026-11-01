@@ -45,12 +45,12 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 - [x] Adaptive accent color pulled from the playing album art, teal at rest
 
 ## Phase 6: Desktop integration
-- [ ] Close to the system tray and keep playing
+- [x] Close to the system tray and keep playing
 - [ ] Tray menu: show Encore, mini player, play/pause, next, quit
 - [ ] Mini player window: glass pill at the bottom center of the screen
 - [ ] Global keybind Ctrl + Alt + Space to show or hide the mini player
-- [ ] Keyboard media keys
-- [ ] Remember window size, volume, and last song
+- [x] Media keys and the Windows media controls
+- [x] Remember window size, volume, and last song
 
 ## Phase 7: Spotify
 - [ ] Spotify developer app (needs Caleb's Spotify login)

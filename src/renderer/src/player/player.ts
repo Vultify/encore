@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import { mediaUrl, type Track } from '@shared/api'
+import { mediaUrl, type PlayerSession, type Track } from '@shared/api'
 
 export type RepeatMode = 'off' | 'all' | 'one'
 
@@ -60,6 +60,8 @@ class Player {
   // True while a song from the hand-built queue is playing rather than one from the source.
   private playingQueued = false
   private nextQueueKey = 1
+  // Where a restored song should start, applied once the file's length is known and seeking is possible.
+  private startAt: number | null = null
 
   private state: PlayerState = {
     track: null,
@@ -83,6 +85,10 @@ class Player {
     this.audio.addEventListener('play', () => this.update({ playing: true }))
     this.audio.addEventListener('pause', () => this.update({ playing: false }))
     this.audio.addEventListener('timeupdate', () => this.update({ position: this.audio.currentTime }))
+    this.audio.addEventListener('loadedmetadata', () => {
+      if (this.startAt !== null) this.audio.currentTime = this.startAt
+      this.startAt = null
+    })
     this.audio.addEventListener('durationchange', () => {
       if (Number.isFinite(this.audio.duration)) this.update({ duration: this.audio.duration })
     })
@@ -200,10 +206,17 @@ class Player {
     if (target < this.order.length) this.playFromSource(target)
   }
 
+  play(): void {
+    if (this.state.track && this.audio.paused) this.resume()
+  }
+
+  pause(): void {
+    this.audio.pause()
+  }
+
   toggle(): void {
-    if (!this.state.track) return
-    if (this.audio.paused) this.resume()
-    else this.audio.pause()
+    if (this.audio.paused) this.play()
+    else this.pause()
   }
 
   next(): void {
@@ -223,12 +236,19 @@ class Player {
   seek(seconds: number): void {
     if (!this.state.track) return
     const max = this.state.duration || this.audio.duration || 0
+    this.startAt = null
     this.audio.currentTime = Math.min(Math.max(0, seconds), max)
     this.update({ position: this.audio.currentTime })
   }
 
   setVolume(volume: number): void {
     this.update({ volume: Math.min(Math.max(0, volume), 1), muted: false })
+    this.applyVolume()
+  }
+
+  // Puts back a saved volume and mute together, without the unmuting that moving the slider does.
+  setSound(volume: number, muted: boolean): void {
+    this.update({ volume: Math.min(Math.max(0, volume), 1), muted })
     this.applyVolume()
   }
 
@@ -255,6 +275,67 @@ class Player {
 
   cycleRepeat(): void {
     this.publish({ repeat: REPEAT_CYCLE[this.state.repeat] })
+  }
+
+  // Where listening stands, so Encore can pick it up again next time it opens.
+  snapshot(): PlayerSession | null {
+    const { track } = this.state
+    if (!track) return null
+    return {
+      sourceKey: this.sourceKey ?? '',
+      sourceName: this.state.sourceName,
+      sourceIds: this.source.map((song) => song.id),
+      order: this.order,
+      cursor: this.cursor,
+      queuedIds: this.state.queued.map((item) => item.track.id),
+      trackId: track.id,
+      fromQueue: this.playingQueued,
+      position: Math.round(this.state.position * 10) / 10,
+      shuffle: this.state.shuffle,
+      repeat: this.state.repeat
+    }
+  }
+
+  // Loads a saved session paused where it left off. Songs that are no longer playable are left out of it.
+  restore(session: PlayerSession, tracks: Track[]): void {
+    const byId = new Map(tracks.map((track) => [track.id, track]))
+    const track = byId.get(session.trackId)
+    if (this.state.track || !track) return
+
+    // Positions in the saved source, mapped to where those songs sit once the unplayable ones are gone.
+    const kept = new Map<number, number>()
+    const source: Track[] = []
+    session.sourceIds.forEach((id, i) => {
+      const song = byId.get(id)
+      if (!song) return
+      kept.set(i, source.length)
+      source.push(song)
+    })
+    const keptOrder = session.order.filter((i) => kept.has(i))
+    const before = session.order.slice(0, session.cursor + 1).filter((i) => kept.has(i)).length
+
+    this.source = source
+    this.sourceKey = session.sourceKey || null
+    this.order = keptOrder.map((i) => kept.get(i)!)
+    this.cursor = before - 1
+    this.playingQueued = session.fromQueue
+    const queued = session.queuedIds.flatMap((id) => {
+      const song = byId.get(id)
+      return song ? [{ key: this.nextQueueKey++, track: song }] : []
+    })
+
+    const position = Math.min(session.position, track.duration ?? session.position)
+    this.audio.src = mediaUrl(track.id)
+    this.startAt = position
+    this.publish({
+      track,
+      sourceName: session.sourceName,
+      position,
+      duration: track.duration ?? 0,
+      queued,
+      shuffle: session.shuffle,
+      repeat: session.repeat
+    })
   }
 
   private currentSourceTrack(): Track | undefined {
@@ -311,6 +392,7 @@ class Player {
   }
 
   private load(track: Track): void {
+    this.startAt = null
     this.audio.src = mediaUrl(track.id)
     this.publish({ track, position: 0, duration: track.duration ?? 0 })
     this.resume()

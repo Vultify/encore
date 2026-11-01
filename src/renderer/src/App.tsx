@@ -7,6 +7,9 @@ import { Toast } from './components/Toast/Toast'
 import { useAccentColor } from './hooks/useAccentColor'
 import { useFileDrop } from './hooks/useFileDrop'
 import { player, usePlayer } from './player/player'
+import { connectMediaSession } from './player/mediaSession'
+import { rememberPlayer } from './player/memory'
+import { connectRemote } from './player/remote'
 import { library, useLibrary } from './store/library'
 import { useIdentify } from './store/identify'
 import { clearNotice, notify, useNotice } from './store/notice'
@@ -72,9 +75,17 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [showView])
 
-  // Loads the saved library and playlists when Encore opens.
+  // Loads the saved library and playlists when Encore opens and picks up where listening left off.
+  // From then on the tray, the media keys, and the Windows media overlay can control the player.
   useEffect(() => {
-    library.load()
+    const forgetPlayer = rememberPlayer(library.load())
+    const disconnectRemote = connectRemote()
+    const disconnectMediaSession = connectMediaSession()
+    return () => {
+      forgetPlayer()
+      disconnectRemote()
+      disconnectMediaSession()
+    }
   }, [])
 
   // Coming back to the window re-checks which song files exist, in case some were moved or put back.

@@ -1,13 +1,16 @@
-import { app, type BrowserWindow, type Tray } from 'electron'
+import { app, type BrowserWindow } from 'electron'
+import type { PlayerCommand } from '../shared/api'
 import { createMainWindow, registerWindowControls, revealWindow } from './window'
-import { createTray } from './tray'
+import { createTray, type EncoreTray } from './tray'
+import { onNowPlaying, registerRemote, sendCommand } from './remote'
+import { flushSettings, loadSettings, registerSettingsHandlers } from './settings'
 import { registerLibraryHandlers, registerPlaylistHandlers } from './library'
 import { registerIdentifyHandlers } from './identify'
 import { handleProtocols, registerSchemes } from './protocols'
 import { closeLibrary, openLibrary } from './library/database'
 
 let mainWindow: BrowserWindow | null = null
-let tray: Tray | null = null
+let tray: EncoreTray | null = null
 let quitting = false
 
 // Tests point Encore at a throwaway data folder so they never touch the real library.
@@ -25,20 +28,32 @@ if (!app.requestSingleInstanceLock()) {
   app.on('before-quit', () => {
     quitting = true
   })
-  app.on('will-quit', closeLibrary)
+  app.on('will-quit', () => {
+    flushSettings()
+    closeLibrary()
+  })
 
   app.whenReady().then(() => {
+    loadSettings()
     openLibrary()
     handleProtocols()
     registerWindowControls(() => mainWindow)
+    registerSettingsHandlers()
+    registerRemote(() => mainWindow)
     registerLibraryHandlers()
     registerPlaylistHandlers()
     registerIdentifyHandlers()
     mainWindow = createMainWindow(() => quitting)
+
+    const command = (name: PlayerCommand) => () => sendCommand(mainWindow, name)
     tray = createTray({
       show: () => revealWindow(mainWindow),
+      toggle: command('toggle'),
+      next: command('next'),
+      previous: command('previous'),
       quit: () => app.quit()
     })
+    onNowPlaying((now) => tray?.update(now))
   })
 
   // The window only truly closes while quitting, so finish the quit and clear the tray icon.

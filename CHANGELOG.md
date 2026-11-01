@@ -48,6 +48,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Save tags to file: writes an identified song's title, artist, album, track number, year, and cover into the file itself, from the song menu or for a whole review at once. It works on a copy, checks the copy, and only then replaces the original.
 - Identify by sound: when a song's name gives nothing to search for, Encore fingerprints it with Chromaprint and looks it up on AcoustID and MusicBrainz, with covers from the Cover Art Archive. These matches are marked as possibly wrong.
 - `.env.example` showing the optional AcoustID key.
+- Music keeps playing while Encore is hidden in the tray, and moves on to the next song on time.
+- Tray menu with the song playing, Play or Pause, Next, Previous, Show Encore, and Quit Encore. Hovering the tray icon names the song.
+- Media keys, headphone buttons, and the Windows media controls (Win + A) show the song and its cover and control playback.
+- Encore reopens at the same size and spot, with the same volume, on the same song paused where it was left. The queue and the rest of the list are still lined up.
 
 ### Fixed
 - A late progress message could replace the "Added songs" notice after an import finished.

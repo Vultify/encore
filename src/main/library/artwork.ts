@@ -23,10 +23,14 @@ const artworkDir = (): string => join(app.getPath('userData'), 'artwork')
 export const artworkPath = (id: string): string => join(artworkDir(), id)
 
 // Serves encore-art://local/<id> from the artwork folder. Anything that isn't a valid id gets a 404.
-export function serveArtwork(request: Request): Promise<Response> | Response {
+// The interface may read the image itself, not just show it, so it can hand the cover to the Windows media overlay.
+export async function serveArtwork(request: Request): Promise<Response> {
   const id = new URL(request.url).pathname.slice(1)
   if (!ARTWORK_ID.test(id)) return new Response(null, { status: 404 })
-  return net.fetch(pathToFileURL(join(artworkDir(), id)).toString())
+  const file = await net.fetch(pathToFileURL(join(artworkDir(), id)).toString())
+  const headers = new Headers(file.headers)
+  headers.set('Access-Control-Allow-Origin', '*')
+  return new Response(file.body, { status: file.status, headers })
 }
 
 // Saves a cover image named by its content hash and returns that name as the artwork id.
