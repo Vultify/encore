@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { artworkUrl, previewUrl, type MatchCandidate, type Track } from '@shared/api'
+import { SaveToFileDialog } from '@/components/Dialog/SaveToFileDialog'
 import { BackIcon, MusicIcon } from '@/components/icons'
 import { formatDuration, songCount } from '@/lib/format'
 import { UNKNOWN_ARTIST } from '@/lib/library'
 import { identify, useIdentify, type ReviewItem } from '@/store/identify'
-import { useLibrary } from '@/store/library'
+import { library, useLibrary } from '@/store/library'
 import styles from './identify.module.css'
 
 // Matches at or above this score are labeled the best match.
@@ -66,6 +67,7 @@ export function IdentifyPage({ onBack }: { onBack: () => void }) {
 
 function Review({ item, track }: { item: ReviewItem; track: Track }) {
   const [picked, setPicked] = useState<string | null>(item.candidates[0]?.id ?? null)
+  const bySound = item.candidates.some((candidate) => candidate.bySound)
   const [saving, setSaving] = useState(false)
 
   const use = async (): Promise<void> => {
@@ -95,6 +97,11 @@ function Review({ item, track }: { item: ReviewItem; track: Track }) {
 
       <section className={styles.section} aria-label="Matches">
         <h3 className={styles.sectionTitle}>{item.candidates.length > 0 ? 'Pick the right one' : 'No matches found'}</h3>
+        {bySound && (
+          <p className={styles.soundNote} role="note">
+            Found by listening, since the name gave nothing to search for. These may be wrong, so check before using one.
+          </p>
+        )}
         {item.candidates.length > 0 ? (
           <ul className={styles.matches} aria-label="Matches">
             {item.candidates.map((candidate, index) => (
@@ -111,7 +118,8 @@ function Review({ item, track }: { item: ReviewItem; track: Track }) {
           </ul>
         ) : (
           <p className={styles.note}>
-            Apple's music search didn't find this song. You can skip it, or fix its file name to "Artist - Title" and try again.
+            Encore couldn't find this song by its name or by listening to it. You can skip it, or rename the file to
+            "Artist - Title" and try again.
           </p>
         )}
       </section>
@@ -152,7 +160,7 @@ function MatchCard({ candidate, best, sameLength, picked, onPick }: MatchCardPro
     >
       <span className={styles.matchCover}>
         <img src={previewUrl(candidate.id)} alt="" draggable={false} />
-        {best && <span className={styles.badge}>Best match</span>}
+        {best && <span className={styles.badge}>{candidate.bySound ? 'Closest by sound' : 'Best match'}</span>}
       </span>
       <span className={styles.matchTitle}>{candidate.title}</span>
       <span className={styles.matchSub}>{candidate.artist}</span>
@@ -171,19 +179,43 @@ function SkipGone({ trackId }: { trackId: number }) {
   return null
 }
 
+// The end of a review: what changed, with the option to write the picks into the song files too.
 function Summary({ items, onDone }: { items: ReviewItem[]; onDone: () => void }) {
-  const applied = items.filter((item) => item.decision === 'applied').length
+  const { tracks } = useLibrary()
+  const [confirming, setConfirming] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const applied = items.filter((item) => item.decision === 'applied')
   const skipped = items.filter((item) => item.decision === 'skipped').length
+  // Only songs still identified can be saved, in case one was restored meanwhile.
+  const toSave = tracks.filter((track) => track.identified && applied.some((item) => item.trackId === track.id))
+
+  const save = async (): Promise<void> => {
+    setConfirming(false)
+    await library.saveToFiles(toSave.map((track) => track.id))
+    setSaved(true)
+  }
+
   return (
     <div className={styles.waiting}>
       <p className={styles.summary}>
         {items.length === 0
           ? 'Nothing was looked up.'
-          : `All done. ${applied > 0 ? `${songCount(applied)} updated` : 'Nothing updated'}${skipped > 0 ? `, ${skipped} skipped` : ''}.`}
+          : `All done. ${applied.length > 0 ? `${songCount(applied.length)} updated` : 'Nothing updated'}${skipped > 0 ? `, ${skipped} skipped` : ''}.`}
       </p>
-      <button className={styles.primary} onClick={onDone}>
-        Back to Local files
-      </button>
+      {toSave.length > 0 && !saved && (
+        <p>The new details live in Encore for now. Saving them into the song files lets iTunes and other apps see them too.</p>
+      )}
+      <div className={styles.summaryActions}>
+        {toSave.length > 0 && !saved && (
+          <button className={styles.secondary} onClick={() => setConfirming(true)}>
+            Save to the files too
+          </button>
+        )}
+        <button className={styles.primary} onClick={onDone}>
+          Back to Local files
+        </button>
+      </div>
+      {confirming && <SaveToFileDialog songs={toSave} onConfirm={save} onCancel={() => setConfirming(false)} />}
     </div>
   )
 }

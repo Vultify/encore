@@ -1,7 +1,8 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
+import { parseFile } from 'music-metadata'
 import type { EncoreApi } from '../src/shared/api'
 import { makeWav } from './fixtures/audio'
 import { startLookupServer, type CatalogSong, type LookupServer } from './fixtures/lookup-server'
@@ -219,6 +220,80 @@ test('no internet: a clear message, and nothing changes', async () => {
   await banner().getByRole('button', { name: 'Identify songs' }).click()
   await expect(page.getByRole('status').filter({ hasText: "Couldn't reach Apple's music search" })).toBeVisible()
   await expect(library.getByText('Nothing was looked up.')).toBeVisible()
+})
+
+// Identifies Numb through the song menu and picks the best match.
+async function identifyNumb(): Promise<void> {
+  await row('Numb').click({ button: 'right' })
+  await menuItem('Identify song').click()
+  await library.getByRole('button', { name: 'Use this match' }).click()
+  await expect(library.getByText('All done. 1 song updated.')).toBeVisible()
+}
+
+test('save tags to file writes the match into the song file, and the music is untouched', async () => {
+  const file = join(musicDir, 'Linkin Park - Numb.wav')
+  const before = await parseFile(file, { duration: true })
+  await identifyNumb()
+  await library.getByRole('button', { name: 'Back to Local files' }).click()
+
+  await row('Numb').click({ button: 'right' })
+  await menuItem('Save tags to file').click()
+  const dialog = page.getByRole('alertdialog', { name: "Save Numb's tags into its file?" })
+  await expect(dialog).toContainText("The music itself isn't changed")
+  await page.waitForTimeout(300)
+  await page.screenshot({ path: 'test-results/save-to-file.png' })
+  await dialog.getByRole('button', { name: 'Save to file' }).click()
+  await expect(page.getByRole('status').filter({ hasText: "Saved the tags into Numb's file" })).toBeVisible()
+
+  // The file itself now carries the match, cover included, and plays exactly as long as before.
+  const after = await parseFile(file, { duration: true })
+  expect(after.common).toMatchObject({ title: 'Numb', artist: 'Linkin Park', album: 'Meteora', year: 2003 })
+  expect(after.common.track.no).toBe(13)
+  expect(after.common.picture?.[0]?.data.length).toBeGreaterThan(0)
+  expect(after.format.duration).toBeCloseTo(before.format.duration!, 1)
+  expect(readdirSync(musicDir).filter((name) => name.startsWith('.encore-saving'))).toEqual([])
+
+  // Encore now reads those tags from the file, so the song is no longer an overlay to restore.
+  await expect(row('Numb')).toContainText('Linkin Park · Meteora')
+  await row('Numb').click({ button: 'right' })
+  await expect(menuItem('Restore original tags')).toHaveCount(0)
+})
+
+test('the review page can save all its picks to their files at once', async () => {
+  await banner().getByRole('button', { name: 'Identify songs' }).click()
+  await library.getByRole('button', { name: 'Use this match' }).click()
+  await library.getByRole('button', { name: 'Use this match' }).click()
+  await library.getByRole('button', { name: 'Skip' }).click()
+
+  await library.getByRole('button', { name: 'Save to the files too' }).click()
+  await page.getByRole('alertdialog', { name: 'Save the tags into 2 files?' }).getByRole('button', { name: 'Save to files' }).click()
+  await expect(page.getByRole('status').filter({ hasText: 'Saved the tags into 2 files' })).toBeVisible()
+  await expect(library.getByRole('button', { name: 'Save to the files too' })).toHaveCount(0)
+
+  const funk = await parseFile(join(musicDir, 'Mark Ronson - Uptown Funk (Lyrics) ft. Bruno Mars.wav'))
+  expect(funk.common).toMatchObject({ title: 'Uptown Funk (feat. Bruno Mars)', artist: 'Mark Ronson', album: 'Uptown Special' })
+})
+
+test('a file that can’t be written is left exactly as it was', async () => {
+  const file = join(musicDir, 'Linkin Park - Numb.wav')
+  await identifyNumb()
+  await library.getByRole('button', { name: 'Back to Local files' }).click()
+  const original = readFileSync(file)
+  chmodSync(file, 0o444)
+  try {
+    await row('Numb').click({ button: 'right' })
+    await menuItem('Save tags to file').click()
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Save to file' }).click()
+    await expect(page.getByRole('status').filter({ hasText: "Couldn't save Numb. The file is in use or read-only." })).toBeVisible()
+
+    expect(readFileSync(file).equals(original)).toBe(true)
+    expect(readdirSync(musicDir).filter((name) => name.startsWith('.encore-saving'))).toEqual([])
+    // The match is still there, ready to try again.
+    await row('Numb').click({ button: 'right' })
+    await expect(menuItem('Restore original tags')).toBeVisible()
+  } finally {
+    chmodSync(file, 0o666)
+  }
 })
 
 test('the interface can only pick matches Encore found itself', async () => {

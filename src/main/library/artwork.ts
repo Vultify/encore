@@ -19,6 +19,9 @@ const saved = new Set<string>()
 
 const artworkDir = (): string => join(app.getPath('userData'), 'artwork')
 
+// Where a saved cover lives on disk, for writing it into a song file.
+export const artworkPath = (id: string): string => join(artworkDir(), id)
+
 // Serves encore-art://local/<id> from the artwork folder. Anything that isn't a valid id gets a 404.
 export function serveArtwork(request: Request): Promise<Response> | Response {
   const id = new URL(request.url).pathname.slice(1)

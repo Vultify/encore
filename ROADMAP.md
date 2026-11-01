@@ -35,9 +35,8 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 - [x] Search by artist and title (from tags or the file name) on the free iTunes search, no account needed
 - [x] Review screen showing the top few matches side by side with covers, to pick one or skip
 - [x] Save the picked album, track number, year, and cover in Encore's library
-- [ ] Optional "Save to file" that writes the tags into the song file itself
-- [ ] Backup for songs with meaningless names: identify by sound with AcoustID (needs a free AcoustID key in `.env`), marked as "may be wrong"
-- [ ] Later: setting to identify new songs automatically
+- [x] Optional "Save to file" that writes the tags into the song file itself
+- [x] Backup for songs with meaningless names: identify by sound with AcoustID (needs a free AcoustID key in `.env`), marked as "may be wrong"
 
 ## Phase 5: Playback experience
 - [x] Shuffle and repeat (off, all, one)
@@ -62,7 +61,7 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 
 ## Phase 8: Polish and 1.0.0
 - [ ] Animations, empty states, and loading states
-- [ ] Settings: keybind, accent color, music folders, Spotify account
+- [ ] Settings: keybind, accent color, music folders, Spotify account, identify new songs automatically
 - [ ] App icon and Windows installer
 - [ ] Start with Windows option
 - [ ] Release 1.0.0

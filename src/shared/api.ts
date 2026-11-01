@@ -76,6 +76,15 @@ export interface LibraryControls {
   findMissing: () => Promise<number[]>
   // The accent color picked from a cover, as #rrggbb, or null when the cover has no real color.
   accentColor: (artworkId: string) => Promise<string | null>
+  // Writes identified songs' tags and covers into their files, so other apps see them too.
+  saveToFiles: (trackIds: number[]) => Promise<SaveToFilesResult>
+}
+
+export interface SaveToFilesResult {
+  // The songs as they are now, read back from their rewritten files.
+  saved: Track[]
+  // Songs left untouched, with the reason in plain words.
+  failed: { trackId: number; title: string; reason: string }[]
 }
 
 // One possible match for a song, as found by the music search. Its id is how the interface refers back to it.
@@ -91,6 +100,8 @@ export interface MatchCandidate {
   duration: number | null
   // How well it fits the song, from 0 to 1. The interface calls 0.75 and up a best match.
   score: number
+  // True when the song was recognized by its sound rather than its name. Those matches may be wrong.
+  bySound: boolean
 }
 
 // The matches found for one song, best first. Empty when nothing fit.
@@ -153,6 +164,7 @@ export const Channels = {
   removeTracks: 'library:remove-tracks',
   findMissing: 'library:find-missing',
   accentColor: 'library:accent-color',
+  saveToFiles: 'library:save-to-files',
   listPlaylists: 'playlists:list',
   createPlaylist: 'playlists:create',
   renamePlaylist: 'playlists:rename',
@@ -176,7 +188,10 @@ export const ARTWORK_ID = /^[a-f0-9]{40}\.(jpg|png|webp|gif|bmp)$/
 export const artworkUrl = (id: string): string => `${ARTWORK_SCHEME}://local/${id}`
 
 // A match's cover, fetched by the main process so the interface never loads images straight from the internet.
-export const CANDIDATE_ID = /^itunes-\d{1,20}$/
+// Apple matches are "itunes-" and the song's number. Sound matches are "mb-", then the album's and the recording's
+// MusicBrainz ids.
+const MB_ID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+export const CANDIDATE_ID = new RegExp(`^(itunes-[0-9]{1,20}|mb-${MB_ID}-${MB_ID})$`)
 export const previewUrl = (candidateId: string): string => `${ARTWORK_SCHEME}://preview/${candidateId}`
 
 // Songs stream to the player through this scheme by library id, so the interface never reads arbitrary files.

@@ -45,9 +45,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Play next and Add to queue in every song's menu.
 - Now Playing view: a large cover, where the song is playing from, a wide progress bar, and an Up next panel with the queue and what comes next.
 - The accent color follows the playing album's cover and fades between songs. Covers without real color, or nothing playing, stay teal.
+- Save tags to file: writes an identified song's title, artist, album, track number, year, and cover into the file itself, from the song menu or for a whole review at once. It works on a copy, checks the copy, and only then replaces the original.
+- Identify by sound: when a song's name gives nothing to search for, Encore fingerprints it with Chromaprint and looks it up on AcoustID and MusicBrainz, with covers from the Cover Art Archive. These matches are marked as possibly wrong.
+- `.env.example` showing the optional AcoustID key.
 
 ### Fixed
 - A late progress message could replace the "Added songs" notice after an import finished.
 - Tall pages could squeeze the title bar shorter.
 - Songs whose files keep their title, artist, and album only in the "sort as" fields, like some iTunes purchases, now show them.
 - The player dock showed a song's old details after it was identified or re-read while playing.
+
+### Security
+- Updated Electron to 44.10.1 for its fix to trusted website certificates.

@@ -164,6 +164,13 @@ export const PencilIcon = (p: IconProps) => (
   </Icon>
 )
 
+export const SaveIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 4v10M8 10.5l4 4 4-4" />
+    <path d="M5 16v2.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V16" />
+  </Icon>
+)
+
 export const UndoIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M9 7.5 4.5 12 9 16.5" />

@@ -9,7 +9,8 @@ import { UNKNOWN_ARTIST } from '@/lib/library'
 import { nextPlaylistName } from '@/lib/playlists'
 import { ContextMenu, type MenuEntry } from '../ContextMenu/ContextMenu'
 import { ConfirmDialog, NameDialog } from '../Dialog/Dialog'
-import { HeartIcon, MoreIcon, MusicIcon, PauseIcon, PlayIcon, PlusIcon, QueueIcon, SearchIcon, TrashIcon, UndoIcon } from '../icons'
+import { SaveToFileDialog } from '../Dialog/SaveToFileDialog'
+import { HeartIcon, MoreIcon, MusicIcon, PauseIcon, PlayIcon, PlusIcon, QueueIcon, SaveIcon, SearchIcon, TrashIcon, UndoIcon } from '../icons'
 import styles from './TrackList.module.css'
 
 interface TrackListProps {
@@ -45,6 +46,9 @@ export function TrackList({ label, tracks, queueSource, queueName, numbered = fa
   const closeNaming = useCallback(() => setNaming(null), [])
   // The song waiting for a yes before it leaves the library.
   const [removing, setRemoving] = useState<Track | null>(null)
+  // The identified song waiting for a yes before its tags are written into its file.
+  const [savingToFile, setSavingToFile] = useState<Track | null>(null)
+  const closeSavingToFile = useCallback(() => setSavingToFile(null), [])
   const closeRemoving = useCallback(() => setRemoving(null), [])
 
   // Playing a song queues up the rest of the list after it. A song whose file is gone explains why instead.
@@ -144,9 +148,12 @@ export function TrackList({ label, tracks, queueSource, queueName, numbered = fa
           ]
         : []),
       { separator: true },
-      track.identified
-        ? { label: 'Restore original tags', icon: <UndoIcon size={16} />, onSelect: () => library.restoreTags(track.id) }
-        : { label: 'Identify song', icon: <SearchIcon size={16} />, onSelect: () => identify.start([track.id]) },
+      ...(track.identified
+        ? [
+            { label: 'Save tags to file', icon: <SaveIcon size={16} />, onSelect: () => setSavingToFile(track) },
+            { label: 'Restore original tags', icon: <UndoIcon size={16} />, onSelect: () => library.restoreTags(track.id) }
+          ]
+        : [{ label: 'Identify song', icon: <SearchIcon size={16} />, onSelect: () => identify.start([track.id]) }]),
       {
         label: 'Remove from library',
         icon: <TrashIcon size={16} />,
@@ -249,6 +256,16 @@ export function TrackList({ label, tracks, queueSource, queueName, numbered = fa
           y={menu.y}
           entries={menuEntries(menu.index)}
           onClose={closeMenu}
+        />
+      )}
+      {savingToFile && (
+        <SaveToFileDialog
+          songs={[savingToFile]}
+          onConfirm={() => {
+            setSavingToFile(null)
+            library.saveToFiles([savingToFile.id])
+          }}
+          onCancel={closeSavingToFile}
         />
       )}
       {removing && (

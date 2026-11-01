@@ -1,7 +1,9 @@
 import { stat } from 'node:fs/promises'
 import { ipcMain, type WebContents } from 'electron'
-import { Channels, type ImportResult, type NewTrack, type Playlist } from '../../shared/api'
-import { allTracks, locationKey, removeTracks, saveTracks, setLiked, storedTracks, trackLocations, type FileStamp } from './database'
+import { Channels, type ImportResult, type NewTrack, type Playlist, type SaveToFilesResult } from '../../shared/api'
+import { allTracks, clearMatch, locationKey, removeTracks, saveTracks, setLiked, storedTracks, trackById, trackLocations, type FileStamp } from './database'
+import { artworkPath } from './artwork'
+import { writeTags, WriteError } from './writeTags'
 import {
   addTracks,
   allPlaylists,
@@ -95,6 +97,34 @@ export function registerLibraryHandlers(): void {
   ipcMain.handle(Channels.removeTracks, (_event, trackIds: unknown) => (isIdList(trackIds) ? removeTracks(trackIds) : []))
   ipcMain.handle(Channels.findMissing, () => findMissing())
   ipcMain.handle(Channels.accentColor, (_event, artworkId: unknown) => (typeof artworkId === 'string' ? accentForArtwork(artworkId) : null))
+  ipcMain.handle(Channels.saveToFiles, (_event, trackIds: unknown) => (isIdList(trackIds) ? saveToFiles(trackIds) : { saved: [], failed: [] }))
+}
+
+// Writes identified songs' tags into their files one at a time. Once a file carries the match itself, it's read
+// again so the library matches what's on disk, and the match is dropped since the file now says the same thing.
+async function saveToFiles(trackIds: number[]): Promise<SaveToFilesResult> {
+  const folderCover = createFolderCoverLookup()
+  const result: SaveToFilesResult = { saved: [], failed: [] }
+  for (const trackId of trackIds) {
+    const track = trackById(trackId)
+    if (!track) continue
+    if (!track.identified) {
+      result.failed.push({ trackId, title: track.title, reason: 'Only identified songs can be saved to their files.' })
+      continue
+    }
+    try {
+      await writeTags(track, track.artworkId ? artworkPath(track.artworkId) : null)
+      const info = await stat(track.path)
+      const fresh = await readTrack({ path: track.path, format: track.format }, folderCover)
+      saveTracks([{ track: fresh, stamp: { size: info.size, modified: Math.round(info.mtimeMs) } }])
+      const updated = clearMatch(trackId)
+      if (updated) result.saved.push(updated)
+    } catch (error) {
+      const reason = error instanceof WriteError ? error.message : "Couldn't save the tags. The file wasn't changed."
+      result.failed.push({ trackId, title: track.title, reason })
+    }
+  }
+  return result
 }
 
 // Checks every song's file, a batch at a time so a big library doesn't open thousands of handles at once.

@@ -32,7 +32,8 @@ const api: EncoreApi = {
     setLiked: (trackIds, liked) => ipcRenderer.invoke(Channels.setLiked, trackIds, liked),
     removeTracks: (trackIds) => ipcRenderer.invoke(Channels.removeTracks, trackIds),
     findMissing: () => ipcRenderer.invoke(Channels.findMissing),
-    accentColor: (artworkId) => ipcRenderer.invoke(Channels.accentColor, artworkId)
+    accentColor: (artworkId) => ipcRenderer.invoke(Channels.accentColor, artworkId),
+    saveToFiles: (trackIds) => ipcRenderer.invoke(Channels.saveToFiles, trackIds)
   },
   playlists: {
     list: () => ipcRenderer.invoke(Channels.listPlaylists),

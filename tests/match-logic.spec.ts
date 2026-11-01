@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import type { MatchCandidate } from '../src/shared/api'
+import { CANDIDATE_ID, type MatchCandidate } from '../src/shared/api'
 import { coreTitle, looksOriginal, needsDeeperLook, preferLocalSpelling, rankCandidates, searchTerm } from '../src/main/identify/match'
 
 let nextId = 1
@@ -14,6 +14,7 @@ const result = (title: string, artist: string, album: string, seconds: number, e
   year: 2003,
   duration: seconds,
   score: 0,
+  bySound: false,
   ...extra
 })
 
@@ -147,4 +148,12 @@ test('the local spelling of an artist is kept when it is the same name', () => {
   expect(preferLocalSpelling('Linkin Park', 'LINKIN PARK')).toBe('Linkin Park')
   expect(preferLocalSpelling('Linkin Park', 'Jay-Z & Linkin Park')).toBe('Jay-Z & Linkin Park')
   expect(preferLocalSpelling(null, 'Mark Ronson')).toBe('Mark Ronson')
+})
+
+test('match ids: Apple and MusicBrainz shapes pass, anything else is refused', () => {
+  expect(CANDIDATE_ID.test('itunes-590423552')).toBe(true)
+  expect(CANDIDATE_ID.test('mb-11111111-2222-3333-4444-555555555555-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')).toBe(true)
+  for (const bad of ['itunes-1x', 'itunes-', '../etc', 'mb-11111111-2222-3333-4444-555555555555', 'mb-ZZZZZZZZ-2222-3333-4444-555555555555-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee']) {
+    expect(CANDIDATE_ID.test(bad)).toBe(false)
+  }
 })

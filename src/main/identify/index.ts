@@ -2,7 +2,9 @@ import { ipcMain, type WebContents } from 'electron'
 import { CANDIDATE_ID, Channels, type IdentifyProgress, type IdentifyResult, type MatchCandidate, type Track } from '../../shared/api'
 import { clearMatch, saveMatch, trackById } from '../library/database'
 import { saveArtwork } from '../library/artwork'
-import { artistSongs, fetchImage, findArtistId, foundCandidate, LookupError, searchSongs, type FoundCandidate } from './itunes'
+import { fetchImage, foundCandidate, LookupError, type FoundCandidate } from './candidates'
+import { artistSongs, findArtistId, searchSongs } from './itunes'
+import { matchBySound } from './acoustid'
 import { needsDeeperLook, preferLocalSpelling, rankCandidates, sameArtist, searchTerm, type SongClues } from './match'
 
 const isId = (value: unknown): value is number => Number.isInteger(value) && (value as number) > 0
@@ -19,7 +21,7 @@ type ArtistCatalogs = Map<string, Promise<FoundCandidate[]>>
 
 // Searches by artist and title. If that turns up only compilations or nothing quite right, also checks
 // the artist's own song list, where albums the search skips still show up.
-async function findMatches(clues: SongClues, catalogs: ArtistCatalogs): Promise<FoundCandidate[]> {
+async function findByName(clues: SongClues, catalogs: ArtistCatalogs): Promise<FoundCandidate[]> {
   const searched = await searchSongs(searchTerm(clues))
   const ranked = rankCandidates(clues, searched)
   const artist = clues.artist
@@ -42,6 +44,15 @@ async function findMatches(clues: SongClues, catalogs: ArtistCatalogs): Promise<
   return rankCandidates(clues, [...searched, ...catalog.filter((candidate) => !known.has(candidate.id))])
 }
 
+// Searches by name first. When the name gives nothing to go on, like a file called "track01" with no artist,
+// or the search finds nothing, Encore listens to the song and matches it by sound instead.
+async function findMatches(path: string, clues: SongClues, catalogs: ArtistCatalogs): Promise<FoundCandidate[]> {
+  const byName = await findByName(clues, catalogs)
+  if (byName.length > 0 && clues.artist) return byName
+  const bySound = await matchBySound(path, clues.duration)
+  return bySound.length > 0 ? bySound : byName
+}
+
 // Looks each song up in turn, sending its best matches as soon as they're ready.
 async function identify(trackIds: number[], sender: WebContents): Promise<void> {
   if (current) throw new Error('Songs are already being identified')
@@ -62,7 +73,7 @@ async function identify(trackIds: number[], sender: WebContents): Promise<void> 
       let candidates: FoundCandidate[] = []
       if (track) {
         try {
-          candidates = await findMatches({ title: track.title, artist: track.artist, duration: track.duration }, catalogs)
+          candidates = await findMatches(track.path, { title: track.title, artist: track.artist, duration: track.duration }, catalogs)
         } catch (error) {
           send(Channels.identifyProgress, { done, total, error: error instanceof LookupError ? error.message : "Couldn't look songs up." })
           return

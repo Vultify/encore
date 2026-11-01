@@ -1,5 +1,5 @@
 import { net } from 'electron'
-import type { MatchCandidate } from '../../shared/api'
+import { LookupError, remember, type FoundCandidate } from './candidates'
 
 // Tests point this at a local stand-in so they never depend on Apple's servers.
 const SEARCH_URL = process.env.ENCORE_LOOKUP_URL ?? 'https://itunes.apple.com/search'
@@ -8,8 +8,6 @@ const REQUEST_GAP_MS = Number(process.env.ENCORE_LOOKUP_GAP_MS ?? 3000)
 const BUSY_RETRY_MS = 15_000
 const RESULTS_PER_SEARCH = 15
 const SONGS_PER_ARTIST = 200
-const MAX_IMAGE_BYTES = 10 * 1024 * 1024
-const REMEMBERED_CANDIDATES = 4000
 
 interface ItunesTrack {
   kind?: string
@@ -24,26 +22,6 @@ interface ItunesTrack {
   releaseDate?: string
   trackTimeMillis?: number
   artworkUrl100?: string
-}
-
-// A candidate plus where its cover lives and who made it in Apple's catalog. These stay in the main process.
-export interface FoundCandidate extends MatchCandidate {
-  coverUrl: string | null
-  thumbnailUrl: string | null
-  artistId: number | null
-}
-
-export class LookupError extends Error {}
-
-// Every candidate handed to the interface is remembered here, so a pick can only ever be one Encore found itself.
-const found = new Map<string, FoundCandidate>()
-
-export const foundCandidate = (id: string): FoundCandidate | undefined => found.get(id)
-
-const remember = (candidate: FoundCandidate): void => {
-  found.delete(candidate.id)
-  found.set(candidate.id, candidate)
-  if (found.size > REMEMBERED_CANDIDATES) found.delete(found.keys().next().value!)
 }
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
@@ -72,6 +50,7 @@ function toCandidate(track: Required<Pick<ItunesTrack, 'trackId' | 'trackName' |
     year: Number.isFinite(year) && year > 0 ? year : null,
     duration: track.trackTimeMillis ? track.trackTimeMillis / 1000 : null,
     score: 0,
+    bySound: false,
     coverUrl: coverAt(track.artworkUrl100, 600),
     thumbnailUrl: coverAt(track.artworkUrl100, 300),
     artistId: track.artistId ?? null
@@ -125,24 +104,4 @@ export async function artistSongs(artistId: number): Promise<FoundCandidate[]> {
 export async function findArtistId(name: string, sameArtist: (candidate: string) => boolean): Promise<number | null> {
   const artists = await ask('search', { term: name, media: 'music', entity: 'musicArtist', limit: '5' })
   return artists.find((artist) => artist.artistId && artist.artistName && sameArtist(artist.artistName))?.artistId ?? null
-}
-
-// Covers only ever come from Apple's image servers, or from the stand-in search during tests.
-function isAllowedImage(url: string): boolean {
-  try {
-    const target = new URL(url)
-    if (target.protocol === 'https:' && target.hostname.endsWith('.mzstatic.com')) return true
-    return target.origin === new URL(SEARCH_URL).origin
-  } catch {
-    return false
-  }
-}
-
-export async function fetchImage(url: string): Promise<{ data: Uint8Array<ArrayBuffer>; type: string } | null> {
-  if (!isAllowedImage(url)) return null
-  const response = await net.fetch(url).catch(() => null)
-  const type = response?.headers.get('content-type')?.split(';')[0].trim() ?? ''
-  if (!response?.ok || !type.startsWith('image/')) return null
-  const data = new Uint8Array(await response.arrayBuffer())
-  return data.length > 0 && data.length <= MAX_IMAGE_BYTES ? { data, type } : null
 }

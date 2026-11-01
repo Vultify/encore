@@ -51,6 +51,34 @@ export function makeMp3(seconds: number, tags: Mp3Tags): Buffer {
   return Buffer.concat([header, body, silentMp3Frames(seconds)])
 }
 
+// An untagged WAV that plays a little melody of changing notes, so Chromaprint has real sound to fingerprint.
+// The seed picks a different melody, for songs that should sound different.
+export function makeTune(seconds: number, seed = 1): Buffer {
+  const rate = 11025
+  const samples = rate * seconds
+  const data = Buffer.alloc(samples * 2)
+  const notes = [220, 247, 262, 294, 330, 349, 392, 440]
+  for (let i = 0; i < samples; i++) {
+    const step = Math.floor(i / (rate / 4))
+    const frequency = notes[(step * (seed + 2) + seed) % notes.length]
+    data.writeInt16LE(Math.round(Math.sin((2 * Math.PI * frequency * i) / rate) * 12000), i * 2)
+  }
+  const header = Buffer.alloc(44)
+  header.write('RIFF', 0, 'latin1')
+  header.writeUInt32LE(36 + data.length, 4)
+  header.write('WAVEfmt ', 8, 'latin1')
+  header.writeUInt32LE(16, 16)
+  header.writeUInt16LE(1, 20)
+  header.writeUInt16LE(1, 22)
+  header.writeUInt32LE(rate, 24)
+  header.writeUInt32LE(rate * 2, 28)
+  header.writeUInt16LE(2, 32)
+  header.writeUInt16LE(16, 34)
+  header.write('data', 36, 'latin1')
+  header.writeUInt32LE(data.length, 40)
+  return Buffer.concat([header, data])
+}
+
 // A plain untagged 8 kHz mono 16-bit WAV of silence.
 export function makeWav(seconds: number): Buffer {
   const rate = 8000

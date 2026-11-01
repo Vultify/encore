@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import type { ImportResult, Playlist, Track } from '@shared/api'
+import { notify } from './notice'
 
 export interface LibraryState {
   tracks: Track[]
@@ -105,6 +106,20 @@ class LibraryStore {
       })
     })
     this.update({ playlists: await api().playlists.moveEntry(playlistId, entryId, toIndex) })
+  }
+
+  // Writes identified songs' tags into their files, swaps in the songs as they now read from disk, and says how it went.
+  async saveToFiles(trackIds: number[]): Promise<void> {
+    const { saved, failed } = await api().library.saveToFiles(trackIds)
+    this.replaceTracks(saved)
+
+    if (failed.length === 0) {
+      notify(saved.length === 1 ? `Saved the tags into ${saved[0].title}'s file` : `Saved the tags into ${saved.length} files`)
+    } else if (saved.length === 0 && failed.length === 1) {
+      notify(`Couldn't save ${failed[0].title}. ${failed[0].reason}`)
+    } else {
+      notify(`Saved ${saved.length} of ${saved.length + failed.length}. Couldn't save ${failed[0].title}: ${failed[0].reason}`)
+    }
   }
 
   // Puts back a song's own tags after it was identified as something else.

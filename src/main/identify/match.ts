@@ -69,7 +69,7 @@ function artistScore(local: string | null, candidate: MatchCandidate): number {
 }
 
 // Lengths within a couple of seconds are almost certainly the same recording. Far apart means a different version.
-function durationScore(local: number | null, candidate: number | null): number {
+export function durationScore(local: number | null, candidate: number | null): number {
   if (local === null || candidate === null) return 0.05
   const gap = Math.abs(local - candidate)
   if (gap <= 2) return 0.15

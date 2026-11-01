@@ -322,3 +322,21 @@
   padding: 0 16px;
   font-size: 13px;
 }
+
+.summaryActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Matches found by listening are marked, since they're more likely to be wrong than name matches. */
+.soundNote {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 196, 92, 0.08);
+  border: 1px solid rgba(255, 196, 92, 0.25);
+  color: #f3d9a4;
+  font-size: 13px;
+  line-height: 1.5;
+}
