@@ -178,3 +178,19 @@
   background: var(--surface-hover);
   color: #fff;
 }
+
+/* A song whose file can't be found stays listed, greyed out, until it's found again or removed. */
+.row[data-missing] .art,
+.row[data-missing] .text {
+  opacity: 0.45;
+}
+
+.missing {
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  font-size: 11px;
+  font-weight: 700;
+}

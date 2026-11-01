@@ -68,6 +68,10 @@ export interface LibraryControls {
   importPaths: (paths: string[]) => Promise<ImportResult>
   onImportProgress: (listener: (progress: ImportProgress) => void) => () => void
   setLiked: (trackIds: number[], liked: boolean) => Promise<Track[]>
+  // Removes songs from the library and returns the ids that were removed. Files stay on disk.
+  removeTracks: (trackIds: number[]) => Promise<number[]>
+  // The ids of songs whose files can't be found right now.
+  findMissing: () => Promise<number[]>
 }
 
 // Every call that changes a playlist returns all playlists as they are afterward, in order.
@@ -101,6 +105,8 @@ export const Channels = {
   importPaths: 'library:import-paths',
   importProgress: 'library:import-progress',
   setLiked: 'library:set-liked',
+  removeTracks: 'library:remove-tracks',
+  findMissing: 'library:find-missing',
   listPlaylists: 'playlists:list',
   createPlaylist: 'playlists:create',
   renamePlaylist: 'playlists:rename',

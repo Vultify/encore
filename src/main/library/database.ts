@@ -187,6 +187,17 @@ export function saveTracks(entries: { track: NewTrack; stamp: FileStamp }[]): Tr
   )
 }
 
+// Takes songs out of the library, along with their spots in playlists. The files are never touched.
+export function removeTracks(trackIds: number[]): number[] {
+  const remove = library().prepare("DELETE FROM tracks WHERE source = 'local' AND id = ? RETURNING id")
+  return transaction(() => trackIds.flatMap((id) => (remove.get(id) as { id: number } | undefined)?.id ?? []))
+}
+
+// Every song's id and file path, for checking which files still exist.
+export function trackLocations(): { id: number; location: string }[] {
+  return library().prepare("SELECT id, location FROM tracks WHERE source = 'local'").all() as unknown as { id: number; location: string }[]
+}
+
 // Likes or unlikes songs and returns them as they are now.
 export function setLiked(trackIds: number[], liked: boolean): Track[] {
   const update = library().prepare(

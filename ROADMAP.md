@@ -27,8 +27,8 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 - [x] Create, rename, reorder, and delete playlists
 - [x] Add songs to playlists, plus Liked Songs
 - [x] Search across songs, artists, albums, and playlists
-- [ ] Remove from library (right-click a song). Only removes it from Encore, never deletes the file
-- [ ] Songs whose file is missing show greyed out with "File not found"
+- [x] Remove from library (right-click a song). Only removes it from Encore, never deletes the file
+- [x] Songs whose file is missing show greyed out with "File not found"
 
 ## Phase 4: Song recognition
 - [ ] "Identify songs" button that looks up songs missing an album or cover, in the background with progress

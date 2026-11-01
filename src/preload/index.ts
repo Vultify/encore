@@ -22,7 +22,9 @@ const api: EncoreApi = {
       ipcRenderer.on(Channels.importProgress, handler)
       return () => ipcRenderer.removeListener(Channels.importProgress, handler)
     },
-    setLiked: (trackIds, liked) => ipcRenderer.invoke(Channels.setLiked, trackIds, liked)
+    setLiked: (trackIds, liked) => ipcRenderer.invoke(Channels.setLiked, trackIds, liked),
+    removeTracks: (trackIds) => ipcRenderer.invoke(Channels.removeTracks, trackIds),
+    findMissing: () => ipcRenderer.invoke(Channels.findMissing)
   },
   playlists: {
     list: () => ipcRenderer.invoke(Channels.listPlaylists),

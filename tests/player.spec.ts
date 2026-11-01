@@ -147,7 +147,7 @@ test('volume slider and mute', async () => {
   await expect(slider).toHaveValue('0.5')
 })
 
-test('a song whose file is gone shows a notice instead of breaking', async () => {
+test('a song whose file is gone is caught before it plays', async () => {
   const goneDir = mkdtempSync(join(tmpdir(), 'encore-gone-'))
   writeFileSync(join(goneDir, 'Ghost - Vanished.wav'), makeWav(3))
   await page.evaluate((dir) => (window as unknown as { encore: EncoreApi }).encore.library.importPaths([dir]), goneDir)
@@ -156,7 +156,7 @@ test('a song whose file is gone shows a notice instead of breaking', async () =>
   await page.getByRole('tab', { name: 'Local files' }).click()
 
   await page.getByRole('listitem').filter({ hasText: 'Vanished' }).dblclick()
-  await expect(page.getByRole('status').filter({ hasText: "Couldn't play Vanished" })).toBeVisible()
+  await expect(page.getByRole('status').filter({ hasText: "Can't find the file for Vanished" })).toBeVisible()
 })
 
 test('the media scheme streams library songs in ranges and nothing else', async () => {

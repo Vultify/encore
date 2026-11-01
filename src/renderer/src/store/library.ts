@@ -4,13 +4,15 @@ import type { ImportResult, Playlist, Track } from '@shared/api'
 export interface LibraryState {
   tracks: Track[]
   playlists: Playlist[]
+  // Songs whose files couldn't be found the last time they were checked.
+  missing: ReadonlySet<number>
 }
 
 const api = (): typeof window.encore => window.encore
 
 // The songs and playlists the interface shows. Changes go to the main process first, then land here.
 class LibraryStore {
-  private state: LibraryState = { tracks: [], playlists: [] }
+  private state: LibraryState = { tracks: [], playlists: [], missing: new Set() }
   private listeners = new Set<() => void>()
 
   subscribe = (listener: () => void): (() => void) => {
@@ -23,11 +25,40 @@ class LibraryStore {
   async load(): Promise<void> {
     const [tracks, playlists] = await Promise.all([api().library.getTracks(), api().playlists.list()])
     this.update({ tracks, playlists })
+    await this.checkFiles()
+  }
+
+  // Looks for songs whose files have moved or been deleted, and for missing ones that came back.
+  async checkFiles(): Promise<void> {
+    const missing = await api().library.findMissing()
+    const changed = missing.length !== this.state.missing.size || missing.some((id) => !this.state.missing.has(id))
+    if (changed) this.update({ missing: new Set(missing) })
+  }
+
+  markMissing(trackId: number): void {
+    if (this.state.missing.has(trackId)) return
+    this.update({ missing: new Set([...this.state.missing, trackId]) })
+  }
+
+  // Takes songs out of the library and every playlist. The files stay where they are.
+  async removeTracks(trackIds: number[]): Promise<void> {
+    const removed = new Set(await api().library.removeTracks(trackIds))
+    const playlists = await api().playlists.list()
+    this.update({
+      tracks: this.state.tracks.filter((track) => !removed.has(track.id)),
+      playlists,
+      missing: new Set([...this.state.missing].filter((id) => !removed.has(id)))
+    })
   }
 
   applyImport({ added, updated }: ImportResult): void {
     if (added.length === 0 && updated.length === 0) return
     this.replaceTracks(updated, added)
+    // A song just read from disk is clearly there, even if it was missing before.
+    const found = new Set(updated.map((track) => track.id))
+    if ([...this.state.missing].some((id) => found.has(id))) {
+      this.update({ missing: new Set([...this.state.missing].filter((id) => !found.has(id))) })
+    }
   }
 
   async setLiked(trackIds: number[], liked: boolean): Promise<void> {

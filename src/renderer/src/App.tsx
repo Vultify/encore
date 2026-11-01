@@ -14,6 +14,8 @@ import { LibraryView, type LibraryLocation } from './views/library/LibraryView'
 import { SearchView } from './views/SearchView'
 import styles from './App.module.css'
 
+const FILE_CHECK_INTERVAL_MS = 10_000
+
 // The Stage layout: album on the left, the current view in a glass panel on the right, player dock floating below.
 export default function App() {
   const [view, setView] = useState<View>('library')
@@ -28,7 +30,9 @@ export default function App() {
   const { failed } = usePlayer()
 
   useEffect(() => {
-    if (failed) notify(`Couldn't play ${failed.title}. The file may have moved.`)
+    if (!failed) return
+    notify(`Couldn't play ${failed.title}. The file may have moved.`)
+    library.markMissing(failed.id)
   }, [failed])
 
   // Space plays and pauses, unless it's typing or pressing a focused control. Ctrl + F opens search.
@@ -52,6 +56,18 @@ export default function App() {
   // Loads the saved library and playlists when Encore opens.
   useEffect(() => {
     library.load()
+  }, [])
+
+  // Coming back to the window re-checks which song files exist, in case some were moved or put back.
+  useEffect(() => {
+    let lastCheck = Date.now()
+    const onFocus = (): void => {
+      if (Date.now() - lastCheck < FILE_CHECK_INTERVAL_MS) return
+      lastCheck = Date.now()
+      library.checkFiles()
+    }
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
   }, [])
 
   useEffect(

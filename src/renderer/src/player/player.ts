@@ -74,6 +74,18 @@ class Player {
     this.update({ queue, index, track: queue[index] })
   }
 
+  // Drops removed songs from the queue. A removed song that's playing finishes, then the queue carries on after it.
+  forget(trackIds: number[]): void {
+    const gone = new Set(trackIds)
+    const { queue, index, track } = this.state
+    const kept = queue.filter((candidate) => !gone.has(candidate.id))
+    const newIndex =
+      track && gone.has(track.id)
+        ? queue.slice(0, index).filter((candidate) => !gone.has(candidate.id)).length - 1
+        : kept.findIndex((candidate) => candidate.id === track?.id)
+    this.update({ queue: kept, index: newIndex })
+  }
+
   toggle(): void {
     if (!this.state.track) return
     if (this.audio.paused) this.resume()

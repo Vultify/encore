@@ -7,7 +7,7 @@ import { formatDuration } from '@/lib/format'
 import { UNKNOWN_ARTIST } from '@/lib/library'
 import { nextPlaylistName } from '@/lib/playlists'
 import { ContextMenu, type MenuEntry } from '../ContextMenu/ContextMenu'
-import { NameDialog } from '../Dialog/Dialog'
+import { ConfirmDialog, NameDialog } from '../Dialog/Dialog'
 import { HeartIcon, MoreIcon, MusicIcon, PauseIcon, PlayIcon, PlusIcon, TrashIcon } from '../icons'
 import styles from './TrackList.module.css'
 
@@ -34,15 +34,32 @@ interface OpenMenu {
 
 export function TrackList({ label, tracks, queueSource, numbered = false, contained = true, playlistId, entryIds, onMove }: TrackListProps) {
   const { track: current, playing } = usePlayer()
-  const { playlists } = useLibrary()
+  const { playlists, missing } = useLibrary()
   const [menu, setMenu] = useState<OpenMenu | null>(null)
   const closeMenu = useCallback(() => setMenu(null), [])
   // The song waiting for a new playlist, while its name is being typed.
   const [naming, setNaming] = useState<Track | null>(null)
   const closeNaming = useCallback(() => setNaming(null), [])
+  // The song waiting for a yes before it leaves the library.
+  const [removing, setRemoving] = useState<Track | null>(null)
+  const closeRemoving = useCallback(() => setRemoving(null), [])
 
-  // Playing a song queues up the rest of the list after it.
-  const play = (index: number): void => player.playQueue(tracks, index, queueSource)
+  // Playing a song queues up the rest of the list after it. A song whose file is gone explains why instead.
+  const play = (index: number): void => {
+    const track = tracks[index]
+    if (missing.has(track.id)) {
+      notify(`Can't find the file for ${track.title}. It may have been moved or deleted.`)
+      return
+    }
+    player.playQueue(tracks, index, queueSource)
+  }
+
+  const remove = async (track: Track): Promise<void> => {
+    setRemoving(null)
+    await library.removeTracks([track.id])
+    player.forget([track.id])
+    notify(`Removed ${track.title} from your library`)
+  }
   useEffect(() => player.syncQueue(queueSource, tracks), [queueSource, tracks])
 
   // Drag to reorder: remembers the row being dragged and where it would land.
@@ -108,7 +125,14 @@ export function TrackList({ label, tracks, queueSource, numbered = false, contai
               onSelect: () => library.removeFromPlaylist(playlistId, [entryId])
             }
           ]
-        : [])
+        : []),
+      { separator: true },
+      {
+        label: 'Remove from library',
+        icon: <TrashIcon size={16} />,
+        danger: true,
+        onSelect: () => setRemoving(track)
+      }
     ]
   }
 
@@ -120,12 +144,14 @@ export function TrackList({ label, tracks, queueSource, numbered = false, contai
         {tracks.map((track, index) => {
           const isCurrent = track.id === current?.id
           const isLiked = track.likedAt !== null
+          const isMissing = missing.has(track.id)
           return (
             <li
               key={entryIds?.[index] ?? track.id}
               className={styles.row}
               title={track.path}
               aria-current={isCurrent || undefined}
+              data-missing={isMissing || undefined}
               data-drop={dropAt?.index === index ? (dropAt.after ? 'after' : 'before') : undefined}
               draggable={Boolean(onMove)}
               onDragStart={(event) => {
@@ -186,7 +212,11 @@ export function TrackList({ label, tracks, queueSource, numbered = false, contai
               >
                 <MoreIcon size={18} />
               </button>
-              <span className={styles.format}>{track.format}</span>
+              {isMissing ? (
+                <span className={styles.missing}>File not found</span>
+              ) : (
+                <span className={styles.format}>{track.format}</span>
+              )}
               <span className={styles.time}>{formatDuration(track.duration)}</span>
             </li>
           )
@@ -199,6 +229,15 @@ export function TrackList({ label, tracks, queueSource, numbered = false, contai
           y={menu.y}
           entries={menuEntries(menu.index)}
           onClose={closeMenu}
+        />
+      )}
+      {removing && (
+        <ConfirmDialog
+          title={`Remove ${removing.title} from your library?`}
+          message="It comes out of Encore, your playlists, and Liked Songs. The file stays on your computer, and you can add it back any time."
+          confirmLabel="Remove"
+          onConfirm={() => remove(removing)}
+          onCancel={closeRemoving}
         />
       )}
       {naming && (

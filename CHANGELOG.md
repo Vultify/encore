@@ -36,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Text selection uses the accent color.
 - Search across songs, artists, albums, and playlists. Matches the start of any word, ignores case and accents, and ranks exact titles first. Results open their page in the library or play right away.
 - Ctrl + F opens search from anywhere.
+- Remove from library in every song's menu, with a confirm step. The song leaves Encore, its playlists, and Liked Songs. The file stays on disk.
+- Songs whose file has moved or been deleted show greyed out with a "File not found" badge. Files are checked when Encore opens and when its window comes back into focus.
 - Roadmap: remove from library and missing file labels added to Phase 3. Song recognition now searches by artist and title first, with sound matching as a backup.
 
 ### Fixed

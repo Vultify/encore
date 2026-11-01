@@ -1,7 +1,7 @@
 import { stat } from 'node:fs/promises'
 import { ipcMain, type WebContents } from 'electron'
 import { Channels, type ImportResult, type NewTrack, type Playlist } from '../../shared/api'
-import { allTracks, locationKey, saveTracks, setLiked, storedTracks, type FileStamp } from './database'
+import { allTracks, locationKey, removeTracks, saveTracks, setLiked, storedTracks, trackLocations, type FileStamp } from './database'
 import {
   addTracks,
   allPlaylists,
@@ -19,6 +19,7 @@ import { createFolderCoverLookup } from './fallbacks'
 // How many files are read at once, and how often progress is sent to the interface.
 const READ_CONCURRENCY = 8
 const PROGRESS_INTERVAL_MS = 100
+const STAT_BATCH = 64
 
 const sameStamp = (a: FileStamp, b: FileStamp): boolean => a.size === b.size && a.modified === b.modified
 
@@ -90,6 +91,22 @@ export function registerLibraryHandlers(): void {
   ipcMain.handle(Channels.setLiked, (_event, trackIds: unknown, liked: unknown) =>
     isIdList(trackIds) && typeof liked === 'boolean' ? setLiked(trackIds, liked) : []
   )
+  ipcMain.handle(Channels.removeTracks, (_event, trackIds: unknown) => (isIdList(trackIds) ? removeTracks(trackIds) : []))
+  ipcMain.handle(Channels.findMissing, () => findMissing())
+}
+
+// Checks every song's file, a batch at a time so a big library doesn't open thousands of handles at once.
+async function findMissing(): Promise<number[]> {
+  const songs = trackLocations()
+  const missing: number[] = []
+  for (let start = 0; start < songs.length; start += STAT_BATCH) {
+    const batch = songs.slice(start, start + STAT_BATCH)
+    const found = await Promise.all(batch.map(({ location }) => stat(location).then((info) => info.isFile(), () => false)))
+    batch.forEach(({ id }, i) => {
+      if (!found[i]) missing.push(id)
+    })
+  }
+  return missing
 }
 
 // Each handler checks its input, makes the change, and answers with every playlist as it is now.
