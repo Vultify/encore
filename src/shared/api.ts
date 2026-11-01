@@ -5,6 +5,8 @@ export interface WindowControls {
   closeToTray: () => void
   isMaximized: () => Promise<boolean>
   onMaximizedChange: (listener: (maximized: boolean) => void) => () => void
+  // Swaps the full window for the mini player.
+  popOut: () => void
 }
 
 export type AudioFormat = 'mp3' | 'flac' | 'wav' | 'm4a'
@@ -149,6 +151,9 @@ export interface NowPlaying {
   artworkId: string | null
   playing: boolean
   hasNext: boolean
+  // In seconds. The position is only reported when it jumps, so while playing it runs on from when it was sent.
+  position: number
+  duration: number
 }
 
 export type PlayerCommand = 'toggle' | 'next' | 'previous'
@@ -182,6 +187,17 @@ export interface RemoteControls {
   onCommand: (listener: (command: PlayerCommand) => void) => () => void
 }
 
+// For the mini player, which shows what the main window's player is doing and passes button presses back to it.
+export interface MiniPlayerControls {
+  current: () => Promise<NowPlaying | null>
+  onNowPlaying: (listener: (now: NowPlaying | null) => void) => () => void
+  send: (command: PlayerCommand) => void
+  // Brings back the full window and puts the mini player away.
+  openEncore: () => void
+  // The see-through space around the pill lets clicks reach whatever is behind it, except while the pointer is on the pill.
+  setInteractive: (interactive: boolean) => void
+}
+
 export interface SettingsControls {
   getPlayer: () => Promise<PlayerPreferences>
   savePlayer: (preferences: PlayerPreferences) => void
@@ -193,6 +209,7 @@ export interface EncoreApi {
   playlists: PlaylistControls
   identify: IdentifyControls
   remote: RemoteControls
+  mini: MiniPlayerControls
   settings: SettingsControls
 }
 
@@ -229,6 +246,12 @@ export const Channels = {
   identifyRestore: 'identify:restore',
   nowPlaying: 'player:now-playing',
   playerCommand: 'player:command',
+  nowPlayingChanged: 'player:now-playing-changed',
+  getNowPlaying: 'player:get-now-playing',
+  remoteCommand: 'player:remote-command',
+  popOut: 'mini:pop-out',
+  openEncore: 'mini:open-encore',
+  miniInteractive: 'mini:interactive',
   getPlayerSettings: 'settings:get-player',
   savePlayerSettings: 'settings:save-player'
 } as const

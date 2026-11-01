@@ -3,10 +3,16 @@ import type { NowPlaying } from '../shared/api'
 
 export interface TrayActions {
   show: () => void
+  toggleMiniPlayer: () => void
   toggle: () => void
   next: () => void
   previous: () => void
   quit: () => void
+}
+
+export interface TrayState {
+  now: NowPlaying | null
+  miniPlayerOpen: boolean
 }
 
 // Windows tray tooltips are cut off past this many characters.
@@ -17,8 +23,8 @@ const menuText = (text: string): string => text.replaceAll('&', '&&')
 
 const songLine = (now: NowPlaying): string => (now.artist ? `${now.title} · ${now.artist}` : now.title)
 
-// The tray's right-click menu: what's playing, playback controls, then the window and quitting.
-export function trayMenuTemplate(now: NowPlaying | null, actions: TrayActions): MenuItemConstructorOptions[] {
+// The tray's right-click menu: what's playing, playback controls, then the windows and quitting.
+export function trayMenuTemplate({ now, miniPlayerOpen }: TrayState, actions: TrayActions): MenuItemConstructorOptions[] {
   const hasSong = now?.trackId != null
   return [
     ...(hasSong ? [{ label: menuText(songLine(now)), enabled: false }, { type: 'separator' } as const] : []),
@@ -27,6 +33,15 @@ export function trayMenuTemplate(now: NowPlaying | null, actions: TrayActions): 
     { label: 'Previous', enabled: hasSong, click: actions.previous },
     { type: 'separator' },
     { label: 'Show Encore', click: actions.show },
+    // The shortcut is only shown here; the mini player module is what claims it.
+    {
+      label: 'Mini player',
+      type: 'checkbox',
+      checked: miniPlayerOpen,
+      accelerator: 'Ctrl+Alt+Space',
+      registerAccelerator: false,
+      click: actions.toggleMiniPlayer
+    },
     { type: 'separator' },
     { label: 'Quit Encore', click: actions.quit }
   ]

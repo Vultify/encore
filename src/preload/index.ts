@@ -18,7 +18,8 @@ const api: EncoreApi = {
       const handler = (_event: IpcRendererEvent, maximized: boolean): void => listener(maximized)
       ipcRenderer.on(Channels.maximizedChanged, handler)
       return () => ipcRenderer.removeListener(Channels.maximizedChanged, handler)
-    }
+    },
+    popOut: () => ipcRenderer.send(Channels.popOut)
   },
   library: {
     pathForFile: (file) => webUtils.getPathForFile(file),
@@ -56,6 +57,13 @@ const api: EncoreApi = {
   remote: {
     report: (nowPlaying) => ipcRenderer.send(Channels.nowPlaying, nowPlaying),
     onCommand: (listener) => listen(Channels.playerCommand, listener)
+  },
+  mini: {
+    current: () => ipcRenderer.invoke(Channels.getNowPlaying),
+    onNowPlaying: (listener) => listen(Channels.nowPlayingChanged, listener),
+    send: (command) => ipcRenderer.send(Channels.remoteCommand, command),
+    openEncore: () => ipcRenderer.send(Channels.openEncore),
+    setInteractive: (interactive) => ipcRenderer.send(Channels.miniInteractive, interactive)
   },
   settings: {
     getPlayer: () => ipcRenderer.invoke(Channels.getPlayerSettings),

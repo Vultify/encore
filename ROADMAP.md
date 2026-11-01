@@ -46,9 +46,9 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 
 ## Phase 6: Desktop integration
 - [x] Close to the system tray and keep playing
-- [ ] Tray menu: show Encore, mini player, play/pause, next, quit
-- [ ] Mini player window: glass pill at the bottom center of the screen
-- [ ] Global keybind Ctrl + Alt + Space to show or hide the mini player
+- [x] Tray menu: show Encore, mini player, play/pause, next, quit
+- [x] Mini player window: glass pill at the bottom center of the screen
+- [x] Global keybind Ctrl + Alt + Space to show or hide the mini player
 - [x] Media keys and the Windows media controls
 - [x] Remember window size, volume, and last song
 

@@ -119,8 +119,12 @@ export function PlayerDock({ compact, onOpenNowPlaying }: PlayerDockProps) {
         </div>
       </div>
 
-      {/* The mini player arrives with the desktop integration phase. */}
-      <button className={styles.iconButton} aria-label="Pop out to mini player" title="Pop out (Ctrl + Alt + Space)" disabled>
+      <button
+        className={styles.iconButton}
+        aria-label="Pop out to mini player"
+        title="Switch to the mini player"
+        onClick={() => window.encore.window.popOut()}
+      >
         <PopOutIcon size={18} />
       </button>
 

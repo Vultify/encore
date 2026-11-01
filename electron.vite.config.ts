@@ -12,6 +12,15 @@ export default defineConfig({
         '@shared': resolve('src/shared')
       }
     },
-    plugins: [react()]
+    plugins: [react()],
+    // The main window and the mini player are separate pages.
+    build: {
+      rollupOptions: {
+        input: {
+          index: resolve('src/renderer/index.html'),
+          mini: resolve('src/renderer/mini.html')
+        }
+      }
+    }
   }
 })

@@ -1,0 +1,160 @@
+/* The window itself is see-through; only the pill shows. */
+:global(html),
+:global(body) {
+  background: transparent;
+}
+
+.stage {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pill {
+  position: relative;
+  width: 500px;
+  height: 78px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 12px 0 13px;
+  border-radius: var(--radius-pill);
+  /* Windows can't blur what's behind a window this shape, so the glass is more solid than the dock's
+     to keep the text readable over any app. */
+  background: rgba(18, 18, 22, 0.94);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  box-shadow:
+    0 0 46px -6px color-mix(in srgb, var(--accent) 45%, transparent),
+    0 20px 40px -12px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  animation: rise 0.32s var(--ease);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill {
+    animation: none;
+  }
+}
+
+/* The cover and title open Encore. */
+.song {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-radius: 30px 14px 14px 30px;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.song:hover {
+  background: var(--surface-hover);
+}
+
+.cover {
+  position: relative;
+  flex: 0 0 auto;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #1c1c22, #111115);
+  border: 1px solid var(--border-strong);
+  overflow: hidden;
+}
+
+.cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.coverRing {
+  position: absolute;
+  inset: 30%;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.title,
+.artist {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.title {
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.artist {
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+
+.iconButton {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: #d4d4da;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.iconButton:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.play {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  transition: transform 0.15s var(--ease);
+}
+
+.play:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+
+.pill button:disabled {
+  opacity: 0.4;
+}
+
+/* Runs along the bottom edge; the pill's rounded ends trim it. */
+.progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--accent);
+  transition: width 0.25s linear;
+}

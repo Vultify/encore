@@ -2,7 +2,15 @@ import { app, type BrowserWindow } from 'electron'
 import type { PlayerCommand } from '../shared/api'
 import { createMainWindow, registerWindowControls, revealWindow } from './window'
 import { createTray, type EncoreTray } from './tray'
-import { onNowPlaying, registerRemote, sendCommand } from './remote'
+import {
+  isMiniPlayerOpen,
+  miniPlayerContents,
+  registerMiniPlayer,
+  releaseMiniPlayerShortcut,
+  sendToMiniPlayer,
+  toggleMiniPlayer
+} from './miniPlayer'
+import { nowPlaying, onNowPlaying, registerRemote, sendCommand } from './remote'
 import { flushSettings, loadSettings, registerSettingsHandlers } from './settings'
 import { registerLibraryHandlers, registerPlaylistHandlers } from './library'
 import { registerIdentifyHandlers } from './identify'
@@ -18,6 +26,8 @@ if (process.env.ENCORE_DATA_DIR) app.setPath('userData', process.env.ENCORE_DATA
 
 registerSchemes()
 
+const refreshTray = (): void => tray?.update({ now: nowPlaying(), miniPlayerOpen: isMiniPlayerOpen() })
+
 // Only one Encore runs at a time. Launching it again brings the open one forward.
 if (!app.requestSingleInstanceLock()) {
   app.quit()
@@ -29,6 +39,7 @@ if (!app.requestSingleInstanceLock()) {
     quitting = true
   })
   app.on('will-quit', () => {
+    releaseMiniPlayerShortcut()
     flushSettings()
     closeLibrary()
   })
@@ -39,7 +50,8 @@ if (!app.requestSingleInstanceLock()) {
     handleProtocols()
     registerWindowControls(() => mainWindow)
     registerSettingsHandlers()
-    registerRemote(() => mainWindow)
+    registerRemote(() => mainWindow, miniPlayerContents)
+    registerMiniPlayer({ getMainWindow: () => mainWindow, openEncore: () => revealWindow(mainWindow), onChange: refreshTray })
     registerLibraryHandlers()
     registerPlaylistHandlers()
     registerIdentifyHandlers()
@@ -48,15 +60,19 @@ if (!app.requestSingleInstanceLock()) {
     const command = (name: PlayerCommand) => () => sendCommand(mainWindow, name)
     tray = createTray({
       show: () => revealWindow(mainWindow),
+      toggleMiniPlayer,
       toggle: command('toggle'),
       next: command('next'),
       previous: command('previous'),
       quit: () => app.quit()
     })
-    onNowPlaying((now) => tray?.update(now))
+    onNowPlaying((now) => {
+      refreshTray()
+      sendToMiniPlayer(now)
+    })
   })
 
-  // The window only truly closes while quitting, so finish the quit and clear the tray icon.
+  // The main window only truly closes while quitting, so finish the quit and clear the tray icon.
   app.on('window-all-closed', () => {
     tray?.destroy()
     app.quit()

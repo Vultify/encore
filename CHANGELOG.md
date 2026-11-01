@@ -52,6 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tray menu with the song playing, Play or Pause, Next, Previous, Show Encore, and Quit Encore. Hovering the tray icon names the song.
 - Media keys, headphone buttons, and the Windows media controls (Win + A) show the song and its cover and control playback.
 - Encore reopens at the same size and spot, with the same volume, on the same song paused where it was left. The queue and the rest of the list are still lined up.
+- Mini player: a floating glass pill at the bottom center of the screen with the song, previous, play or pause, next, and a progress line in the album's accent color. It stays on top without taking focus from other apps, and clicks pass through the clear space around it.
+- Ctrl + Alt + Space shows or hides the mini player from anywhere. The tray menu has a Mini player item, and the dock's pop-out button swaps the full window for it. Clicking the song in the mini player brings Encore back.
 
 ### Fixed
 - A late progress message could replace the "Added songs" notice after an import finished.
