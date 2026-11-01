@@ -24,9 +24,9 @@ export function AlbumPage({ album, backLabel, onBack }: AlbumPageProps) {
         artworkId={album.artworkId}
         backLabel={backLabel}
         onBack={onBack}
-        onPlay={() => player.playQueue(album.tracks, 0, albumQueue(album))}
+        onPlay={() => player.playQueue(album.tracks, 0, albumQueue(album), album.title)}
       />
-      <TrackList label={`${album.title} songs`} tracks={album.tracks} queueSource={albumQueue(album)} numbered />
+      <TrackList label={`${album.title} songs`} tracks={album.tracks} queueSource={albumQueue(album)} queueName={album.title} numbered />
     </div>
   )
 }

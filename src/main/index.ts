@@ -2,6 +2,7 @@ import { app, type BrowserWindow, type Tray } from 'electron'
 import { createMainWindow, registerWindowControls, revealWindow } from './window'
 import { createTray } from './tray'
 import { registerLibraryHandlers, registerPlaylistHandlers } from './library'
+import { registerIdentifyHandlers } from './identify'
 import { handleProtocols, registerSchemes } from './protocols'
 import { closeLibrary, openLibrary } from './library/database'
 
@@ -32,6 +33,7 @@ if (!app.requestSingleInstanceLock()) {
     registerWindowControls(() => mainWindow)
     registerLibraryHandlers()
     registerPlaylistHandlers()
+    registerIdentifyHandlers()
     mainWindow = createMainWindow(() => quitting)
     tray = createTray({
       show: () => revealWindow(mainWindow),

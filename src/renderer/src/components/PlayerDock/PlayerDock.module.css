@@ -12,11 +12,30 @@
   border-radius: var(--radius-pill);
   background: var(--surface-dock);
   backdrop-filter: blur(28px);
-  border: 1px solid rgba(var(--accent-rgb), 0.32);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
   box-shadow:
-    0 0 50px -8px rgba(var(--accent-rgb), 0.3),
+    0 0 50px -8px color-mix(in srgb, var(--accent) 30%, transparent),
     0 24px 48px -14px rgba(0, 0, 0, 0.7);
-  transition: border-color var(--color-fade), box-shadow var(--color-fade);
+}
+
+/* The cover and title open the Now Playing view. */
+.nowPlaying {
+  flex: 0 1 236px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 30px 14px 14px 30px;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.nowPlaying:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.nowPlaying:disabled {
+  opacity: 1 !important;
 }
 
 .cover {
@@ -40,11 +59,11 @@
   position: absolute;
   inset: 30%;
   border-radius: 50%;
-  border: 1.5px solid rgba(var(--accent-rgb), 0.5);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 50%, transparent);
 }
 
 .meta {
-  flex: 0 1 170px;
+  flex: 1 1 auto;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -85,7 +104,9 @@
   height: 44px;
   border-radius: 50%;
   color: var(--text-2);
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .iconButton:hover:not(:disabled) {
@@ -93,9 +114,9 @@
   color: #fff;
 }
 
-.like[aria-pressed='true'] {
+/* Like, shuffle, and repeat glow in the accent color while they're on. */
+.toggle[aria-pressed='true'] {
   color: var(--accent);
-  transition: color var(--color-fade);
 }
 
 .play {
@@ -108,7 +129,7 @@
   border-radius: 50%;
   background: var(--accent);
   color: var(--on-accent);
-  transition: background var(--color-fade), transform 0.15s var(--ease);
+  transition: transform 0.15s var(--ease);
 }
 
 .play:hover:not(:disabled) {
@@ -219,9 +240,7 @@
 
 .progress {
   background: var(--accent);
-  transition:
-    background var(--color-fade),
-    height 0.15s ease;
+  transition: height 0.15s ease;
 }
 
 .seekTrack:has(.seek:hover:not(:disabled))::before,
@@ -243,4 +262,14 @@
 
 .seek:disabled {
   pointer-events: none;
+}
+
+/* In the Now Playing view the dock is just the controls, narrower and centered, like the mockup. */
+.dock[data-compact] {
+  width: min(560px, calc(100% - 32px));
+  justify-content: center;
+}
+
+.dock[data-compact] .controls {
+  flex: 0 0 auto;
 }

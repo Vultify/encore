@@ -1,0 +1,324 @@
+.page {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow-y: auto;
+  margin-right: -12px;
+  padding-right: 12px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.back {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px 0 8px;
+  margin-left: -8px;
+  border-radius: var(--radius-pill);
+  color: var(--text-3);
+  font-size: 13px;
+  font-weight: 600;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.back:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.kind {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--text-3);
+  text-transform: uppercase;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.progress {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* The song being identified, as Encore knows it now. */
+.song {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.songArt {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+}
+
+.songArt img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.songText {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.songTitle,
+.songSub,
+.songFile {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.songTitle {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.songSub {
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+.songFile {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+/* Matches as cover cards. The picked one gets an accent ring. */
+.matches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(128px, 150px));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.match {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 6px 10px;
+  border-radius: var(--radius-md);
+  text-align: left;
+  outline: 2px solid transparent;
+  transition:
+    background 0.15s ease,
+    outline-color 0.15s ease;
+}
+
+.match:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.match[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  outline-color: var(--accent);
+}
+
+.matchCover {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  margin-bottom: 6px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #1c1c22, #111115);
+}
+
+.matchCover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.badge {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  padding: 4px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.matchTitle,
+.matchSub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.matchTitle {
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.matchSub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.matchLength {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.matchLength[data-same] {
+  color: var(--accent);
+}
+
+.note {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-3);
+}
+
+/* The buttons stay pinned to the bottom of the panel, so they're in reach however tall the matches are. */
+.actions {
+  position: sticky;
+  bottom: 0;
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 0 2px;
+  background: linear-gradient(to bottom, rgba(16, 16, 20, 0), rgba(16, 16, 20, 0.96) 40%);
+}
+
+.primary,
+.secondary {
+  height: 42px;
+  padding: 0 20px;
+  border-radius: var(--radius-pill);
+  font-size: 13.5px;
+  font-weight: 800;
+}
+
+.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  transition: transform 0.15s var(--ease);
+}
+
+.primary:hover:not(:disabled) {
+  transform: scale(1.03);
+}
+
+.secondary {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.primary:disabled,
+.secondary:disabled {
+  opacity: 0.45;
+}
+
+.waiting {
+  margin: auto;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-3);
+}
+
+.summary {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* The bar above Local files that offers to identify songs and shows how a run is going. */
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 12px 12px 16px;
+  margin-bottom: 12px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+  font-size: 13.5px;
+}
+
+.bannerText {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text-2);
+}
+
+.banner .primary,
+.banner .secondary {
+  height: 36px;
+  padding: 0 16px;
+  font-size: 13px;
+}

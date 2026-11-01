@@ -44,9 +44,8 @@
   height: 64px;
   margin-bottom: 6px;
   border-radius: 50%;
-  background: rgba(var(--accent-rgb), 0.1);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
   color: var(--accent);
-  transition: background var(--color-fade), color var(--color-fade);
 }
 
 .emptyTitle {

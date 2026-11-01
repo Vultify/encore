@@ -40,7 +40,21 @@ const MIGRATIONS = [
     position INTEGER NOT NULL,
     added_at INTEGER NOT NULL
   );
-  CREATE INDEX playlist_entries_in_order ON playlist_entries (playlist_id, position);`
+  CREATE INDEX playlist_entries_in_order ON playlist_entries (playlist_id, position);`,
+  `CREATE TABLE track_matches (
+    track_id INTEGER PRIMARY KEY REFERENCES tracks (id) ON DELETE CASCADE,
+    source TEXT NOT NULL,
+    source_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    artist TEXT,
+    album TEXT,
+    album_artist TEXT,
+    track_number INTEGER,
+    disc_number INTEGER,
+    year INTEGER,
+    artwork_id TEXT,
+    matched_at INTEGER NOT NULL
+  )`
 ]
 
 // The file details used to tell whether a song changed since it was last read.
@@ -71,27 +85,50 @@ interface TrackRow {
   file_modified: number | null
   added_at: number
   liked_at: number | null
+  // From track_matches, when the song was identified. Null otherwise.
+  match_source: string | null
+  match_title: string | null
+  match_artist: string | null
+  match_album: string | null
+  match_album_artist: string | null
+  match_track_number: number | null
+  match_disc_number: number | null
+  match_year: number | null
+  match_artwork_id: string | null
 }
 
 // Windows paths ignore case, so lookups use a lowercased copy.
 export const locationKey = (path: string): string => path.toLowerCase()
 
-const toTrack = (row: TrackRow): Track => ({
-  id: row.id,
-  path: row.location,
-  format: row.format as AudioFormat,
-  title: row.title,
-  artist: row.artist,
-  album: row.album,
-  albumArtist: row.album_artist,
-  trackNumber: row.track_number,
-  discNumber: row.disc_number,
-  year: row.year,
-  duration: row.duration,
-  artworkId: row.artwork_id,
-  addedAt: row.added_at,
-  likedAt: row.liked_at
-})
+// Every song read goes through here, so an identified song always shows its match on top of the file's own tags.
+const SELECT_TRACKS = `
+  SELECT t.*, m.source AS match_source, m.title AS match_title, m.artist AS match_artist, m.album AS match_album,
+    m.album_artist AS match_album_artist, m.track_number AS match_track_number, m.disc_number AS match_disc_number,
+    m.year AS match_year, m.artwork_id AS match_artwork_id
+  FROM tracks t LEFT JOIN track_matches m ON m.track_id = t.id
+  WHERE t.source = 'local'`
+
+// A match replaces the file's tags as a set, so an album never mixes the file's track number with the match's.
+const toTrack = (row: TrackRow): Track => {
+  const matched = row.match_source !== null
+  return {
+    id: row.id,
+    path: row.location,
+    format: row.format as AudioFormat,
+    title: matched ? row.match_title! : row.title,
+    artist: matched ? row.match_artist : row.artist,
+    album: matched ? row.match_album : row.album,
+    albumArtist: matched ? row.match_album_artist : row.album_artist,
+    trackNumber: matched ? row.match_track_number : row.track_number,
+    discNumber: matched ? row.match_disc_number : row.disc_number,
+    year: matched ? row.match_year : row.year,
+    duration: row.duration,
+    artworkId: (matched ? row.match_artwork_id : null) ?? row.artwork_id,
+    addedAt: row.added_at,
+    likedAt: row.liked_at,
+    identified: matched
+  }
+}
 
 let db: DatabaseSync | null = null
 
@@ -137,8 +174,13 @@ export function transaction<T>(work: () => T, database: DatabaseSync = library()
 }
 
 export function allTracks(): Track[] {
-  const rows = library().prepare("SELECT * FROM tracks WHERE source = 'local' ORDER BY id").all() as unknown as TrackRow[]
+  const rows = library().prepare(`${SELECT_TRACKS} ORDER BY t.id`).all() as unknown as TrackRow[]
   return rows.map(toTrack)
+}
+
+export function trackById(id: number): Track | null {
+  const row = library().prepare(`${SELECT_TRACKS} AND t.id = ?`).get(id) as TrackRow | undefined
+  return row ? toTrack(row) : null
 }
 
 // The file behind a library song, or null for an unknown id.
@@ -151,7 +193,7 @@ export function trackFile(id: number): { path: string; format: AudioFormat } | n
 
 // Looks up the songs already in the library by path, with the file details they were read from.
 export function storedTracks(paths: string[]): Map<string, StoredTrack> {
-  const statement = library().prepare("SELECT * FROM tracks WHERE source = 'local' AND location_key = ?")
+  const statement = library().prepare(`${SELECT_TRACKS} AND t.location_key = ?`)
   const found = new Map<string, StoredTrack>()
   for (const path of paths) {
     const row = statement.get(locationKey(path)) as TrackRow | undefined
@@ -172,17 +214,17 @@ export function saveTracks(entries: { track: NewTrack; stamp: FileStamp }[]): Tr
       album = excluded.album, album_artist = excluded.album_artist, track_number = excluded.track_number,
       disc_number = excluded.disc_number, year = excluded.year, duration = excluded.duration,
       artwork_id = excluded.artwork_id, file_size = excluded.file_size, file_modified = excluded.file_modified
-    RETURNING *
+    RETURNING id
   `)
 
   const now = Date.now()
   return transaction(() =>
-    entries.map(({ track: t, stamp }) => {
-      const row = upsert.get(
+    entries.flatMap(({ track: t, stamp }) => {
+      const { id } = upsert.get(
         t.path, locationKey(t.path), t.format, t.title, t.artist, t.album, t.albumArtist, t.trackNumber,
         t.discNumber, t.year, t.duration, t.artworkId, stamp.size, stamp.modified, now
-      ) as unknown as TrackRow
-      return toTrack(row)
+      ) as { id: number }
+      return trackById(id) ?? []
     })
   )
 }
@@ -201,13 +243,46 @@ export function trackLocations(): { id: number; location: string }[] {
 // Likes or unlikes songs and returns them as they are now.
 export function setLiked(trackIds: number[], liked: boolean): Track[] {
   const update = library().prepare(
-    "UPDATE tracks SET liked_at = CASE WHEN ? THEN coalesce(liked_at, ?) ELSE NULL END WHERE source = 'local' AND id = ? RETURNING *"
+    "UPDATE tracks SET liked_at = CASE WHEN ? THEN coalesce(liked_at, ?) ELSE NULL END WHERE source = 'local' AND id = ? RETURNING id"
   )
   const now = Date.now()
   return transaction(() =>
     trackIds.flatMap((id) => {
-      const row = update.get(liked ? 1 : 0, now, id) as TrackRow | undefined
-      return row ? [toTrack(row)] : []
+      const row = update.get(liked ? 1 : 0, now, id) as { id: number } | undefined
+      return (row && trackById(row.id)) ?? []
     })
   )
+}
+
+export interface MatchInfo {
+  source: string
+  sourceId: string
+  title: string
+  artist: string | null
+  album: string | null
+  albumArtist: string | null
+  trackNumber: number | null
+  discNumber: number | null
+  year: number | null
+  artworkId: string | null
+}
+
+// Saves what a song was identified as. The file's own tags stay untouched underneath.
+export function saveMatch(trackId: number, match: MatchInfo): Track | null {
+  library()
+    .prepare(
+      `INSERT OR REPLACE INTO track_matches (track_id, source, source_id, title, artist, album, album_artist,
+        track_number, disc_number, year, artwork_id, matched_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      trackId, match.source, match.sourceId, match.title, match.artist, match.album, match.albumArtist,
+      match.trackNumber, match.discNumber, match.year, match.artworkId, Date.now()
+    )
+  return trackById(trackId)
+}
+
+// Forgets a match, so the song shows its file's own tags again.
+export function clearMatch(trackId: number): Track | null {
+  library().prepare('DELETE FROM track_matches WHERE track_id = ?').run(trackId)
+  return trackById(trackId)
 }

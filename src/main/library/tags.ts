@@ -32,10 +32,11 @@ export async function readTrack(
     const { common, format: audio } = await parseFile(path)
     const cover = selectCover(common.picture)
 
-    track.title = clean(common.title) ?? fileTitle
-    track.artist = clean(common.artist) ?? clean(common.artists?.join(', '))
-    track.album = clean(common.album)
-    track.albumArtist = clean(common.albumartist)
+    // Some files, including some iTunes purchases, fill in only the "sort as" fields, so those are the backup.
+    track.title = clean(common.title) ?? clean(common.titlesort) ?? fileTitle
+    track.artist = clean(common.artist) ?? clean(common.artists?.join(', ')) ?? clean(common.artistsort)
+    track.album = clean(common.album) ?? clean(common.albumsort)
+    track.albumArtist = clean(common.albumartist) ?? clean(common.albumartistsort)
     track.trackNumber = positive(common.track.no)
     track.discNumber = positive(common.disk.no)
     track.year = positive(common.year)
@@ -53,6 +54,8 @@ export async function readTrack(
     track.trackNumber ??= guess.trackNumber
   }
 
+  // A missing track number can still come from a file name like "02 Stand Steady".
+  track.trackNumber ??= guessFromName(fileTitle).trackNumber
   track.artworkId ??= await folderCover(dirname(path))
   return track
 }

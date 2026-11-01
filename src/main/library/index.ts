@@ -13,6 +13,7 @@ import {
   reorderPlaylists
 } from './playlists'
 import { findAudioFiles } from './scan'
+import { accentForArtwork } from './accent'
 import { readTrack } from './tags'
 import { createFolderCoverLookup } from './fallbacks'
 
@@ -93,6 +94,7 @@ export function registerLibraryHandlers(): void {
   )
   ipcMain.handle(Channels.removeTracks, (_event, trackIds: unknown) => (isIdList(trackIds) ? removeTracks(trackIds) : []))
   ipcMain.handle(Channels.findMissing, () => findMissing())
+  ipcMain.handle(Channels.accentColor, (_event, artworkId: unknown) => (typeof artworkId === 'string' ? accentForArtwork(artworkId) : null))
 }
 
 // Checks every song's file, a batch at a time so a big library doesn't open thousands of handles at once.

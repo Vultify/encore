@@ -50,7 +50,7 @@ export function PlaylistPage({ playlist, tracksById, onBack }: PlaylistPageProps
         artworkId={playlistArtwork(tracks)}
         backLabel="Playlists"
         onBack={onBack}
-        onPlay={() => player.playQueue(tracks, 0, queue)}
+        onPlay={() => player.playQueue(tracks, 0, queue, playlist.name)}
         canPlay={tracks.length > 0}
         renaming={renaming}
         onRename={finishRename}
@@ -71,6 +71,7 @@ export function PlaylistPage({ playlist, tracksById, onBack }: PlaylistPageProps
           label={`${playlist.name} songs`}
           tracks={tracks}
           queueSource={queue}
+          queueName={playlist.name}
           playlistId={playlist.id}
           entryIds={entryIds}
           onMove={(from, to) => library.moveEntry(playlist.id, entryIds[from], to)}
@@ -115,11 +116,11 @@ export function LikedPage({ tracks, onBack }: { tracks: Track[]; onBack: () => v
         cover={<LikedCover />}
         backLabel="Playlists"
         onBack={onBack}
-        onPlay={() => player.playQueue(liked, 0, LIKED_QUEUE)}
+        onPlay={() => player.playQueue(liked, 0, LIKED_QUEUE, 'Liked Songs')}
         canPlay={liked.length > 0}
       />
       {liked.length > 0 ? (
-        <TrackList label="Liked Songs" tracks={liked} queueSource={LIKED_QUEUE} />
+        <TrackList label="Liked Songs" tracks={liked} queueSource={LIKED_QUEUE} queueName="Liked Songs" />
       ) : (
         <EmptyState icon={<HeartIcon size={26} />} title="No liked songs yet">
           Tap the heart in the player, or right-click a song and choose Like.

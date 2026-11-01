@@ -144,6 +144,21 @@ test('importing a folder reads every song in every subfolder', async () => {
   expect(byFile['Loose.wav'].artworkId).toBeNull()
 })
 
+// Shaped like some real iTunes purchases: the main title, artist, and album fields are empty,
+// and only the "sort as" fields are filled in. The track number lives only in the file name.
+test('songs with only "sort as" tags still get their title, artist, album, and track number', async () => {
+  const sortDir = mkdtempSync(join(tmpdir(), 'encore-sort-'))
+  try {
+    writeFileSync(join(sortDir, '02 Stand Steady.mp3'), makeMp3(2, { sortTitle: 'Stand Steady', sortArtist: 'Real Friends', sortAlbum: 'Composure' }))
+    const {
+      added: [song]
+    } = await importPaths([sortDir])
+    expect(song).toMatchObject({ title: 'Stand Steady', artist: 'Real Friends', album: 'Composure', trackNumber: 2 })
+  } finally {
+    rmSync(sortDir, { recursive: true, force: true })
+  }
+})
+
 test('untagged songs get artist and title from the file name and the cover from their folder', async () => {
   const {
     added: [video, plain]

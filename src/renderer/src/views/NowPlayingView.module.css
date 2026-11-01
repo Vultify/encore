@@ -1,0 +1,351 @@
+/* The big centered song on the left, Up next in a glass panel on the right, like the mockup. */
+.view {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 56px;
+  padding: 16px 40px 132px;
+}
+
+.close {
+  position: absolute;
+  left: 32px;
+  top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: var(--text-3);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.close:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.stage {
+  flex: 999 1 520px;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+}
+
+/* The cover sits on a blurred copy of itself, so its colors glow into the room around it. */
+.art {
+  position: relative;
+  width: min(440px, 100%, calc(100vh - 470px));
+  aspect-ratio: 1 / 1;
+  flex: none;
+}
+
+.artGlow {
+  position: absolute;
+  inset: 8% 6% -6%;
+  width: 88%;
+  height: 98%;
+  border-radius: 44px;
+  object-fit: cover;
+  filter: blur(64px) saturate(1.2);
+  opacity: 0.7;
+}
+
+.cover {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: linear-gradient(145deg, #17171c, #0e0e12);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 44px 90px -24px rgba(0, 0, 0, 0.7);
+  color: var(--text-faint);
+}
+
+.cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.info {
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.from {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--text-3);
+  text-transform: uppercase;
+}
+
+.title {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 48px;
+  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.byline {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.dot {
+  margin: 0 10px;
+  color: var(--text-faint);
+}
+
+.album {
+  color: var(--text-3);
+}
+
+/* A wide progress bar with a round handle, filled in the accent color. */
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: min(560px, 100%);
+}
+
+.time {
+  flex: none;
+  width: 40px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.time:first-child {
+  text-align: right;
+}
+
+.seek {
+  flex: 1 1 auto;
+  height: 18px;
+  margin: 0;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.seek::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, var(--accent) var(--fill), rgba(255, 255, 255, 0.12) var(--fill));
+}
+
+.seek::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 30%, transparent);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.seek:hover::-webkit-slider-thumb,
+.seek:focus-visible::-webkit-slider-thumb {
+  opacity: 1;
+}
+
+.seek:disabled {
+  cursor: default;
+}
+
+/* Up next: the hand-built queue first, then the rest of the list. */
+.upNext {
+  flex: 1 1 300px;
+  max-width: 360px;
+  align-self: stretch;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px 14px 14px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(20px);
+}
+
+.upNextHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 8px;
+}
+
+.upNextTitle {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.clear {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-3);
+}
+
+.clear:hover {
+  color: var(--text);
+}
+
+.upNextList {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sectionTitle {
+  padding: 4px 8px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-md);
+  transition: background 0.15s ease;
+}
+
+.row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.rowPlay {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 58px;
+  padding: 0 8px;
+  text-align: left;
+}
+
+.rowArt {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+}
+
+.rowArt img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rowText {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.rowTitle,
+.rowArtist {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowTitle {
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.rowArtist {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.rowTime {
+  flex: none;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.remove {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin-right: 6px;
+  border-radius: 50%;
+  color: var(--text-3);
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.row:hover .remove,
+.remove:focus-visible {
+  opacity: 1;
+}
+
+.remove:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.empty {
+  padding: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-3);
+}

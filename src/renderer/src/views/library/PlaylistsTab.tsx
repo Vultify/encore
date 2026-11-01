@@ -67,9 +67,9 @@ export function PlaylistsTab({ tracks, openKey, onOpen, onBack }: PlaylistsTabPr
   }
 
   const play = (key: string): void => {
-    if (key === LIKED_KEY) return player.playQueue(liked, 0, LIKED_QUEUE)
+    if (key === LIKED_KEY) return player.playQueue(liked, 0, LIKED_QUEUE, 'Liked Songs')
     const playlist = playlists.find((candidate) => playlistKey(candidate.id) === key)
-    if (playlist) player.playQueue(playlistTracks(playlist, tracksById).tracks, 0, playlistQueue(playlist.id))
+    if (playlist) player.playQueue(playlistTracks(playlist, tracksById).tracks, 0, playlistQueue(playlist.id), playlist.name)
   }
 
   const reorder = (fromKey: string, toKey: string, after: boolean): void => {

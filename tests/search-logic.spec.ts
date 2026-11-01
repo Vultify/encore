@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import type { Track } from '../src/shared/api'
-import { normalize, searchLibrary } from '../src/renderer/src/lib/search'
+import { normalize } from '../src/shared/text'
+import { searchLibrary } from '../src/renderer/src/lib/search'
 
 let nextId = 1
 const song = (title: string, artist: string | null = null, album: string | null = null): Track => ({
@@ -17,7 +18,8 @@ const song = (title: string, artist: string | null = null, album: string | null 
   duration: 200,
   artworkId: null,
   addedAt: 0,
-  likedAt: null
+  likedAt: null,
+  identified: false
 })
 
 const library = (tracks: Track[]) => ({ tracks, artists: [], albums: [], playlists: [] })

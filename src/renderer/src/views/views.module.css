@@ -16,7 +16,7 @@
   color: var(--text-muted);
   font-size: 15px;
   font-weight: 600;
-  transition: color 0.2s ease, border-color var(--color-fade);
+  transition: color 0.2s ease;
 }
 
 .tab:hover {
@@ -50,7 +50,7 @@
 }
 
 .search:focus-within {
-  outline: 2px solid rgba(var(--accent-rgb), 0.6);
+  outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
 }
 
 .search input {
@@ -77,7 +77,9 @@
   margin-right: -8px;
   border-radius: 50%;
   color: var(--text-3);
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .clear:hover {

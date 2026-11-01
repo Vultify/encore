@@ -111,7 +111,7 @@ export function SearchView({ query, onQueryChange, onNavigate, focusRequest }: S
                 </button>
               )}
             </div>
-            <TrackList label="Song results" tracks={shownSongs} queueSource="search" contained={false} />
+            <TrackList label="Song results" tracks={shownSongs} queueSource="search" queueName="Search results" contained={false} />
           </section>
         )}
 
@@ -130,7 +130,7 @@ export function SearchView({ query, onQueryChange, onNavigate, focusRequest }: S
               onOpen={(key) => onNavigate({ tab: 'Artists', key })}
               onPlay={(key) => {
                 const artist = artists.find((candidate) => candidate.key === key)
-                if (artist) player.playQueue(artist.tracks, 0, artistQueue(artist))
+                if (artist) player.playQueue(artist.tracks, 0, artistQueue(artist), artist.name)
               }}
             />
           </section>
@@ -150,7 +150,7 @@ export function SearchView({ query, onQueryChange, onNavigate, focusRequest }: S
               onOpen={(key) => onNavigate({ tab: 'Albums', key })}
               onPlay={(key) => {
                 const album = albums.find((candidate) => candidate.key === key)
-                if (album) player.playQueue(album.tracks, 0, albumQueue(album))
+                if (album) player.playQueue(album.tracks, 0, albumQueue(album), album.title)
               }}
             />
           </section>
@@ -174,7 +174,7 @@ export function SearchView({ query, onQueryChange, onNavigate, focusRequest }: S
               onOpen={(key) => onNavigate({ tab: 'Playlists', key })}
               onPlay={(key) => {
                 const playlist = playlists.find((candidate) => playlistKey(candidate.id) === key)
-                if (playlist) player.playQueue(playlistTracks(playlist, tracksById).tracks, 0, playlistQueue(playlist.id))
+                if (playlist) player.playQueue(playlistTracks(playlist, tracksById).tracks, 0, playlistQueue(playlist.id), playlist.name)
               }}
             />
           </section>

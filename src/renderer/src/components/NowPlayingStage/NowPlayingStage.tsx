@@ -2,26 +2,37 @@ import { artworkUrl } from '@shared/api'
 import { usePlayer } from '@/player/player'
 import styles from './NowPlayingStage.module.css'
 
-// The big album on the left. Without a song, or a song without a cover, it shows Encore's ring mark.
-export function NowPlayingStage() {
+// The big album on the left. Clicking it opens the Now Playing view. Without a song, or a song without
+// a cover, it shows Encore's ring mark.
+export function NowPlayingStage({ onOpen }: { onOpen: () => void }) {
   const { track } = usePlayer()
+
+  const art = (
+    <>
+      <div className={styles.artGlow} aria-hidden="true" />
+      <div className={styles.art}>
+        {track?.artworkId ? (
+          <img className={styles.cover} src={artworkUrl(track.artworkId)} alt={`${track.album ?? track.title} cover`} draggable={false} />
+        ) : (
+          <>
+            <span className={styles.ringOuter} aria-hidden="true" />
+            <span className={styles.ringInner} aria-hidden="true" />
+            <span className={styles.ringDot} aria-hidden="true" />
+          </>
+        )}
+      </div>
+    </>
+  )
 
   return (
     <section aria-label="Now playing" className={styles.stage}>
-      <div className={styles.artFrame}>
-        <div className={styles.artGlow} aria-hidden="true" />
-        <div className={styles.art}>
-          {track?.artworkId ? (
-            <img className={styles.cover} src={artworkUrl(track.artworkId)} alt={`${track.album ?? track.title} cover`} draggable={false} />
-          ) : (
-            <>
-              <span className={styles.ringOuter} aria-hidden="true" />
-              <span className={styles.ringInner} aria-hidden="true" />
-              <span className={styles.ringDot} aria-hidden="true" />
-            </>
-          )}
-        </div>
-      </div>
+      {track ? (
+        <button className={styles.artFrame} aria-label="Open Now Playing" onClick={onOpen}>
+          {art}
+        </button>
+      ) : (
+        <div className={styles.artFrame}>{art}</div>
+      )}
 
       <div className={styles.info}>
         <span className={styles.label}>Now playing</span>

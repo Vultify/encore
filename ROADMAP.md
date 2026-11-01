@@ -31,19 +31,19 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 - [x] Songs whose file is missing show greyed out with "File not found"
 
 ## Phase 4: Song recognition
-- [ ] "Identify songs" button that looks up songs missing an album or cover, in the background with progress
-- [ ] Search by artist and title (from tags or the file name) on the free iTunes search, no account needed
-- [ ] Review screen showing the top few matches side by side with covers, to pick one or skip
-- [ ] Save the picked album, track number, year, and cover in Encore's library
+- [x] "Identify songs" button that looks up songs missing an album or cover, in the background with progress
+- [x] Search by artist and title (from tags or the file name) on the free iTunes search, no account needed
+- [x] Review screen showing the top few matches side by side with covers, to pick one or skip
+- [x] Save the picked album, track number, year, and cover in Encore's library
 - [ ] Optional "Save to file" that writes the tags into the song file itself
 - [ ] Backup for songs with meaningless names: identify by sound with AcoustID (needs a free AcoustID key in `.env`), marked as "may be wrong"
 - [ ] Later: setting to identify new songs automatically
 
 ## Phase 5: Playback experience
-- [ ] Shuffle and repeat (off, all, one)
-- [ ] Queue and Up next panel
-- [ ] Now playing view
-- [ ] Adaptive accent color pulled from the playing album art, teal at rest
+- [x] Shuffle and repeat (off, all, one)
+- [x] Queue and Up next panel
+- [x] Now playing view
+- [x] Adaptive accent color pulled from the playing album art, teal at rest
 
 ## Phase 6: Desktop integration
 - [ ] Close to the system tray and keep playing
@@ -77,3 +77,4 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 - **Spotify playback inside Encore needs copy protection support (Widevine).** Plain Electron doesn't include it, so Phase 7 switches to the castlabs build of Electron, which does. If that turns out to be blocked, the fallback is Encore controlling the Spotify app in the background through Spotify Connect.
 - **Song recognition never overwrites files on its own.** Matches are reviewed first and saved inside Encore. Writing tags into the file is a separate choice per song.
 - **Recognition searches by name first, sound second.** Picard's sound matching got 4 out of 4 of Caleb's songs wrong (a mashup, a tribute cover, two compilations), likely because lyric-video downloads are slightly altered. Searching the iTunes catalog by artist and title is far more accurate when the name is known.
+- **Apple's song search skips some albums, often explicit ones.** When the best result is a compilation or not a near-perfect fit, Encore also checks the artist's own song list, where those albums still show up. That's how *Welcome Home* finds *Good Apollo I'm Burning Star IV*.

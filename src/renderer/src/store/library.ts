@@ -107,6 +107,17 @@ class LibraryStore {
     this.update({ playlists: await api().playlists.moveEntry(playlistId, entryId, toIndex) })
   }
 
+  // Puts back a song's own tags after it was identified as something else.
+  async restoreTags(trackId: number): Promise<void> {
+    const track = await api().identify.restore(trackId)
+    if (track) this.replaceTrack(track)
+  }
+
+  // For a song changed somewhere else, like a match picked while identifying.
+  replaceTrack(track: Track): void {
+    this.replaceTracks([track])
+  }
+
   // Swaps in changed songs by id and appends new ones.
   private replaceTracks(changed: Track[], added: Track[] = []): void {
     const byId = new Map(changed.map((track) => [track.id, track]))

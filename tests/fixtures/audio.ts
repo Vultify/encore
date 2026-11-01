@@ -7,6 +7,10 @@ interface Mp3Tags {
   track?: string
   year?: string
   cover?: Buffer
+  // The "sort as" fields. Some iTunes purchases have only these, with the main fields empty.
+  sortTitle?: string
+  sortArtist?: string
+  sortAlbum?: string
 }
 
 // ID3v2.4 stores sizes as four 7-bit bytes.
@@ -36,7 +40,10 @@ export function makeMp3(seconds: number, tags: Mp3Tags): Buffer {
     tags.album && textFrame('TALB', tags.album),
     tags.track && textFrame('TRCK', tags.track),
     tags.year && textFrame('TDRC', tags.year),
-    tags.cover && coverFrame(tags.cover)
+    tags.cover && coverFrame(tags.cover),
+    tags.sortTitle && textFrame('TSOT', tags.sortTitle),
+    tags.sortArtist && textFrame('TSOP', tags.sortArtist),
+    tags.sortAlbum && textFrame('TSOA', tags.sortAlbum)
   ].filter((f): f is Buffer => Boolean(f))
 
   const body = Buffer.concat(frames)

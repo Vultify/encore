@@ -39,7 +39,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove from library in every song's menu, with a confirm step. The song leaves Encore, its playlists, and Liked Songs. The file stays on disk.
 - Songs whose file has moved or been deleted show greyed out with a "File not found" badge. Files are checked when Encore opens and when its window comes back into focus.
 - Roadmap: remove from library and missing file labels added to Phase 3. Song recognition now searches by artist and title first, with sound matching as a backup.
+- Identify songs: looks up songs missing an album or cover on Apple's free music search, by artist and title. A review page shows the top matches with covers, best one first, to pick or skip. Picks are saved inside Encore only, and Restore original tags undoes them.
+- Matching skips live versions, remixes, karaoke, tribute, and instrumental versions, prefers the original album over compilations, and uses song length to tell recordings apart. When the search misses an album, the artist's own song list is checked too.
+- Shuffle and repeat (off, all, one).
+- Play next and Add to queue in every song's menu.
+- Now Playing view: a large cover, where the song is playing from, a wide progress bar, and an Up next panel with the queue and what comes next.
+- The accent color follows the playing album's cover and fades between songs. Covers without real color, or nothing playing, stay teal.
 
 ### Fixed
 - A late progress message could replace the "Added songs" notice after an import finished.
 - Tall pages could squeeze the title bar shorter.
+- Songs whose files keep their title, artist, and album only in the "sort as" fields, like some iTunes purchases, now show them.
+- The player dock showed a song's old details after it was identified or re-read while playing.

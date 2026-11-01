@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react'
 import { artworkUrl, type Track } from '@shared/api'
 import { player, usePlayer } from '@/player/player'
+import { identify } from '@/store/identify'
 import { library, useLibrary } from '@/store/library'
 import { notify } from '@/store/notice'
 import { formatDuration } from '@/lib/format'
@@ -8,7 +9,7 @@ import { UNKNOWN_ARTIST } from '@/lib/library'
 import { nextPlaylistName } from '@/lib/playlists'
 import { ContextMenu, type MenuEntry } from '../ContextMenu/ContextMenu'
 import { ConfirmDialog, NameDialog } from '../Dialog/Dialog'
-import { HeartIcon, MoreIcon, MusicIcon, PauseIcon, PlayIcon, PlusIcon, TrashIcon } from '../icons'
+import { HeartIcon, MoreIcon, MusicIcon, PauseIcon, PlayIcon, PlusIcon, QueueIcon, SearchIcon, TrashIcon, UndoIcon } from '../icons'
 import styles from './TrackList.module.css'
 
 interface TrackListProps {
@@ -16,6 +17,8 @@ interface TrackListProps {
   tracks: Track[]
   // Names the list the queue comes from, so the queue follows it when songs are added or changed.
   queueSource: string
+  // What "Playing from" calls the list, like an album title or "Liked Songs".
+  queueName: string
   // Shows track numbers instead of covers, for album pages.
   numbered?: boolean
   // Scrolls inside its own space. Turn off when the page around it scrolls instead.
@@ -32,7 +35,7 @@ interface OpenMenu {
   index: number
 }
 
-export function TrackList({ label, tracks, queueSource, numbered = false, contained = true, playlistId, entryIds, onMove }: TrackListProps) {
+export function TrackList({ label, tracks, queueSource, queueName, numbered = false, contained = true, playlistId, entryIds, onMove }: TrackListProps) {
   const { track: current, playing } = usePlayer()
   const { playlists, missing } = useLibrary()
   const [menu, setMenu] = useState<OpenMenu | null>(null)
@@ -51,7 +54,7 @@ export function TrackList({ label, tracks, queueSource, numbered = false, contai
       notify(`Can't find the file for ${track.title}. It may have been moved or deleted.`)
       return
     }
-    player.playQueue(tracks, index, queueSource)
+    player.playQueue(tracks, index, queueSource, queueName)
   }
 
   const remove = async (track: Track): Promise<void> => {
@@ -95,11 +98,25 @@ export function TrackList({ label, tracks, queueSource, numbered = false, contai
     notify(`Added to ${target.name}`)
   }
 
+  // Lines a song up after the current one, or at the end of the hand-built queue.
+  const queue = (track: Track, where: 'next' | 'end'): void => {
+    if (missing.has(track.id)) {
+      notify(`Can't find the file for ${track.title}. It may have been moved or deleted.`)
+      return
+    }
+    if (where === 'next') player.playNext([track])
+    else player.addToQueue([track])
+    notify(where === 'next' ? `${track.title} plays next` : `Added ${track.title} to the queue`)
+  }
+
   const menuEntries = (index: number): MenuEntry[] => {
     const track = tracks[index]
     const liked = track.likedAt !== null
     const entryId = entryIds?.[index]
     return [
+      { label: 'Play next', icon: <QueueIcon size={16} />, onSelect: () => queue(track, 'next') },
+      { label: 'Add to queue', icon: <QueueIcon size={16} />, onSelect: () => queue(track, 'end') },
+      { separator: true },
       {
         label: liked ? 'Remove from Liked Songs' : 'Like',
         icon: <HeartIcon size={16} filled={liked} />,
@@ -127,6 +144,9 @@ export function TrackList({ label, tracks, queueSource, numbered = false, contai
           ]
         : []),
       { separator: true },
+      track.identified
+        ? { label: 'Restore original tags', icon: <UndoIcon size={16} />, onSelect: () => library.restoreTags(track.id) }
+        : { label: 'Identify song', icon: <SearchIcon size={16} />, onSelect: () => identify.start([track.id]) },
       {
         label: 'Remove from library',
         icon: <TrashIcon size={16} />,

@@ -28,10 +28,12 @@ export interface Track {
   addedAt: number
   // When the song was liked, or null if it isn't.
   likedAt: number | null
+  // True when the tags shown come from a match the song was identified as, not from the file.
+  identified: boolean
 }
 
 // A song read from disk that hasn't been saved to the library yet.
-export type NewTrack = Omit<Track, 'id' | 'addedAt' | 'likedAt'>
+export type NewTrack = Omit<Track, 'id' | 'addedAt' | 'likedAt' | 'identified'>
 
 // One spot in a playlist. A song can appear more than once, so each spot has its own id.
 export interface PlaylistEntry {
@@ -72,6 +74,48 @@ export interface LibraryControls {
   removeTracks: (trackIds: number[]) => Promise<number[]>
   // The ids of songs whose files can't be found right now.
   findMissing: () => Promise<number[]>
+  // The accent color picked from a cover, as #rrggbb, or null when the cover has no real color.
+  accentColor: (artworkId: string) => Promise<string | null>
+}
+
+// One possible match for a song, as found by the music search. Its id is how the interface refers back to it.
+export interface MatchCandidate {
+  id: string
+  title: string
+  artist: string
+  album: string | null
+  albumArtist: string | null
+  trackNumber: number | null
+  discNumber: number | null
+  year: number | null
+  duration: number | null
+  // How well it fits the song, from 0 to 1. The interface calls 0.75 and up a best match.
+  score: number
+}
+
+// The matches found for one song, best first. Empty when nothing fit.
+export interface IdentifyResult {
+  trackId: number
+  candidates: MatchCandidate[]
+}
+
+export interface IdentifyProgress {
+  done: number
+  total: number
+  // Set when the search stopped early, for example with no internet connection.
+  error?: string
+}
+
+export interface IdentifyControls {
+  // Looks the songs up one at a time in the background. Results and progress arrive through the listeners.
+  start: (trackIds: number[]) => Promise<void>
+  stop: () => void
+  onResult: (listener: (result: IdentifyResult) => void) => () => void
+  onProgress: (listener: (progress: IdentifyProgress) => void) => () => void
+  // Saves a picked match and returns the song as it now looks.
+  apply: (trackId: number, candidateId: string) => Promise<Track | null>
+  // Drops a song's match so it shows the file's own tags again.
+  restore: (trackId: number) => Promise<Track | null>
 }
 
 // Every call that changes a playlist returns all playlists as they are afterward, in order.
@@ -90,6 +134,7 @@ export interface EncoreApi {
   window: WindowControls
   library: LibraryControls
   playlists: PlaylistControls
+  identify: IdentifyControls
 }
 
 export const PLAYLIST_NAME_MAX = 100
@@ -107,6 +152,7 @@ export const Channels = {
   setLiked: 'library:set-liked',
   removeTracks: 'library:remove-tracks',
   findMissing: 'library:find-missing',
+  accentColor: 'library:accent-color',
   listPlaylists: 'playlists:list',
   createPlaylist: 'playlists:create',
   renamePlaylist: 'playlists:rename',
@@ -114,7 +160,13 @@ export const Channels = {
   reorderPlaylists: 'playlists:reorder',
   addToPlaylist: 'playlists:add-tracks',
   removeFromPlaylist: 'playlists:remove-entries',
-  movePlaylistEntry: 'playlists:move-entry'
+  movePlaylistEntry: 'playlists:move-entry',
+  identifyStart: 'identify:start',
+  identifyStop: 'identify:stop',
+  identifyResult: 'identify:result',
+  identifyProgress: 'identify:progress',
+  identifyApply: 'identify:apply',
+  identifyRestore: 'identify:restore'
 } as const
 
 // Cover art is served to the interface through this private scheme, one file per unique image.
@@ -122,6 +174,10 @@ export const ARTWORK_SCHEME = 'encore-art'
 export const ARTWORK_ID = /^[a-f0-9]{40}\.(jpg|png|webp|gif|bmp)$/
 
 export const artworkUrl = (id: string): string => `${ARTWORK_SCHEME}://local/${id}`
+
+// A match's cover, fetched by the main process so the interface never loads images straight from the internet.
+export const CANDIDATE_ID = /^itunes-\d{1,20}$/
+export const previewUrl = (candidateId: string): string => `${ARTWORK_SCHEME}://preview/${candidateId}`
 
 // Songs stream to the player through this scheme by library id, so the interface never reads arbitrary files.
 export const MEDIA_SCHEME = 'encore-media'

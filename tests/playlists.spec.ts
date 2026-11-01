@@ -138,8 +138,12 @@ test('the ⋯ button opens the same menu as right-click', async () => {
   await song('Charlie').hover()
   await song('Charlie').getByRole('button', { name: 'More options for Charlie' }).click()
   await expect(page.getByRole('menu', { name: 'Charlie options' })).toBeVisible()
-  await expect(menuItem('Like')).toBeFocused()
+  await expect(menuItem('Play next')).toBeFocused()
 
+  // The arrow keys move through the menu, past the divider, to Like.
+  await page.keyboard.press('ArrowDown')
+  await page.keyboard.press('ArrowDown')
+  await expect(menuItem('Like')).toBeFocused()
   await page.keyboard.press('Enter')
   await expect(song('Charlie').getByRole('img', { name: 'Liked' })).toBeVisible()
 })

@@ -1,6 +1,13 @@
 import { contextBridge, ipcRenderer, webUtils, type IpcRendererEvent } from 'electron'
 import { Channels, type EncoreApi, type ImportProgress } from '../shared/api'
 
+// Subscribes to a message from the main process and returns a function that unsubscribes.
+function listen<T>(channel: string, listener: (payload: T) => void): () => void {
+  const handler = (_event: IpcRendererEvent, payload: T): void => listener(payload)
+  ipcRenderer.on(channel, handler)
+  return () => ipcRenderer.removeListener(channel, handler)
+}
+
 const api: EncoreApi = {
   window: {
     minimize: () => ipcRenderer.send(Channels.minimize),
@@ -24,7 +31,8 @@ const api: EncoreApi = {
     },
     setLiked: (trackIds, liked) => ipcRenderer.invoke(Channels.setLiked, trackIds, liked),
     removeTracks: (trackIds) => ipcRenderer.invoke(Channels.removeTracks, trackIds),
-    findMissing: () => ipcRenderer.invoke(Channels.findMissing)
+    findMissing: () => ipcRenderer.invoke(Channels.findMissing),
+    accentColor: (artworkId) => ipcRenderer.invoke(Channels.accentColor, artworkId)
   },
   playlists: {
     list: () => ipcRenderer.invoke(Channels.listPlaylists),
@@ -35,6 +43,14 @@ const api: EncoreApi = {
     addTracks: (playlistId, trackIds) => ipcRenderer.invoke(Channels.addToPlaylist, playlistId, trackIds),
     removeEntries: (playlistId, entryIds) => ipcRenderer.invoke(Channels.removeFromPlaylist, playlistId, entryIds),
     moveEntry: (playlistId, entryId, toIndex) => ipcRenderer.invoke(Channels.movePlaylistEntry, playlistId, entryId, toIndex)
+  },
+  identify: {
+    start: (trackIds) => ipcRenderer.invoke(Channels.identifyStart, trackIds),
+    stop: () => ipcRenderer.send(Channels.identifyStop),
+    onResult: (listener) => listen(Channels.identifyResult, listener),
+    onProgress: (listener) => listen(Channels.identifyProgress, listener),
+    apply: (trackId, candidateId) => ipcRenderer.invoke(Channels.identifyApply, trackId, candidateId),
+    restore: (trackId) => ipcRenderer.invoke(Channels.identifyRestore, trackId)
   }
 }
 

@@ -22,7 +22,7 @@ export function ArtistPage({ artist, onBack }: ArtistPageProps) {
 
   const playAlbum = (key: string): void => {
     const picked = artist.albums.find((candidate) => candidate.key === key)
-    if (picked) player.playQueue(picked.tracks, 0, albumQueue(picked))
+    if (picked) player.playQueue(picked.tracks, 0, albumQueue(picked), picked.title)
   }
 
   return (
@@ -35,7 +35,7 @@ export function ArtistPage({ artist, onBack }: ArtistPageProps) {
         round
         backLabel="Artists"
         onBack={onBack}
-        onPlay={() => player.playQueue(artist.tracks, 0, artistQueue(artist))}
+        onPlay={() => player.playQueue(artist.tracks, 0, artistQueue(artist), artist.name)}
       />
 
       {artist.albums.length > 0 && (
@@ -57,7 +57,7 @@ export function ArtistPage({ artist, onBack }: ArtistPageProps) {
 
       <section className={styles.section} aria-label="Songs">
         <h3 className={styles.sectionTitle}>Songs</h3>
-        <TrackList label={`${artist.name} songs`} tracks={artist.tracks} queueSource={artistQueue(artist)} contained={false} />
+        <TrackList label={`${artist.name} songs`} tracks={artist.tracks} queueSource={artistQueue(artist)} queueName={artist.name} contained={false} />
       </section>
     </div>
   )

@@ -103,6 +103,30 @@ export const RepeatIcon = (p: IconProps) => (
   </Icon>
 )
 
+// Repeat with a small 1 in the middle, for repeating just the current song.
+export const RepeatOneIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M17 2.5 20 5.5l-3 3" />
+    <path d="M4 11V9.5a4 4 0 0 1 4-4h12" />
+    <path d="M7 21.5 4 18.5l3-3" />
+    <path d="M20 13v1.5a4 4 0 0 1-4 4H4" />
+    <path d="M11 10.5 12.5 9.5v5" strokeWidth={1.7} />
+  </Icon>
+)
+
+export const ChevronDownIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M6 9.5l6 6 6-6" />
+  </Icon>
+)
+
+export const QueueIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 6h12M4 11h12M4 16h7" />
+    <path d="M15 14.5v5l4-2.5z" fill="currentColor" stroke="none" />
+  </Icon>
+)
+
 export const VolumeIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" />
@@ -137,6 +161,13 @@ export const PencilIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z" />
     <path d="m13.5 6.5 4 4" />
+  </Icon>
+)
+
+export const UndoIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M9 7.5 4.5 12 9 16.5" />
+    <path d="M4.5 12H15a4.5 4.5 0 0 1 0 9h-3" />
   </Icon>
 )
 

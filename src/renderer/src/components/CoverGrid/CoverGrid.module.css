@@ -98,8 +98,7 @@
   transform: translateY(6px);
   transition:
     opacity 0.15s ease,
-    transform 0.2s var(--ease),
-    background var(--color-fade);
+    transform 0.2s var(--ease);
 }
 
 .item:hover .play,
