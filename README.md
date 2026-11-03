@@ -4,7 +4,6 @@ Encore is my own desktop music player for Windows. I built it because I wanted a
 
 ## What it does
 - Plays music saved on my PC. Drag and drop files or whole folders to add them.
-- Plays my Spotify library right alongside my local music.
 - Playlists, shuffle, repeat, a queue, search, and album art.
 - Fixes songs with missing info. It looks them up by name, or by listening to them when the name is no help, and can save the fixes into the files.
 - The app's accent color changes to match the album that's playing.

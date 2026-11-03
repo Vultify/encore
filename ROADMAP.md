@@ -52,16 +52,9 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 - [x] Media keys and the Windows media controls
 - [x] Remember window size, volume, and last song
 
-## Phase 7: Spotify
-- [ ] Spotify developer app (needs Caleb's Spotify login)
-- [ ] Sign in with Spotify and keep the session
-- [ ] Import playlists and Liked Songs into the library
-- [ ] Play Spotify songs inside Encore (Premium, Web Playback SDK)
-- [ ] Spotify and local songs side by side in one library and queue
-
-## Phase 8: Polish and 1.0.0
+## Phase 7: Polish and 1.0.0
 - [ ] Animations, empty states, and loading states
-- [ ] Settings: keybind, accent color, music folders, Spotify account, identify new songs automatically
+- [ ] Settings: keybind, accent color, music folders, identify new songs automatically
 - [ ] App icon and Windows installer
 - [ ] Start with Windows option
 - [ ] Release 1.0.0
@@ -72,8 +65,8 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 - [ ] Equalizer
 
 ## Notes
-- **Music sources are plug-ins.** Local files, Spotify, and later Apple Music all follow one shared source interface, so adding a source never touches the rest of the app.
-- **Spotify playback inside Encore needs copy protection support (Widevine).** Plain Electron doesn't include it, so Phase 7 switches to the castlabs build of Electron, which does. If that turns out to be blocked, the fallback is Encore controlling the Spotify app in the background through Spotify Connect.
+- **Music sources are plug-ins.** Local files, and later Apple Music, follow one shared source interface, so adding a source never touches the rest of the app.
+- **Spotify was left out on purpose.** A test in November 2026 showed Spotify can play inside Encore using the castlabs build of Electron, signed through castlabs. But it needs a Premium subscription, re-signing after every Electron update, and Spotify's API keeps shrinking, so Encore stays local music only.
 - **Song recognition never overwrites files on its own.** Matches are reviewed first and saved inside Encore. Writing tags into the file is a separate choice per song.
 - **Recognition searches by name first, sound second.** Picard's sound matching got 4 out of 4 of Caleb's songs wrong (a mashup, a tribute cover, two compilations), likely because lyric-video downloads are slightly altered. Searching the iTunes catalog by artist and title is far more accurate when the name is known.
 - **Apple's song search skips some albums, often explicit ones.** When the best result is a compilation or not a near-perfect fit, Encore also checks the artist's own song list, where those albums still show up. That's how *Welcome Home* finds *Good Apollo I'm Burning Star IV*.

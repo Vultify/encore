@@ -34,10 +34,6 @@ export function TitleBar({ view, onViewChange }: TitleBarProps) {
       </nav>
 
       <div className={styles.end}>
-        <span className={styles.source}>
-          <span className={styles.sourceDot} />
-          Spotify not connected
-        </span>
         <WindowButtons />
       </div>
     </header>
