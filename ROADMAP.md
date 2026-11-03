@@ -54,7 +54,7 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 
 ## Phase 7: Polish and 1.0.0
 - [ ] Animations, empty states, and loading states
-- [ ] Settings: keybind, accent color, music folders, identify new songs automatically
+- [x] Settings: keybind, accent color, music folders, identify new songs automatically
 - [ ] App icon and Windows installer
 - [ ] Start with Windows option
 - [ ] Release 1.0.0

@@ -1,7 +1,8 @@
 import { app, type BrowserWindow } from 'electron'
-import type { PlayerCommand } from '../shared/api'
+import { Channels, type PlayerCommand } from '../shared/api'
 import { createMainWindow, registerWindowControls, revealWindow } from './window'
 import { createTray, type EncoreTray } from './tray'
+import type { TrayState } from './trayMenu'
 import {
   isMiniPlayerOpen,
   miniPlayerContents,
@@ -11,14 +12,17 @@ import {
   toggleMiniPlayer
 } from './miniPlayer'
 import { nowPlaying, onNowPlaying, registerRemote, sendCommand } from './remote'
-import { flushSettings, loadSettings, registerSettingsHandlers } from './settings'
-import { registerLibraryHandlers, registerPlaylistHandlers } from './library'
+import { flushSettings, loadSettings, preferences, registerSettingsHandlers } from './settings'
+import { registerPreferenceHandlers, STARTED_HIDDEN_FLAG } from './preferences'
+import { importMusic, registerLibraryHandlers, registerPlaylistHandlers } from './library'
+import { createFolderWatcher, type FolderWatcher } from './library/watch'
 import { registerIdentifyHandlers } from './identify'
 import { handleProtocols, registerSchemes } from './protocols'
 import { closeLibrary, openLibrary } from './library/database'
 
 let mainWindow: BrowserWindow | null = null
 let tray: EncoreTray | null = null
+let folderWatcher: FolderWatcher | null = null
 let quitting = false
 
 // Tests point Encore at a throwaway data folder so they never touch the real library.
@@ -26,7 +30,14 @@ if (process.env.ENCORE_DATA_DIR) app.setPath('userData', process.env.ENCORE_DATA
 
 registerSchemes()
 
-const refreshTray = (): void => tray?.update({ now: nowPlaying(), miniPlayerOpen: isMiniPlayerOpen() })
+const trayState = (): TrayState => ({ now: nowPlaying(), miniPlayerOpen: isMiniPlayerOpen(), shortcut: preferences().miniPlayerShortcut })
+const refreshTray = (): void => tray?.update(trayState())
+
+// Reads songs that appeared in a music folder while Encore is open, and hands any new or changed ones to the window.
+async function importFromFolders(paths: string[]): Promise<void> {
+  const result = await importMusic(paths).catch(() => null)
+  if (result && (result.added.length > 0 || result.updated.length > 0)) mainWindow?.webContents.send(Channels.folderImport, result)
+}
 
 // Only one Encore runs at a time. Launching it again brings the open one forward.
 if (!app.requestSingleInstanceLock()) {
@@ -39,6 +50,7 @@ if (!app.requestSingleInstanceLock()) {
     quitting = true
   })
   app.on('will-quit', () => {
+    folderWatcher?.close()
     releaseMiniPlayerShortcut()
     flushSettings()
     closeLibrary()
@@ -51,11 +63,25 @@ if (!app.requestSingleInstanceLock()) {
     registerWindowControls(() => mainWindow)
     registerSettingsHandlers()
     registerRemote(() => mainWindow, miniPlayerContents)
-    registerMiniPlayer({ getMainWindow: () => mainWindow, openEncore: () => revealWindow(mainWindow), onChange: refreshTray })
+    registerMiniPlayer({
+      getMainWindow: () => mainWindow,
+      openEncore: () => revealWindow(mainWindow),
+      shortcut: preferences().miniPlayerShortcut,
+      onChange: refreshTray
+    })
+    registerPreferenceHandlers({
+      getMainWindow: () => mainWindow,
+      onChange: (next) => {
+        folderWatcher?.watch(next.musicFolders)
+        refreshTray()
+      }
+    })
     registerLibraryHandlers()
     registerPlaylistHandlers()
     registerIdentifyHandlers()
-    mainWindow = createMainWindow(() => quitting)
+    mainWindow = createMainWindow(() => quitting, process.argv.includes(STARTED_HIDDEN_FLAG))
+    folderWatcher = createFolderWatcher(importFromFolders)
+    folderWatcher.watch(preferences().musicFolders)
 
     const command = (name: PlayerCommand) => () => sendCommand(mainWindow, name)
     tray = createTray({
@@ -65,7 +91,7 @@ if (!app.requestSingleInstanceLock()) {
       next: command('next'),
       previous: command('previous'),
       quit: () => app.quit()
-    })
+    }, trayState())
     onNowPlaying((now) => {
       refreshTray()
       sendToMiniPlayer(now)

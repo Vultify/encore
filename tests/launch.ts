@@ -18,10 +18,10 @@ const NO_SOUND_LOOKUPS = { ENCORE_ACOUSTID_URL: 'http://127.0.0.1:9/v2/lookup', 
 
 // Starts Encore against a throwaway data folder, so tests never touch the real library or clash with a running copy.
 // A folder created here is removed when the app closes. A folder passed in belongs to the caller.
-export async function launchEncore(dataDir?: string, env: Record<string, string> = {}): Promise<Encore> {
+export async function launchEncore(dataDir?: string, env: Record<string, string> = {}, args: string[] = []): Promise<Encore> {
   const dir = dataDir ?? makeDataDir()
   const app = await electron.launch({
-    args: ['.'],
+    args: ['.', ...args],
     env: { ...process.env, ENCORE_LOOKUP_URL: NO_LOOKUPS, ...NO_SOUND_LOOKUPS, ENCORE_LOOKUP_GAP_MS: '0', ...env, ENCORE_DATA_DIR: dir }
   })
   if (!dataDir) app.on('close', () => rmSync(dir, { recursive: true, force: true }))

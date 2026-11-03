@@ -1,7 +1,16 @@
 import { readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app, ipcMain } from 'electron'
-import { Channels, type PlayerPreferences, type PlayerSession } from '../shared/api'
+import {
+  ACCENT_PRESETS,
+  Channels,
+  DEFAULT_MINI_PLAYER_SHORTCUT,
+  type AccentChoice,
+  type PlayerPreferences,
+  type PlayerSession,
+  type Preferences
+} from '../shared/api'
+import { isAllowedShortcut } from '../shared/shortcut'
 
 export interface WindowState {
   x: number
@@ -14,6 +23,7 @@ export interface WindowState {
 interface Settings {
   window?: WindowState
   player?: PlayerPreferences
+  preferences?: Partial<Preferences>
 }
 
 // Changes are saved a moment after they stop, so dragging the window doesn't write the file over and over.
@@ -76,6 +86,31 @@ export function windowState(): WindowState | undefined {
 
 export function rememberWindow(state: WindowState): void {
   settings.window = state
+  saveSoon()
+}
+
+export const isAccentChoice = (value: unknown): value is AccentChoice =>
+  value === 'album' || ACCENT_PRESETS.some((preset) => preset.color === value)
+
+const isFolder = (value: unknown): value is string => typeof value === 'string' && value.length > 0 && value.length <= 1000
+
+// What's set on the Settings page, with anything missing or damaged in the file falling back to the default.
+export function preferences(): Preferences {
+  const saved = settings.preferences ?? {}
+  return {
+    miniPlayerShortcut:
+      typeof saved.miniPlayerShortcut === 'string' && isAllowedShortcut(saved.miniPlayerShortcut)
+        ? saved.miniPlayerShortcut
+        : DEFAULT_MINI_PLAYER_SHORTCUT,
+    accent: isAccentChoice(saved.accent) ? saved.accent : 'album',
+    musicFolders: Array.isArray(saved.musicFolders) ? saved.musicFolders.filter(isFolder) : [],
+    identifyNewSongs: saved.identifyNewSongs === true,
+    startWithWindows: saved.startWithWindows === true
+  }
+}
+
+export function savePreferences(next: Preferences): void {
+  settings.preferences = next
   saveSoon()
 }
 

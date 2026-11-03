@@ -34,7 +34,9 @@ const api: EncoreApi = {
     removeTracks: (trackIds) => ipcRenderer.invoke(Channels.removeTracks, trackIds),
     findMissing: () => ipcRenderer.invoke(Channels.findMissing),
     accentColor: (artworkId) => ipcRenderer.invoke(Channels.accentColor, artworkId),
-    saveToFiles: (trackIds) => ipcRenderer.invoke(Channels.saveToFiles, trackIds)
+    saveToFiles: (trackIds) => ipcRenderer.invoke(Channels.saveToFiles, trackIds),
+    scanMusicFolders: () => ipcRenderer.invoke(Channels.scanMusicFolders),
+    onFolderImport: (listener) => listen(Channels.folderImport, listener)
   },
   playlists: {
     list: () => ipcRenderer.invoke(Channels.listPlaylists),
@@ -68,6 +70,16 @@ const api: EncoreApi = {
   settings: {
     getPlayer: () => ipcRenderer.invoke(Channels.getPlayerSettings),
     savePlayer: (preferences) => ipcRenderer.send(Channels.savePlayerSettings, preferences)
+  },
+  preferences: {
+    get: () => ipcRenderer.invoke(Channels.getPreferences),
+    onChange: (listener) => listen(Channels.preferencesChanged, listener),
+    update: (changes) => ipcRenderer.invoke(Channels.updatePreferences, changes),
+    setMiniPlayerShortcut: (accelerator) => ipcRenderer.invoke(Channels.setMiniPlayerShortcut, accelerator),
+    pauseMiniPlayerShortcut: (pause) => ipcRenderer.send(Channels.pauseMiniPlayerShortcut, pause),
+    addMusicFolder: () => ipcRenderer.invoke(Channels.addMusicFolder),
+    removeMusicFolder: (path) => ipcRenderer.invoke(Channels.removeMusicFolder, path),
+    canStartWithWindows: () => ipcRenderer.invoke(Channels.canStartWithWindows)
   }
 }
 

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import type { ImportResult } from '@shared/api'
 import { TitleBar, type View } from './components/TitleBar/TitleBar'
 import { NowPlayingStage } from './components/NowPlayingStage/NowPlayingStage'
 import { PlayerDock } from './components/PlayerDock/PlayerDock'
@@ -11,16 +12,25 @@ import { connectMediaSession } from './player/mediaSession'
 import { rememberPlayer } from './player/memory'
 import { connectRemote } from './player/remote'
 import { library, useLibrary } from './store/library'
-import { useIdentify } from './store/identify'
+import { identify, useIdentify } from './store/identify'
 import { clearNotice, notify, useNotice } from './store/notice'
 import { songCount } from './lib/format'
 import { HomeView } from './views/HomeView'
 import { IDENTIFY_KEY, LibraryView, type LibraryLocation } from './views/library/LibraryView'
 import { NowPlayingView } from './views/NowPlayingView'
 import { SearchView } from './views/SearchView'
+import { SettingsView } from './views/settings/SettingsView'
 import styles from './App.module.css'
 
 const FILE_CHECK_INTERVAL_MS = 10_000
+
+// Songs that turned up in the music folders on their own join the library with a short note.
+function addFolderSongs(result: ImportResult | null): void {
+  if (!result) return
+  library.applyImport(result)
+  if (result.added.length > 0) notify(`Added ${songCount(result.added.length)} from your music folders`)
+  identify.identifyNewSongs(result.added)
+}
 
 // The Stage layout: album on the left, the current view in a glass panel on the right, player dock floating below.
 export default function App() {
@@ -32,8 +42,6 @@ export default function App() {
   // The big Now Playing view takes over the space under the title bar while it's open.
   const [nowPlayingOpen, setNowPlayingOpen] = useState(false)
   const notice = useNotice()
-  // Progress messages can arrive after the import has already finished, so only show them while it runs.
-  const importRunning = useRef(false)
 
   const { failed, track } = usePlayer()
   const { tracks } = useLibrary()
@@ -75,14 +83,19 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [showView])
 
-  // Loads the saved library and playlists when Encore opens and picks up where listening left off.
-  // From then on the tray, the media keys, and the Windows media overlay can control the player.
+  // Loads the saved library and playlists when Encore opens, picks up where listening left off, and catches up on
+  // songs saved to the music folders while it was closed. From then on the tray, the media keys, and the Windows
+  // media overlay can control the player, and new songs in the music folders show up by themselves.
   useEffect(() => {
-    const forgetPlayer = rememberPlayer(library.load())
+    const loaded = library.load()
+    const forgetPlayer = rememberPlayer(loaded)
+    void loaded.then(() => window.encore.library.scanMusicFolders().catch(() => null)).then(addFolderSongs)
+    const stopWatching = window.encore.library.onFolderImport(addFolderSongs)
     const disconnectRemote = connectRemote()
     const disconnectMediaSession = connectMediaSession()
     return () => {
       forgetPlayer()
+      stopWatching()
       disconnectRemote()
       disconnectMediaSession()
     }
@@ -100,42 +113,12 @@ export default function App() {
     return () => window.removeEventListener('focus', onFocus)
   }, [])
 
-  useEffect(
-    () =>
-      window.encore.library.onImportProgress(({ done, total }) => {
-        if (importRunning.current && done < total) {
-          notify(`Reading songs ${done.toLocaleString()} of ${total.toLocaleString()}`, { persist: true })
-        }
-      }),
-    []
-  )
-
   // Reads the music in what was dropped, saves anything new or changed, and shows it in Local files.
   const addDroppedFiles = useCallback(async (files: File[]) => {
     const paths = files.map((file) => window.encore.library.pathForFile(file)).filter(Boolean)
-    importRunning.current = true
-    notify('Looking for music', { persist: true })
-    const result = await window.encore.library.importPaths(paths).catch(() => null)
-    importRunning.current = false
-
-    if (!result) {
-      notify('Something went wrong adding those songs')
-      return
-    }
-    if (result.found === 0) {
-      notify('No MP3, FLAC, WAV, or M4A files in what you dropped')
-      return
-    }
-
-    library.applyImport(result)
-    const { added, updated } = result
-    notify(
-      added.length > 0
-        ? `Added ${songCount(added.length)}`
-        : updated.length > 0
-          ? `Updated ${songCount(updated.length)}`
-          : 'Those songs are already in your library'
-    )
+    const result = await library.importMusic(paths, 'No MP3, FLAC, WAV, or M4A files in what you dropped')
+    if (!result) return
+    identify.identifyNewSongs(result.added)
     showView('library')
     setLocation({ tab: 'Local files', key: null })
   }, [showView])
@@ -168,6 +151,7 @@ export default function App() {
           {view === 'home' && <HomeView />}
           {view === 'library' && <LibraryView location={location} onNavigate={setLocation} />}
           {view === 'search' && <SearchView query={searchQuery} onQueryChange={setSearchQuery} onNavigate={goToLibrary} focusRequest={searchFocus} />}
+          {view === 'settings' && <SettingsView />}
         </main>
       )}
       <PlayerDock compact={nowPlayingOpen} onOpenNowPlaying={() => setNowPlayingOpen(true)} />

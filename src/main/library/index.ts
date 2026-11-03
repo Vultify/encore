@@ -1,6 +1,6 @@
 import { stat } from 'node:fs/promises'
-import { ipcMain, type WebContents } from 'electron'
-import { Channels, type ImportResult, type NewTrack, type Playlist, type SaveToFilesResult } from '../../shared/api'
+import { ipcMain } from 'electron'
+import { Channels, type ImportProgress, type ImportResult, type NewTrack, type Playlist, type SaveToFilesResult } from '../../shared/api'
 import { allTracks, clearMatch, locationKey, removeTracks, saveTracks, setLiked, storedTracks, trackById, trackLocations, type FileStamp } from './database'
 import { artworkPath } from './artwork'
 import { writeTags, WriteError } from './writeTags'
@@ -18,6 +18,7 @@ import { findAudioFiles } from './scan'
 import { accentForArtwork } from './accent'
 import { readTrack } from './tags'
 import { createFolderCoverLookup } from './fallbacks'
+import { preferences } from '../settings'
 
 // How many files are read at once, and how often progress is sent to the interface.
 const READ_CONCURRENCY = 8
@@ -26,8 +27,17 @@ const STAT_BATCH = 64
 
 const sameStamp = (a: FileStamp, b: FileStamp): boolean => a.size === b.size && a.modified === b.modified
 
-// Finds the songs in the dropped paths, reads only the new or changed ones, and saves them.
-async function importPaths(paths: string[], sender: WebContents): Promise<ImportResult> {
+// Imports run one at a time, so songs dropped while a music folder is being caught up aren't read twice.
+let importQueue: Promise<unknown> = Promise.resolve()
+
+// Finds the songs in the given files and folders, reads only the new or changed ones, and saves them.
+export function importMusic(paths: string[], onProgress?: (progress: ImportProgress) => void): Promise<ImportResult> {
+  const run = importQueue.then(() => importPaths(paths, onProgress))
+  importQueue = run.catch(() => {})
+  return run
+}
+
+async function importPaths(paths: string[], onProgress?: (progress: ImportProgress) => void): Promise<ImportResult> {
   const files = await findAudioFiles(paths)
   const stored = storedTracks(files.map((file) => file.path))
 
@@ -52,7 +62,7 @@ async function importPaths(paths: string[], sender: WebContents): Promise<Import
     const now = Date.now()
     if (!force && now - lastSent < PROGRESS_INTERVAL_MS) return
     lastSent = now
-    if (!sender.isDestroyed()) sender.send(Channels.importProgress, { done, total: toRead.length })
+    onProgress?.({ done, total: toRead.length })
   }
 
   const worker = async (): Promise<void> => {
@@ -89,8 +99,11 @@ export function registerLibraryHandlers(): void {
     if (!Array.isArray(paths) || !paths.every((p) => typeof p === 'string' && p.length > 0)) {
       return { found: 0, added: [], updated: [] }
     }
-    return importPaths(paths, event.sender)
+    return importMusic(paths, (progress) => {
+      if (!event.sender.isDestroyed()) event.sender.send(Channels.importProgress, progress)
+    })
   })
+  ipcMain.handle(Channels.scanMusicFolders, () => importMusic(preferences().musicFolders))
   ipcMain.handle(Channels.setLiked, (_event, trackIds: unknown, liked: unknown) =>
     isIdList(trackIds) && typeof liked === 'boolean' ? setLiked(trackIds, liked) : []
   )

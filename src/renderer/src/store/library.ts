@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import type { ImportResult, Playlist, Track } from '@shared/api'
+import { songCount } from '@/lib/format'
 import { notify } from './notice'
 
 export interface LibraryState {
@@ -15,6 +16,14 @@ const api = (): typeof window.encore => window.encore
 class LibraryStore {
   private state: LibraryState = { tracks: [], playlists: [], missing: new Set() }
   private listeners = new Set<() => void>()
+  // Progress messages can arrive after an import has already finished, so they only show while one runs.
+  private importing = false
+
+  constructor() {
+    api().library.onImportProgress(({ done, total }) => {
+      if (this.importing && done < total) notify(`Reading songs ${done.toLocaleString()} of ${total.toLocaleString()}`, { persist: true })
+    })
+  }
 
   subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener)
@@ -27,6 +36,34 @@ class LibraryStore {
     const [tracks, playlists] = await Promise.all([api().library.getTracks(), api().playlists.list()])
     this.update({ tracks, playlists })
     await this.checkFiles()
+  }
+
+  // Reads the music in the given files and folders, saves anything new or changed, and says how it went.
+  // Returns null when it failed or found no music, after saying so with the given message.
+  async importMusic(paths: string[], nothingFound: string): Promise<ImportResult | null> {
+    this.importing = true
+    notify('Looking for music', { persist: true })
+    const result = await api().library.importPaths(paths).catch(() => null)
+    this.importing = false
+
+    if (!result) {
+      notify('Something went wrong adding those songs')
+      return null
+    }
+    if (result.found === 0) {
+      notify(nothingFound)
+      return null
+    }
+    this.applyImport(result)
+    const { added, updated } = result
+    notify(
+      added.length > 0
+        ? `Added ${songCount(added.length)}`
+        : updated.length > 0
+          ? `Updated ${songCount(updated.length)}`
+          : 'Those songs are already in your library'
+    )
+    return result
   }
 
   // Looks for songs whose files have moved or been deleted, and for missing ones that came back.

@@ -13,6 +13,8 @@ export interface TrayActions {
 export interface TrayState {
   now: NowPlaying | null
   miniPlayerOpen: boolean
+  // The mini player's shortcut, shown beside its menu item.
+  shortcut: string
 }
 
 // Windows tray tooltips are cut off past this many characters.
@@ -24,7 +26,7 @@ const menuText = (text: string): string => text.replaceAll('&', '&&')
 const songLine = (now: NowPlaying): string => (now.artist ? `${now.title} · ${now.artist}` : now.title)
 
 // The tray's right-click menu: what's playing, playback controls, then the windows and quitting.
-export function trayMenuTemplate({ now, miniPlayerOpen }: TrayState, actions: TrayActions): MenuItemConstructorOptions[] {
+export function trayMenuTemplate({ now, miniPlayerOpen, shortcut }: TrayState, actions: TrayActions): MenuItemConstructorOptions[] {
   const hasSong = now?.trackId != null
   return [
     ...(hasSong ? [{ label: menuText(songLine(now)), enabled: false }, { type: 'separator' } as const] : []),
@@ -38,7 +40,7 @@ export function trayMenuTemplate({ now, miniPlayerOpen }: TrayState, actions: Tr
       label: 'Mini player',
       type: 'checkbox',
       checked: miniPlayerOpen,
-      accelerator: 'Ctrl+Alt+Space',
+      accelerator: shortcut,
       registerAccelerator: false,
       click: actions.toggleMiniPlayer
     },

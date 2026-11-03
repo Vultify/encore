@@ -80,6 +80,10 @@ export interface LibraryControls {
   accentColor: (artworkId: string) => Promise<string | null>
   // Writes identified songs' tags and covers into their files, so other apps see them too.
   saveToFiles: (trackIds: number[]) => Promise<SaveToFilesResult>
+  // Catches up on songs saved to the music folders while Encore was closed.
+  scanMusicFolders: () => Promise<ImportResult>
+  // Songs that showed up in a music folder while Encore is open, already saved to the library.
+  onFolderImport: (listener: (result: ImportResult) => void) => () => void
 }
 
 export interface SaveToFilesResult {
@@ -198,6 +202,46 @@ export interface MiniPlayerControls {
   setInteractive: (interactive: boolean) => void
 }
 
+// The accent follows the playing album's cover, or stays one of these colors. Teal is also the resting color.
+export const ACCENT_PRESETS = [
+  { name: 'Teal', color: '#2bc4a8' },
+  { name: 'Coral', color: '#ff8a5c' },
+  { name: 'Violet', color: '#c77dff' },
+  { name: 'Pink', color: '#ff7ea8' },
+  { name: 'Blue', color: '#64a8ff' }
+] as const
+
+export type AccentChoice = 'album' | (typeof ACCENT_PRESETS)[number]['color']
+
+export const DEFAULT_MINI_PLAYER_SHORTCUT = 'Control+Alt+Space'
+
+export interface Preferences {
+  // An Electron accelerator, like Control+Alt+Space.
+  miniPlayerShortcut: string
+  accent: AccentChoice
+  // Folders whose new songs are added to the library by themselves.
+  musicFolders: string[]
+  identifyNewSongs: boolean
+  startWithWindows: boolean
+}
+
+export type PreferenceChanges = Partial<Pick<Preferences, 'accent' | 'identifyNewSongs' | 'startWithWindows'>>
+
+export interface PreferenceControls {
+  get: () => Promise<Preferences>
+  onChange: (listener: (preferences: Preferences) => void) => () => void
+  update: (changes: PreferenceChanges) => Promise<Preferences>
+  // Returns false when the shortcut isn't allowed or another app already uses it.
+  setMiniPlayerShortcut: (accelerator: string) => Promise<boolean>
+  // Lets go of the current shortcut while a new one is recorded, and takes it back after.
+  pauseMiniPlayerShortcut: (pause: boolean) => void
+  // Asks for a folder with the Windows folder picker. Returns its path, or null if none was picked.
+  addMusicFolder: () => Promise<string | null>
+  removeMusicFolder: (path: string) => Promise<void>
+  // Starting with Windows only works in the installed app, not while developing.
+  canStartWithWindows: () => Promise<boolean>
+}
+
 export interface SettingsControls {
   getPlayer: () => Promise<PlayerPreferences>
   savePlayer: (preferences: PlayerPreferences) => void
@@ -211,6 +255,7 @@ export interface EncoreApi {
   remote: RemoteControls
   mini: MiniPlayerControls
   settings: SettingsControls
+  preferences: PreferenceControls
 }
 
 export const PLAYLIST_NAME_MAX = 100
@@ -253,6 +298,16 @@ export const Channels = {
   openEncore: 'mini:open-encore',
   miniInteractive: 'mini:interactive',
   getPlayerSettings: 'settings:get-player',
+  folderImport: 'library:folder-import',
+  scanMusicFolders: 'library:scan-folders',
+  getPreferences: 'preferences:get',
+  preferencesChanged: 'preferences:changed',
+  updatePreferences: 'preferences:update',
+  setMiniPlayerShortcut: 'preferences:set-shortcut',
+  pauseMiniPlayerShortcut: 'preferences:pause-shortcut',
+  addMusicFolder: 'preferences:add-folder',
+  removeMusicFolder: 'preferences:remove-folder',
+  canStartWithWindows: 'preferences:can-start-with-windows',
   savePlayerSettings: 'settings:save-player'
 } as const
 

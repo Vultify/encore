@@ -3,12 +3,12 @@
 Encore is my own desktop music player for Windows. I built it because I wanted a music app laid out the way I like, instead of Spotify's or Apple Music's layout.
 
 ## What it does
-- Plays music saved on my PC. Drag and drop files or whole folders to add them.
+- Plays music saved on my PC. Drag and drop files or whole folders to add them, or pick music folders and new songs saved there show up on their own.
 - Playlists, shuffle, repeat, a queue, search, and album art.
 - Fixes songs with missing info. It looks them up by name, or by listening to them when the name is no help, and can save the fixes into the files.
-- The app's accent color changes to match the album that's playing.
+- The app's accent color changes to match the album that's playing, or stays one color I pick.
 - Closing the window keeps it running in the system tray.
-- Ctrl + Alt + Space pops up a mini player at the bottom of my screen.
+- Ctrl + Alt + Space pops up a mini player at the bottom of my screen. The shortcut can be changed in Settings.
 
 ## Running it
 Needs Node 24.

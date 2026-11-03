@@ -2,8 +2,6 @@ import { join } from 'node:path'
 import { BrowserWindow, globalShortcut, ipcMain, screen, type WebContents } from 'electron'
 import { Channels, type NowPlaying } from '../shared/api'
 
-export const MINI_PLAYER_SHORTCUT = 'Control+Alt+Space'
-
 const PILL = { width: 500, height: 78 }
 // Room around the pill for its glow and shadow, which the window's edge would otherwise cut off.
 const MARGIN = 48
@@ -13,6 +11,10 @@ const LIFT = 20
 
 let win: BrowserWindow | null = null
 let changed = (): void => {}
+// The shortcut Encore holds right now, or null if another app already had the one picked. It's let go for a
+// moment while a new one is being recorded.
+let claimed: string | null = null
+let paused = false
 
 export const miniPlayerContents = (): WebContents | null => (win && !win.isDestroyed() ? win.webContents : null)
 
@@ -99,14 +101,40 @@ export function sendToMiniPlayer(now: NowPlaying | null): void {
   miniPlayerContents()?.send(Channels.nowPlayingChanged, now)
 }
 
+// Swaps the global shortcut for a new one. If another app already uses the new one, the old one stays and this
+// returns false.
+export function setMiniPlayerShortcut(accelerator: string): boolean {
+  if (accelerator === claimed && !paused) return true
+  if (!globalShortcut.register(accelerator, toggleMiniPlayer)) return false
+  if (claimed && !paused && claimed !== accelerator) globalShortcut.unregister(claimed)
+  claimed = accelerator
+  paused = false
+  return true
+}
+
+// While a new shortcut is recorded, the current one is let go so pressing its keys reaches the recorder too.
+export function pauseMiniPlayerShortcut(pause: boolean): void {
+  if (!claimed || pause === paused) return
+  paused = pause
+  if (pause) globalShortcut.unregister(claimed)
+  else if (!globalShortcut.register(claimed, toggleMiniPlayer)) claimed = null
+}
+
+export function releaseMiniPlayerShortcut(): void {
+  if (claimed && !paused) globalShortcut.unregister(claimed)
+  claimed = null
+  paused = false
+}
+
 interface MiniPlayerOptions {
   getMainWindow: () => BrowserWindow | null
   openEncore: () => void
+  shortcut: string
   // Called whenever the mini player opens or closes, so the tray menu can show it.
   onChange: () => void
 }
 
-export function registerMiniPlayer({ getMainWindow, openEncore, onChange }: MiniPlayerOptions): void {
+export function registerMiniPlayer({ getMainWindow, openEncore, shortcut, onChange }: MiniPlayerOptions): void {
   changed = onChange
 
   ipcMain.on(Channels.popOut, (event) => {
@@ -126,11 +154,5 @@ export function registerMiniPlayer({ getMainWindow, openEncore, onChange }: Mini
   })
 
   // Another app may already own the shortcut. The tray and the dock button still open the mini player then.
-  if (!globalShortcut.register(MINI_PLAYER_SHORTCUT, toggleMiniPlayer)) {
-    console.warn(`Couldn't claim ${MINI_PLAYER_SHORTCUT} for the mini player; another app is using it.`)
-  }
-}
-
-export function releaseMiniPlayerShortcut(): void {
-  globalShortcut.unregister(MINI_PLAYER_SHORTCUT)
+  if (!setMiniPlayerShortcut(shortcut)) console.warn(`Couldn't claim ${shortcut} for the mini player; another app is using it.`)
 }

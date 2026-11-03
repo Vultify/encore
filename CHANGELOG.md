@@ -54,6 +54,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Encore reopens at the same size and spot, with the same volume, on the same song paused where it was left. The queue and the rest of the list are still lined up.
 - Mini player: a floating glass pill at the bottom center of the screen with the song, previous, play or pause, next, and a progress line in the album's accent color. It stays on top without taking focus from other apps, and clicks pass through the clear space around it.
 - Ctrl + Alt + Space shows or hides the mini player from anywhere. The tray menu has a Mini player item, and the dock's pop-out button swaps the full window for it. Clicking the song in the mini player brings Encore back.
+- Settings page, opened from the gear in the title bar.
+- Change the mini player shortcut by pressing the new keys. Keys show up as they're held, a combination Windows or another app already uses is turned down, and Reset goes back to Ctrl + Alt + Space.
+- Accent color: follow the playing album's cover, or stay Teal, Coral, Violet, Pink, or Blue. The mini player follows it too.
+- Music folders: songs already in a folder are added, then new songs saved there show up on their own, including whole album folders moved in at once. Songs saved while Encore was closed are caught up when it opens.
+- Identify new songs automatically: new songs missing an album or cover are looked up quietly, with matches waiting in Local files for review.
+- Start with Windows setting, which opens Encore quietly in the tray. It takes effect in the installed app.
 
 ### Removed
 - The "Spotify not connected" badge in the title bar. Encore plays local music only.

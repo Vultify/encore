@@ -1,10 +1,18 @@
 import { useEffect } from 'react'
+import { usePreferences } from '@/store/preferences'
 
-// Sets the app's accent to a color picked from the playing song's cover, or back to teal when there's
-// no song or the cover has no real color. The change fades because --accent is a registered, animated color.
+// Sets the app's accent: a color picked from the playing song's cover, or the one color chosen in Settings.
+// With no song, or a cover with no real color, it goes back to teal. The change fades because --accent is a
+// registered, animated color.
 export function useAccentColor(artworkId: string | null): void {
+  const { accent } = usePreferences()
+
   useEffect(() => {
     const root = document.documentElement
+    if (accent !== 'album') {
+      root.style.setProperty('--accent', accent)
+      return
+    }
     if (!artworkId) {
       root.style.removeProperty('--accent')
       return
@@ -20,5 +28,5 @@ export function useAccentColor(artworkId: string | null): void {
     return () => {
       current = false
     }
-  }, [artworkId])
+  }, [artworkId, accent])
 }

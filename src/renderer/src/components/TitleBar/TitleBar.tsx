@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { CloseIcon, LogoMark, MaximizeIcon, MinimizeIcon, RestoreIcon, SearchIcon } from '../icons'
+import { CloseIcon, LogoMark, MaximizeIcon, MinimizeIcon, RestoreIcon, SearchIcon, SettingsIcon } from '../icons'
 import styles from './TitleBar.module.css'
 
-export type View = 'home' | 'library' | 'search'
+export type View = 'home' | 'library' | 'search' | 'settings'
 
 interface TitleBarProps {
   view: View
@@ -30,6 +30,14 @@ export function TitleBar({ view, onViewChange }: TitleBarProps) {
           onClick={() => onViewChange('search')}
         >
           <SearchIcon size={17} strokeWidth={2} />
+        </button>
+        <button
+          className={styles.tab}
+          aria-label="Settings"
+          aria-current={view === 'settings' ? 'page' : undefined}
+          onClick={() => onViewChange('settings')}
+        >
+          <SettingsIcon size={17} strokeWidth={2} />
         </button>
       </nav>
 

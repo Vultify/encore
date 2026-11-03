@@ -21,8 +21,8 @@ function savedBounds(): (Rectangle & { maximized: boolean }) | null {
 }
 
 // Creates the main window: frameless, dark, and hidden instead of closed so Encore keeps running in the tray.
-// It opens where it was last time.
-export function createMainWindow(shouldQuit: () => boolean): BrowserWindow {
+// It opens where it was last time. When Windows starts Encore at sign-in, it stays in the tray until opened.
+export function createMainWindow(shouldQuit: () => boolean, startHidden = false): BrowserWindow {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize
   const saved = savedBounds()
 
@@ -46,8 +46,12 @@ export function createMainWindow(shouldQuit: () => boolean): BrowserWindow {
     }
   })
 
-  if (saved?.maximized) win.maximize()
-  win.once('ready-to-show', () => win.show())
+  // Maximizing also shows a window, so one that starts hidden waits until it's first opened.
+  if (saved?.maximized) {
+    if (startHidden) win.once('show', () => win.maximize())
+    else win.maximize()
+  }
+  if (!startHidden) win.once('ready-to-show', () => win.show())
 
   // The size it would go back to when un-maximized is the one worth remembering.
   const remember = (): void => rememberWindow({ ...win.getNormalBounds(), maximized: win.isMaximized() })

@@ -1,7 +1,8 @@
 import { useSyncExternalStore } from 'react'
-import type { MatchCandidate } from '@shared/api'
+import type { MatchCandidate, Track } from '@shared/api'
 import { library } from './library'
 import { notify } from './notice'
+import { preferences } from './preferences'
 
 export interface ReviewItem {
   trackId: number
@@ -33,11 +34,11 @@ class IdentifyStore {
 
   getState = (): IdentifyState => this.state
 
-  // Starts looking songs up and asks for the review page. Matches show up there as they arrive.
-  async start(trackIds: number[]): Promise<void> {
+  // Starts looking songs up and, unless told not to, asks for the review page. Matches show up there as they arrive.
+  async start(trackIds: number[], { review = true } = {}): Promise<void> {
     if (this.state.running || trackIds.length === 0) return
     this.listen()
-    this.update({ running: true, done: 0, total: trackIds.length, items: [], reviewRequest: this.state.reviewRequest + 1 })
+    this.update({ running: true, done: 0, total: trackIds.length, items: [], reviewRequest: this.state.reviewRequest + (review ? 1 : 0) })
     try {
       await api().start(trackIds)
     } catch {
@@ -45,6 +46,13 @@ class IdentifyStore {
     } finally {
       this.update({ running: false })
     }
+  }
+
+  // With "Identify new songs automatically" on, looks up just-added songs that are missing an album or cover,
+  // quietly. Their matches wait in Local files for review.
+  identifyNewSongs(added: Track[]): void {
+    if (!preferences.getState().identifyNewSongs) return
+    void this.start(needsIdentifying(added, library.getState().missing), { review: false })
   }
 
   stop(): void {

@@ -17,8 +17,8 @@ const playing: NowPlaying = {
   duration: 200
 }
 
-const menuFor = (now: NowPlaying | null, miniPlayerOpen = false): MenuItemConstructorOptions[] =>
-  trayMenuTemplate({ now, miniPlayerOpen } satisfies TrayState, actions)
+const menuFor = (now: NowPlaying | null, miniPlayerOpen = false, shortcut = 'Control+Alt+Space'): MenuItemConstructorOptions[] =>
+  trayMenuTemplate({ now, miniPlayerOpen, shortcut } satisfies TrayState, actions)
 
 const item = (menu: MenuItemConstructorOptions[], label: string): MenuItemConstructorOptions | undefined =>
   menu.find((entry) => entry.label === label)
@@ -50,10 +50,11 @@ test('the mini player item shows its shortcut and is ticked while it is open', (
   expect(item(menuFor(playing), 'Mini player')).toMatchObject({
     type: 'checkbox',
     checked: false,
-    accelerator: 'Ctrl+Alt+Space',
+    accelerator: 'Control+Alt+Space',
     registerAccelerator: false
   })
   expect(item(menuFor(playing, true), 'Mini player')?.checked).toBe(true)
+  expect(item(menuFor(playing, false, 'Control+Shift+M'), 'Mini player')?.accelerator).toBe('Control+Shift+M')
 })
 
 test('an ampersand in a song shows as itself, not as a shortcut marker', () => {
