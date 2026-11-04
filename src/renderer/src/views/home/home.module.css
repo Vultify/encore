@@ -1,0 +1,347 @@
+.spans {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.spans button {
+  height: 30px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 700;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.spans button:hover {
+  color: var(--text);
+}
+
+.spans button[aria-checked='true'] {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}
+
+.scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  margin-right: -10px;
+  padding-right: 10px;
+  container-type: inline-size;
+}
+
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 22px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-strong);
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.cardTitle {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Listening time: the big number on the left, the chart filling the rest. */
+.time {
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 32px;
+}
+
+.timeText {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 170px;
+}
+
+.timeText .cardTitle {
+  margin-bottom: 10px;
+}
+
+/* A big standalone number reads best with the font's natural digit widths. */
+.hero {
+  font-size: 52px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: normal;
+}
+
+.heroLabel {
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+.quiet {
+  margin: auto 0;
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+.ranks {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rank {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 10px 6px 6px;
+  border-radius: 12px;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.rank:hover {
+  background: var(--surface-hover);
+}
+
+.rankNumber {
+  flex: none;
+  width: 16px;
+  text-align: center;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.rankCover {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: linear-gradient(145deg, #1c1c22, #111115);
+  color: var(--text-faint);
+}
+
+.rank[data-round] .rankCover {
+  border-radius: 50%;
+}
+
+.rankCover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rankText {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rankTitle,
+.rankSub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rankTitle {
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.rankSub {
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.rankStat {
+  flex: none;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+/* The number one spot gets a bigger cover and title, with its rank in the accent color. */
+.rank[data-lead] {
+  padding-top: 4px;
+  padding-bottom: 10px;
+}
+
+.rank[data-lead] .rankNumber {
+  color: var(--accent);
+  font-size: 15px;
+}
+
+.rank[data-lead] .rankCover {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  box-shadow: 0 12px 26px -12px rgba(0, 0, 0, 0.7);
+}
+
+.rank[data-lead][data-round] .rankCover {
+  border-radius: 50%;
+}
+
+.rank[data-lead] .rankTitle {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.mixHead {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.mosaic {
+  flex: none;
+  display: grid;
+  width: 76px;
+  height: 76px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--accent) 45%, #111115), #111115);
+  color: var(--text);
+  place-items: center;
+  box-shadow: 0 14px 28px -14px rgba(0, 0, 0, 0.7);
+}
+
+.mosaic[data-count='4'] {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+.mosaic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mixText {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mixTitle {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.mixDetails {
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+
+.mixActions {
+  flex: none;
+  display: flex;
+  gap: 8px;
+}
+
+.primary,
+.secondary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  font-size: 13.5px;
+  font-weight: 800;
+  transition:
+    transform 0.15s var(--ease),
+    background 0.15s ease;
+}
+
+.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.primary:hover {
+  transform: scale(1.03);
+}
+
+.secondary {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.showSongs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 700;
+  transition: color 0.15s ease;
+}
+
+.showSongs:hover {
+  color: var(--text);
+}
+
+.showSongs svg {
+  transition: transform 0.2s var(--ease);
+}
+
+.showSongs[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+/* In a narrow window the cards stack, and the listening time puts its number above the chart. */
+@container (max-width: 640px) {
+  .dashboard {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .time {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 18px;
+  }
+
+  .mixHead {
+    flex-wrap: wrap;
+  }
+}

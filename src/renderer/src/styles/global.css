@@ -73,3 +73,15 @@ p {
   background: color-mix(in srgb, var(--accent) 40%, transparent);
   color: var(--text);
 }
+
+/* For anyone who has asked Windows for less motion, everything moves at once instead of easing. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

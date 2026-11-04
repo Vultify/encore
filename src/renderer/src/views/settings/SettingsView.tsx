@@ -1,5 +1,5 @@
 import { useEffect, useId, useState, type ReactNode } from 'react'
-import { ACCENT_PRESETS, DEFAULT_MINI_PLAYER_SHORTCUT, type AccentChoice, type PreferenceChanges } from '@shared/api'
+import { ACCENT_PRESETS, DEFAULT_MINI_PLAYER_SHORTCUT, roundMixSize, TOP_MIX, type AccentChoice, type PreferenceChanges } from '@shared/api'
 import { shortcutFor, shortcutLabel } from '@shared/shortcut'
 import { Panel } from '@/components/Panel/Panel'
 import { Switch } from '@/components/Switch/Switch'
@@ -16,7 +16,7 @@ const MODIFIER_KEYS = ['Control', 'Alt', 'Shift', 'Meta']
 
 // Everything Encore lets you set, in a few short groups.
 export function SettingsView() {
-  const { miniPlayerShortcut, accent, musicFolders, identifyNewSongs, startWithWindows } = usePreferences()
+  const { miniPlayerShortcut, accent, musicFolders, identifyNewSongs, startWithWindows, topMixSize } = usePreferences()
 
   return (
     <Panel label="Settings" header={<h2 className={views.heading}>Settings</h2>}>
@@ -26,6 +26,9 @@ export function SettingsView() {
         </Section>
         <Section title="Look">
           <AccentSetting accent={accent} />
+        </Section>
+        <Section title="Home">
+          <MixSizeSetting size={topMixSize} />
         </Section>
         <Section title="Music">
           <FolderSetting folders={musicFolders} />
@@ -219,6 +222,44 @@ function AccentSetting({ accent }: { accent: AccentChoice }) {
         ))}
       </div>
     </Row>
+  )
+}
+
+// The size of the top songs mix on Home. Whatever is typed rounds to the nearest five once you're done typing.
+function MixSizeSetting({ size }: { size: number }) {
+  const titleId = useId()
+  const [text, setText] = useState(String(size))
+  useEffect(() => setText(String(size)), [size])
+
+  const commit = (): void => {
+    const next = roundMixSize(Number(text), size)
+    setText(String(next))
+    if (next !== size) update({ topMixSize: next })
+  }
+
+  return (
+    <Row
+      title="Top songs mix size"
+      titleId={titleId}
+      description={`How many of your most played songs go in the mix on Home, from ${TOP_MIX.min} to ${TOP_MIX.max}. It rounds to the nearest ${TOP_MIX.step}.`}
+      control={
+        <input
+          className={styles.number}
+          type="number"
+          inputMode="numeric"
+          min={TOP_MIX.min}
+          max={TOP_MIX.max}
+          step={TOP_MIX.step}
+          value={text}
+          aria-labelledby={titleId}
+          onChange={(event) => setText(event.target.value)}
+          onBlur={commit}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') commit()
+          }}
+        />
+      }
+    />
   )
 }
 

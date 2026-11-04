@@ -8,13 +8,15 @@ export interface LibraryState {
   playlists: Playlist[]
   // Songs whose files couldn't be found the last time they were checked.
   missing: ReadonlySet<number>
+  // False until the saved library has been read, so screens can wait instead of calling it empty.
+  loaded: boolean
 }
 
 const api = (): typeof window.encore => window.encore
 
 // The songs and playlists the interface shows. Changes go to the main process first, then land here.
 class LibraryStore {
-  private state: LibraryState = { tracks: [], playlists: [], missing: new Set() }
+  private state: LibraryState = { tracks: [], playlists: [], missing: new Set(), loaded: false }
   private listeners = new Set<() => void>()
   // Progress messages can arrive after an import has already finished, so they only show while one runs.
   private importing = false
@@ -34,7 +36,7 @@ class LibraryStore {
 
   async load(): Promise<void> {
     const [tracks, playlists] = await Promise.all([api().library.getTracks(), api().playlists.list()])
-    this.update({ tracks, playlists })
+    this.update({ tracks, playlists, loaded: true })
     await this.checkFiles()
   }
 

@@ -1,0 +1,8 @@
+.art {
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.art[data-loaded] {
+  opacity: 1;
+}

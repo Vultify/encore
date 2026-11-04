@@ -60,6 +60,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Music folders: songs already in a folder are added, then new songs saved there show up on their own, including whole album folders moved in at once. Songs saved while Encore was closed are caught up when it opens.
 - Identify new songs automatically: new songs missing an album or cover are looked up quietly, with matches waiting in Local files for review.
 - Start with Windows setting, which opens Encore quietly in the tray. It takes effect in the installed app.
+- Home shows listening stats for the last week, month, year, or all time: total listening time with a bar per day or month, top songs by plays, and top artists by listening time.
+- Listening is tracked by the real time spent playing, leaving out pauses and skipped parts. A song counts as played after 30 seconds, or halfway through if it's shorter than a minute.
+- Your Top 25: a live mix of the top songs on Home that plays or shuffles as a queue and changes as you listen. Its size is set in Settings, rounded to the nearest five.
+- Covers fade in as they load, views ease in when switching, and a quiet spinner shows while the library loads instead of an empty message.
+- Motion is turned off for anyone who has asked Windows for less of it.
 
 ### Removed
 - The "Spotify not connected" badge in the title bar. Encore plays local music only.

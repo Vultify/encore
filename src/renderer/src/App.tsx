@@ -8,6 +8,7 @@ import { Toast } from './components/Toast/Toast'
 import { useAccentColor } from './hooks/useAccentColor'
 import { useFileDrop } from './hooks/useFileDrop'
 import { player, usePlayer } from './player/player'
+import { connectHistory } from './player/history'
 import { connectMediaSession } from './player/mediaSession'
 import { rememberPlayer } from './player/memory'
 import { connectRemote } from './player/remote'
@@ -15,7 +16,8 @@ import { library, useLibrary } from './store/library'
 import { identify, useIdentify } from './store/identify'
 import { clearNotice, notify, useNotice } from './store/notice'
 import { songCount } from './lib/format'
-import { HomeView } from './views/HomeView'
+import { HomeView } from './views/home/HomeView'
+import type { StatsSpan } from './lib/stats'
 import { IDENTIFY_KEY, LibraryView, type LibraryLocation } from './views/library/LibraryView'
 import { NowPlayingView } from './views/NowPlayingView'
 import { SearchView } from './views/SearchView'
@@ -39,6 +41,8 @@ export default function App() {
   // Kept here so a search is still there after visiting another view.
   const [searchQuery, setSearchQuery] = useState('')
   const [searchFocus, setSearchFocus] = useState(0)
+  // The span the stats on Home cover, kept while visiting other views.
+  const [homeSpan, setHomeSpan] = useState<StatsSpan>('month')
   // The big Now Playing view takes over the space under the title bar while it's open.
   const [nowPlayingOpen, setNowPlayingOpen] = useState(false)
   const notice = useNotice()
@@ -91,11 +95,13 @@ export default function App() {
     const forgetPlayer = rememberPlayer(loaded)
     void loaded.then(() => window.encore.library.scanMusicFolders().catch(() => null)).then(addFolderSongs)
     const stopWatching = window.encore.library.onFolderImport(addFolderSongs)
+    const disconnectHistory = connectHistory()
     const disconnectRemote = connectRemote()
     const disconnectMediaSession = connectMediaSession()
     return () => {
       forgetPlayer()
       stopWatching()
+      disconnectHistory()
       disconnectRemote()
       disconnectMediaSession()
     }
@@ -148,7 +154,15 @@ export default function App() {
       ) : (
         <main className={styles.content}>
           <NowPlayingStage onOpen={() => setNowPlayingOpen(true)} />
-          {view === 'home' && <HomeView />}
+          {view === 'home' && (
+            <HomeView
+              span={homeSpan}
+              onSpanChange={setHomeSpan}
+              onNavigate={goToLibrary}
+              onOpenLibrary={() => showView('library')}
+              onOpenSettings={() => showView('settings')}
+            />
+          )}
           {view === 'library' && <LibraryView location={location} onNavigate={setLocation} />}
           {view === 'search' && <SearchView query={searchQuery} onQueryChange={setSearchQuery} onNavigate={goToLibrary} focusRequest={searchFocus} />}
           {view === 'settings' && <SettingsView />}

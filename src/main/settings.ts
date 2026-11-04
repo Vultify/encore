@@ -5,6 +5,8 @@ import {
   ACCENT_PRESETS,
   Channels,
   DEFAULT_MINI_PLAYER_SHORTCUT,
+  roundMixSize,
+  TOP_MIX,
   type AccentChoice,
   type PlayerPreferences,
   type PlayerSession,
@@ -92,6 +94,8 @@ export function rememberWindow(state: WindowState): void {
 export const isAccentChoice = (value: unknown): value is AccentChoice =>
   value === 'album' || ACCENT_PRESETS.some((preset) => preset.color === value)
 
+export const isMixSize = (value: unknown): value is number => typeof value === 'number' && roundMixSize(value) === value
+
 const isFolder = (value: unknown): value is string => typeof value === 'string' && value.length > 0 && value.length <= 1000
 
 // What's set on the Settings page, with anything missing or damaged in the file falling back to the default.
@@ -105,7 +109,8 @@ export function preferences(): Preferences {
     accent: isAccentChoice(saved.accent) ? saved.accent : 'album',
     musicFolders: Array.isArray(saved.musicFolders) ? saved.musicFolders.filter(isFolder) : [],
     identifyNewSongs: saved.identifyNewSongs === true,
-    startWithWindows: saved.startWithWindows === true
+    startWithWindows: saved.startWithWindows === true,
+    topMixSize: isMixSize(saved.topMixSize) ? saved.topMixSize : TOP_MIX.default
   }
 }
 

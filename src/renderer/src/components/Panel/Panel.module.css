@@ -24,6 +24,14 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+  animation: enter 0.32s var(--ease) both;
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 }
 
 .empty {
@@ -58,4 +66,48 @@
   font-size: 14px;
   line-height: 1.55;
   color: var(--text-3);
+}
+
+.emptyAction {
+  height: 42px;
+  margin-top: 6px;
+  padding: 0 22px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 13.5px;
+  font-weight: 800;
+  transition: transform 0.15s var(--ease);
+}
+
+.emptyAction:hover {
+  transform: scale(1.03);
+}
+
+.loading {
+  margin: auto;
+  opacity: 0;
+  animation: appear 0.3s ease 0.4s forwards;
+}
+
+.spinner {
+  display: block;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--accent);
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes appear {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

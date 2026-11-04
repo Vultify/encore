@@ -82,8 +82,27 @@ export interface LibraryControls {
   saveToFiles: (trackIds: number[]) => Promise<SaveToFilesResult>
   // Catches up on songs saved to the music folders while Encore was closed.
   scanMusicFolders: () => Promise<ImportResult>
+  // Starts saving a listen to a song, with the list it's playing from. Returns its id, or null if the song is gone.
+  startListen: (trackId: number, sourceKey: string | null) => Promise<number | null>
+  // Saves how many seconds a listen has lasted, and whether that's long enough to count as a play.
+  updateListen: (listenId: number, seconds: number, counted: boolean) => void
+  // Listening since a moment in time, for the stats on Home.
+  listeningStats: (since: number, bucket: StatsBucket) => Promise<ListeningStats>
   // Songs that showed up in a music folder while Encore is open, already saved to the library.
   onFolderImport: (listener: (result: ImportResult) => void) => () => void
+}
+
+// Listening time is grouped by day for a week or month, and by month for longer spans.
+export type StatsBucket = 'day' | 'month'
+
+export interface ListeningStats {
+  totalSeconds: number
+  // Every song listened to in the span, with how often it counted as played and for how long.
+  tracks: { trackId: number; plays: number; seconds: number }[]
+  // Seconds listened per local day (2026-11-03) or month (2026-11). Days and months with none are left out.
+  buckets: { key: string; seconds: number }[]
+  // When the very first listen happened, or null if nothing has ever been played.
+  firstPlayedAt: number | null
 }
 
 export interface SaveToFilesResult {
@@ -215,6 +234,16 @@ export type AccentChoice = 'album' | (typeof ACCENT_PRESETS)[number]['color']
 
 export const DEFAULT_MINI_PLAYER_SHORTCUT = 'Control+Alt+Space'
 
+// The mix of top songs on Home holds this many, set in steps of five.
+export const TOP_MIX = { min: 5, max: 100, step: 5, default: 25 } as const
+
+// Whatever is typed for the mix size, rounded to the nearest five and kept in range. Anything that isn't a
+// number keeps the size it had.
+export function roundMixSize(value: number, fallback: number = TOP_MIX.default): number {
+  if (!Number.isFinite(value)) return fallback
+  return Math.min(TOP_MIX.max, Math.max(TOP_MIX.min, Math.round(value / TOP_MIX.step) * TOP_MIX.step))
+}
+
 export interface Preferences {
   // An Electron accelerator, like Control+Alt+Space.
   miniPlayerShortcut: string
@@ -223,9 +252,10 @@ export interface Preferences {
   musicFolders: string[]
   identifyNewSongs: boolean
   startWithWindows: boolean
+  topMixSize: number
 }
 
-export type PreferenceChanges = Partial<Pick<Preferences, 'accent' | 'identifyNewSongs' | 'startWithWindows'>>
+export type PreferenceChanges = Partial<Pick<Preferences, 'accent' | 'identifyNewSongs' | 'startWithWindows' | 'topMixSize'>>
 
 export interface PreferenceControls {
   get: () => Promise<Preferences>
@@ -300,6 +330,9 @@ export const Channels = {
   getPlayerSettings: 'settings:get-player',
   folderImport: 'library:folder-import',
   scanMusicFolders: 'library:scan-folders',
+  startListen: 'library:start-listen',
+  updateListen: 'library:update-listen',
+  listeningStats: 'library:listening-stats',
   getPreferences: 'preferences:get',
   preferencesChanged: 'preferences:changed',
   updatePreferences: 'preferences:update',

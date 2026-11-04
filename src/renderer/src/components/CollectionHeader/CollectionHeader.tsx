@@ -1,5 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react'
-import { artworkUrl, PLAYLIST_NAME_MAX } from '@shared/api'
+import { PLAYLIST_NAME_MAX } from '@shared/api'
+import { Artwork } from '../Artwork/Artwork'
 import { BackIcon, MusicIcon, PlayIcon } from '../icons'
 import styles from './CollectionHeader.module.css'
 
@@ -34,7 +35,7 @@ export function CollectionHeader(props: CollectionHeaderProps) {
       </button>
       <div className={styles.body}>
         <span className={styles.cover} data-round={round}>
-          {cover ?? (artworkId ? <img src={artworkUrl(artworkId)} alt="" draggable={false} /> : <MusicIcon size={34} />)}
+          {cover ?? (artworkId ? <Artwork id={artworkId} /> : <MusicIcon size={34} />)}
         </span>
         <div className={styles.info}>
           <span className={styles.kind}>{kind}</span>

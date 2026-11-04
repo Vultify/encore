@@ -1,6 +1,6 @@
 import { useMemo, type ReactNode } from 'react'
 import { CoverGrid } from '@/components/CoverGrid/CoverGrid'
-import { EmptyState, Panel } from '@/components/Panel/Panel'
+import { EmptyState, LoadingState, Panel } from '@/components/Panel/Panel'
 import { TrackList } from '@/components/TrackList/TrackList'
 import { MusicIcon, UploadIcon } from '@/components/icons'
 import { songCount } from '@/lib/format'
@@ -33,7 +33,7 @@ interface LibraryViewProps {
 
 export function LibraryView({ location, onNavigate }: LibraryViewProps) {
   const { tab, key: openKey } = location
-  const { tracks, albums, artists } = useLibraryGroups()
+  const { tracks, albums, artists, loaded } = useLibraryGroups()
   const localFiles = useMemo(() => [...tracks].sort(byAlbum), [tracks])
 
   const open = (key: string): void => onNavigate({ tab, key })
@@ -62,6 +62,7 @@ export function LibraryView({ location, onNavigate }: LibraryViewProps) {
   )
 
   const body = (): ReactNode => {
+    if (!loaded) return <LoadingState label="Loading your library" />
     if (tracks.length === 0) {
       return (
         <EmptyState icon={<UploadIcon size={26} />} title="Your library is empty">
@@ -130,7 +131,7 @@ export function LibraryView({ location, onNavigate }: LibraryViewProps) {
   }
 
   return (
-    <Panel label="Library" header={header}>
+    <Panel label="Library" header={header} contentKey={`${tab}/${openKey ?? ''}`}>
       {body()}
     </Panel>
   )

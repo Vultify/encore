@@ -1,5 +1,5 @@
 import { useRef, useState, type DragEvent, type ReactNode } from 'react'
-import { artworkUrl } from '@shared/api'
+import { Artwork } from '../Artwork/Artwork'
 import { MusicIcon, PlayIcon } from '../icons'
 import styles from './CoverGrid.module.css'
 
@@ -71,7 +71,7 @@ export function CoverGrid({ label, items, round = false, onOpen, onPlay, onReord
               <span className={styles.cover}>
                 {item.cover ??
                   (item.artworkId ? (
-                    <img src={artworkUrl(item.artworkId)} alt="" loading="lazy" draggable={false} />
+                    <Artwork id={item.artworkId} lazy />
                   ) : (
                     <MusicIcon size={28} />
                   ))}

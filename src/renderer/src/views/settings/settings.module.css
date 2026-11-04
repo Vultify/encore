@@ -240,3 +240,20 @@
   background: rgba(255, 255, 255, 0.08);
   color: var(--text);
 }
+
+.number {
+  width: 84px;
+  height: 36px;
+  padding: 0 8px 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  outline: none;
+}
+
+.number:focus {
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+}

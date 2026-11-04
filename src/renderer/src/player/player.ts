@@ -118,6 +118,13 @@ class Player {
     this.playFromSource(this.state.shuffle ? 0 : index)
   }
 
+  // Turns shuffle on and starts the list from a random song.
+  playShuffled(tracks: Track[], sourceKey: string, sourceName: string): void {
+    if (tracks.length === 0) return
+    this.update({ shuffle: true })
+    this.playQueue(tracks, Math.floor(Math.random() * tracks.length), sourceKey, sourceName)
+  }
+
   // Swaps in the latest version of the list the songs came from, keeping the current song playing.
   // New songs join what's still to come; with shuffle on, they're mixed in at random.
   syncQueue(sourceKey: string, tracks: Track[]): void {
@@ -277,6 +284,11 @@ class Player {
     this.publish({ repeat: REPEAT_CYCLE[this.state.repeat] })
   }
 
+  // The list the current song is playing from, or null for a song added by hand to the queue.
+  currentSourceKey(): string | null {
+    return this.playingQueued ? null : this.sourceKey
+  }
+
   // Where listening stands, so Encore can pick it up again next time it opens.
   snapshot(): PlayerSession | null {
     const { track } = this.state
@@ -336,6 +348,13 @@ class Player {
       shuffle: session.shuffle,
       repeat: session.repeat
     })
+  }
+
+  // Stops the song for good and lets go of the file, so this player can be thrown away.
+  dispose(): void {
+    this.audio.pause()
+    this.audio.removeAttribute('src')
+    this.audio.load()
   }
 
   private currentSourceTrack(): Track | undefined {
@@ -427,5 +446,9 @@ class Player {
 }
 
 export const player = new Player()
+
+// While developing, an edited player file is swapped in without a restart. The old player stops its song first,
+// or it would keep playing where no button can reach it.
+import.meta.hot?.dispose(() => player.dispose())
 
 export const usePlayer = (): PlayerState => useSyncExternalStore(player.subscribe, player.getState)

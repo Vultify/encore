@@ -1,4 +1,4 @@
-import { artworkUrl } from '@shared/api'
+import { Artwork } from '../Artwork/Artwork'
 import { usePlayer } from '@/player/player'
 import styles from './NowPlayingStage.module.css'
 
@@ -12,7 +12,7 @@ export function NowPlayingStage({ onOpen }: { onOpen: () => void }) {
       <div className={styles.artGlow} aria-hidden="true" />
       <div className={styles.art}>
         {track?.artworkId ? (
-          <img className={styles.cover} src={artworkUrl(track.artworkId)} alt={`${track.album ?? track.title} cover`} draggable={false} />
+          <Artwork className={styles.cover} id={track.artworkId} alt={`${track.album ?? track.title} cover`} />
         ) : (
           <>
             <span className={styles.ringOuter} aria-hidden="true" />

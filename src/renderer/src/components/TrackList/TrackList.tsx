@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react'
-import { artworkUrl, type Track } from '@shared/api'
+import { type Track } from '@shared/api'
+import { Artwork } from '../Artwork/Artwork'
 import { player, usePlayer } from '@/player/player'
 import { identify } from '@/store/identify'
 import { library, useLibrary } from '@/store/library'
@@ -202,7 +203,7 @@ export function TrackList({ label, tracks, queueSource, queueName, numbered = fa
                 {numbered ? (
                   <span className={styles.number}>{track.trackNumber ?? index + 1}</span>
                 ) : track.artworkId ? (
-                  <img src={artworkUrl(track.artworkId)} alt="" loading="lazy" draggable={false} />
+                  <Artwork id={track.artworkId} lazy />
                 ) : (
                   <MusicIcon size={16} />
                 )}

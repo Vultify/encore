@@ -54,7 +54,17 @@ const MIGRATIONS = [
     year INTEGER,
     artwork_id TEXT,
     matched_at INTEGER NOT NULL
-  )`
+  )`,
+  `CREATE TABLE plays (
+    id INTEGER PRIMARY KEY,
+    track_id INTEGER NOT NULL REFERENCES tracks (id) ON DELETE CASCADE,
+    source_key TEXT,
+    played_at INTEGER NOT NULL
+  )`,
+  // Each listen keeps how long it lasted, and whether that was long enough to count as a play.
+  `ALTER TABLE plays ADD COLUMN listened_seconds REAL NOT NULL DEFAULT 0;
+  ALTER TABLE plays ADD COLUMN counted INTEGER NOT NULL DEFAULT 1;
+  CREATE INDEX plays_by_time ON plays (played_at);`
 ]
 
 // The file details used to tell whether a song changed since it was last read.

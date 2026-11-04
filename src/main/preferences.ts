@@ -2,7 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, type WebContents } from 'electron'
 import { Channels, type PreferenceChanges, type Preferences } from '../shared/api'
 import { isAllowedShortcut } from '../shared/shortcut'
 import { pauseMiniPlayerShortcut, setMiniPlayerShortcut } from './miniPlayer'
-import { isAccentChoice, preferences, savePreferences } from './settings'
+import { isAccentChoice, isMixSize, preferences, savePreferences } from './settings'
 
 // Windows passes this when it starts Encore at sign-in, so Encore opens quietly in the tray.
 export const STARTED_HIDDEN_FLAG = '--hidden'
@@ -39,6 +39,7 @@ export function registerPreferenceHandlers({ getMainWindow, onChange }: Preferen
     const next = { ...current }
     if (isAccentChoice(changes.accent)) next.accent = changes.accent
     if (typeof changes.identifyNewSongs === 'boolean') next.identifyNewSongs = changes.identifyNewSongs
+    if (isMixSize(changes.topMixSize)) next.topMixSize = changes.topMixSize
     if (typeof changes.startWithWindows === 'boolean') {
       next.startWithWindows = changes.startWithWindows
       if (canStartWithWindows()) app.setLoginItemSettings({ openAtLogin: next.startWithWindows, args: [STARTED_HIDDEN_FLAG] })

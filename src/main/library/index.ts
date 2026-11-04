@@ -19,6 +19,7 @@ import { accentForArtwork } from './accent'
 import { readTrack } from './tags'
 import { createFolderCoverLookup } from './fallbacks'
 import { preferences } from '../settings'
+import { listeningStats, startListen, updateListen } from './history'
 
 // How many files are read at once, and how often progress is sent to the interface.
 const READ_CONCURRENCY = 8
@@ -92,6 +93,8 @@ const isId = (value: unknown): value is number => Number.isInteger(value) && (va
 const isIdList = (value: unknown): value is number[] => Array.isArray(value) && value.length <= 10_000 && value.every(isId)
 const isName = (value: unknown): value is string => typeof value === 'string' && value.length <= 1000
 const isIndex = (value: unknown): value is number => Number.isInteger(value) && (value as number) >= 0
+// A single listen can't be longer than a day; anything else is a mistake.
+const isListenLength = (value: unknown): value is number => typeof value === 'number' && value >= 0 && value <= 86_400
 
 export function registerLibraryHandlers(): void {
   ipcMain.handle(Channels.getTracks, () => allTracks())
@@ -104,6 +107,15 @@ export function registerLibraryHandlers(): void {
     })
   })
   ipcMain.handle(Channels.scanMusicFolders, () => importMusic(preferences().musicFolders))
+  ipcMain.handle(Channels.startListen, (_event, trackId: unknown, sourceKey: unknown) =>
+    isId(trackId) && (sourceKey === null || (typeof sourceKey === 'string' && sourceKey.length <= 300)) ? startListen(trackId, sourceKey) : null
+  )
+  ipcMain.on(Channels.updateListen, (_event, listenId: unknown, seconds: unknown, counted: unknown) => {
+    if (isId(listenId) && isListenLength(seconds) && typeof counted === 'boolean') updateListen(listenId, seconds, counted)
+  })
+  ipcMain.handle(Channels.listeningStats, (_event, since: unknown, bucket: unknown) =>
+    typeof since === 'number' && Number.isFinite(since) && (bucket === 'day' || bucket === 'month') ? listeningStats(since, bucket) : null
+  )
   ipcMain.handle(Channels.setLiked, (_event, trackIds: unknown, liked: unknown) =>
     isIdList(trackIds) && typeof liked === 'boolean' ? setLiked(trackIds, liked) : []
   )

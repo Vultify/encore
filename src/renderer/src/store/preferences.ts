@@ -1,12 +1,13 @@
 import { useSyncExternalStore } from 'react'
-import { DEFAULT_MINI_PLAYER_SHORTCUT, type Preferences } from '@shared/api'
+import { DEFAULT_MINI_PLAYER_SHORTCUT, TOP_MIX, type Preferences } from '@shared/api'
 
 const DEFAULTS: Preferences = {
   miniPlayerShortcut: DEFAULT_MINI_PLAYER_SHORTCUT,
   accent: 'album',
   musicFolders: [],
   identifyNewSongs: false,
-  startWithWindows: false
+  startWithWindows: false,
+  topMixSize: TOP_MIX.default
 }
 
 // What's set on the Settings page. The main process owns it and tells every window about each change.

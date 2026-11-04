@@ -1,5 +1,6 @@
 import { useEffect, type CSSProperties } from 'react'
 import { artworkUrl, type Track } from '@shared/api'
+import { Artwork } from '@/components/Artwork/Artwork'
 import { ChevronDownIcon, CloseIcon, MusicIcon } from '@/components/icons'
 import { formatDuration } from '@/lib/format'
 import { UNKNOWN_ARTIST } from '@/lib/library'
@@ -32,7 +33,7 @@ export function NowPlayingView({ onClose }: { onClose: () => void }) {
           {track?.artworkId && <img className={styles.artGlow} src={artworkUrl(track.artworkId)} alt="" aria-hidden="true" />}
           <div className={styles.cover}>
             {track?.artworkId ? (
-              <img src={artworkUrl(track.artworkId)} alt={`${track.album ?? track.title} cover`} draggable={false} />
+              <Artwork id={track.artworkId} alt={`${track.album ?? track.title} cover`} />
             ) : (
               <MusicIcon size={64} />
             )}
@@ -138,7 +139,7 @@ function UpNextRow({ track, onPlay, onRemove }: UpNextRowProps) {
     <li className={styles.row}>
       <button className={styles.rowPlay} aria-label={`Play ${track.title}`} onClick={onPlay}>
         <span className={styles.rowArt}>
-          {track.artworkId ? <img src={artworkUrl(track.artworkId)} alt="" loading="lazy" draggable={false} /> : <MusicIcon size={16} />}
+          {track.artworkId ? <Artwork id={track.artworkId} lazy /> : <MusicIcon size={16} />}
         </span>
         <span className={styles.rowText}>
           <span className={styles.rowTitle}>{track.title}</span>

@@ -1,6 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { CoverGrid } from '@/components/CoverGrid/CoverGrid'
-import { EmptyState, Panel } from '@/components/Panel/Panel'
+import { EmptyState, LoadingState, Panel } from '@/components/Panel/Panel'
 import { TrackList } from '@/components/TrackList/TrackList'
 import { CloseIcon, SearchIcon, UploadIcon } from '@/components/icons'
 import { useLibraryGroups } from '@/hooks/useLibraryGroups'
@@ -73,6 +73,7 @@ export function SearchView({ query, onQueryChange, onNavigate, focusRequest }: S
   )
 
   const body = (): ReactNode => {
+    if (!library.loaded) return <LoadingState label="Loading your library" />
     if (library.tracks.length === 0) {
       return (
         <EmptyState icon={<UploadIcon size={26} />} title="Nothing to search yet">

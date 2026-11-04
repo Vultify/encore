@@ -36,6 +36,9 @@ const api: EncoreApi = {
     accentColor: (artworkId) => ipcRenderer.invoke(Channels.accentColor, artworkId),
     saveToFiles: (trackIds) => ipcRenderer.invoke(Channels.saveToFiles, trackIds),
     scanMusicFolders: () => ipcRenderer.invoke(Channels.scanMusicFolders),
+    startListen: (trackId, sourceKey) => ipcRenderer.invoke(Channels.startListen, trackId, sourceKey),
+    updateListen: (listenId, seconds, counted) => ipcRenderer.send(Channels.updateListen, listenId, seconds, counted),
+    listeningStats: (since, bucket) => ipcRenderer.invoke(Channels.listeningStats, since, bucket),
     onFolderImport: (listener) => listen(Channels.folderImport, listener)
   },
   playlists: {

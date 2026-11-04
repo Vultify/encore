@@ -57,7 +57,7 @@ const localFiles = (): Locator => page.getByRole('list', { name: 'Local files' }
 test('the gear opens Settings with every group', async () => {
   await open()
   const settings = await openSettings()
-  for (const group of ['Mini player', 'Look', 'Music', 'Startup']) {
+  for (const group of ['Mini player', 'Look', 'Home', 'Music', 'Startup']) {
     await expect(settings.getByRole('region', { name: group })).toBeVisible()
   }
   await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Settings' })).toHaveAttribute('aria-current', 'page')

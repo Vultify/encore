@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { artworkUrl, previewUrl, type MatchCandidate, type Track } from '@shared/api'
+import { previewUrl, type MatchCandidate, type Track } from '@shared/api'
+import { Artwork } from '@/components/Artwork/Artwork'
 import { SaveToFileDialog } from '@/components/Dialog/SaveToFileDialog'
 import { BackIcon, MusicIcon } from '@/components/icons'
 import { formatDuration, songCount } from '@/lib/format'
@@ -83,7 +84,7 @@ function Review({ item, track }: { item: ReviewItem; track: Track }) {
         <h3 className={styles.sectionTitle}>Your song</h3>
         <div className={styles.song}>
           <span className={styles.songArt}>
-            {track.artworkId ? <img src={artworkUrl(track.artworkId)} alt="" draggable={false} /> : <MusicIcon size={22} />}
+            {track.artworkId ? <Artwork id={track.artworkId} /> : <MusicIcon size={22} />}
           </span>
           <span className={styles.songText}>
             <span className={styles.songTitle}>{track.title}</span>

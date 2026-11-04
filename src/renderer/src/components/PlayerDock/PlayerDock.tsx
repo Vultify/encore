@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { artworkUrl } from '@shared/api'
+import { Artwork } from '../Artwork/Artwork'
 import { player, usePlayer, type RepeatMode } from '@/player/player'
 import { formatDuration } from '@/lib/format'
 import { library } from '@/store/library'
@@ -39,7 +39,7 @@ export function PlayerDock({ compact, onOpenNowPlaying }: PlayerDockProps) {
       {!compact && (
         <button className={styles.nowPlaying} aria-label="Open Now Playing" disabled={idle} onClick={onOpenNowPlaying}>
           <span className={styles.cover} aria-hidden="true">
-            {track?.artworkId ? <img src={artworkUrl(track.artworkId)} alt="" draggable={false} /> : <span className={styles.coverRing} />}
+            {track?.artworkId ? <Artwork id={track.artworkId} /> : <span className={styles.coverRing} />}
           </span>
           <span className={styles.meta}>
             <span className={styles.title}>{track?.title ?? 'Not playing'}</span>
