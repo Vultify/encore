@@ -4,6 +4,7 @@ import { DEFAULT_MINI_PLAYER_SHORTCUT, TOP_MIX, type Preferences } from '@shared
 const DEFAULTS: Preferences = {
   miniPlayerShortcut: DEFAULT_MINI_PLAYER_SHORTCUT,
   accent: 'album',
+  motion: 'system',
   musicFolders: [],
   identifyNewSongs: false,
   startWithWindows: false,

@@ -6,6 +6,7 @@ import { PlayerDock } from './components/PlayerDock/PlayerDock'
 import { DropOverlay } from './components/DropOverlay/DropOverlay'
 import { Toast } from './components/Toast/Toast'
 import { useAccentColor } from './hooks/useAccentColor'
+import { useReducedMotion } from './hooks/useReducedMotion'
 import { useFileDrop } from './hooks/useFileDrop'
 import { player, usePlayer } from './player/player'
 import { connectHistory } from './player/history'
@@ -55,6 +56,7 @@ export default function App() {
 
   // The accent follows the playing song's cover.
   useAccentColor(track?.artworkId ?? null)
+  useReducedMotion()
 
   // Going anywhere else closes the Now Playing view.
   const showView = useCallback((next: View) => {

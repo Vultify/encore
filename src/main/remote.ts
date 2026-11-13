@@ -2,7 +2,7 @@ import { ipcMain, type BrowserWindow, type WebContents } from 'electron'
 import { Channels, type NowPlaying, type PlayerCommand } from '../shared/api'
 
 // The player lives in the main window. This passes its "now playing" summary out to the tray and the mini player,
-// and passes their play, pause, next, and previous presses back in.
+// and passes their presses and volume changes back in.
 
 let latest: NowPlaying | null = null
 const listeners = new Set<(now: NowPlaying | null) => void>()
@@ -14,9 +14,13 @@ export function onNowPlaying(listener: (now: NowPlaying | null) => void): () => 
   return () => listeners.delete(listener)
 }
 
-const COMMANDS: PlayerCommand[] = ['toggle', 'next', 'previous']
+const PRESSES: unknown[] = ['toggle', 'next', 'previous', 'toggleMute']
 
 const isSeconds = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0
+const isVolume = (value: unknown): value is number => isSeconds(value) && value <= 1
+
+const isCommand = (value: unknown): value is PlayerCommand =>
+  PRESSES.includes(value) || (typeof value === 'object' && value !== null && isVolume((value as { volume: unknown }).volume))
 
 function isNowPlaying(value: unknown): value is NowPlaying {
   const now = value as NowPlaying
@@ -30,12 +34,16 @@ function isNowPlaying(value: unknown): value is NowPlaying {
     typeof now.playing === 'boolean' &&
     typeof now.hasNext === 'boolean' &&
     isSeconds(now.position) &&
-    isSeconds(now.duration)
+    isSeconds(now.duration) &&
+    isVolume(now.volume) &&
+    typeof now.muted === 'boolean'
   )
 }
 
-export function sendCommand(win: BrowserWindow | null, command: PlayerCommand): void {
-  if (win && !win.isDestroyed() && COMMANDS.includes(command)) win.webContents.send(Channels.playerCommand, command)
+// Only a known press, or a volume with nothing else in it, is passed on.
+export function sendCommand(win: BrowserWindow | null, command: unknown): void {
+  if (!win || win.isDestroyed() || !isCommand(command)) return
+  win.webContents.send(Channels.playerCommand, typeof command === 'string' ? command : { volume: command.volume })
 }
 
 // Only the main window, where the player lives, may report what's playing. Only the mini player may send presses.
@@ -46,7 +54,7 @@ export function registerRemote(getMainWindow: () => BrowserWindow | null, getMin
     listeners.forEach((listener) => listener(latest))
   })
   ipcMain.handle(Channels.getNowPlaying, () => latest)
-  ipcMain.on(Channels.remoteCommand, (event, command: PlayerCommand) => {
+  ipcMain.on(Channels.remoteCommand, (event, command: unknown) => {
     if (event.sender === getMiniPlayer()) sendCommand(getMainWindow(), command)
   })
 }

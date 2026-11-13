@@ -14,7 +14,9 @@ const playing: NowPlaying = {
   playing: true,
   hasNext: true,
   position: 12,
-  duration: 200
+  duration: 200,
+  volume: 0.8,
+  muted: false
 }
 
 const menuFor = (now: NowPlaying | null, miniPlayerOpen = false, shortcut = 'Control+Alt+Space'): MenuItemConstructorOptions[] =>

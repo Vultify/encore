@@ -5,10 +5,16 @@ import { player } from './player'
 // drifts from that by more than this.
 const DRIFT_SECONDS = 1
 
-const COMMANDS: Record<PlayerCommand, () => void> = {
+const PRESSES: Record<Exclude<PlayerCommand, object>, () => void> = {
   toggle: () => player.toggle(),
   next: () => player.next(),
-  previous: () => player.previous()
+  previous: () => player.previous(),
+  toggleMute: () => player.toggleMute()
+}
+
+function carryOut(command: PlayerCommand): void {
+  if (typeof command === 'object') player.setVolume(command.volume)
+  else PRESSES[command]?.()
 }
 
 // Tells the tray and the mini player what's playing whenever that changes, and carries out the presses that come
@@ -18,7 +24,7 @@ export function connectRemote(): () => void {
   let reportedAt = 0
 
   const report = (): void => {
-    const { track, playing, hasNext, position, duration } = player.getState()
+    const { track, playing, hasNext, position, duration, volume, muted } = player.getState()
     const now: NowPlaying = {
       trackId: track?.id ?? null,
       title: track?.title ?? '',
@@ -27,7 +33,9 @@ export function connectRemote(): () => void {
       playing,
       hasNext,
       position: track ? position : 0,
-      duration: track ? duration : 0
+      duration: track ? duration : 0,
+      volume,
+      muted
     }
     // The player changes several times a second while it plays, but this summary rarely does.
     if (reported) {
@@ -42,7 +50,7 @@ export function connectRemote(): () => void {
 
   report()
   const stopReporting = player.subscribe(report)
-  const stopListening = window.encore.remote.onCommand((command) => COMMANDS[command]?.())
+  const stopListening = window.encore.remote.onCommand(carryOut)
   return () => {
     stopReporting()
     stopListening()

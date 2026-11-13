@@ -74,14 +74,13 @@ p {
   color: var(--text);
 }
 
-/* For anyone who has asked Windows for less motion, everything moves at once instead of easing. */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-delay: 0s !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+/* With motion off, from the Motion setting or Windows' Animation effects, everything moves at once instead of easing. */
+:root[data-motion='reduce'],
+:root[data-motion='reduce'] *,
+:root[data-motion='reduce'] *::before,
+:root[data-motion='reduce'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
 }

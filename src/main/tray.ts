@@ -11,9 +11,16 @@ export interface EncoreTray {
 // Puts Encore in the system tray. Clicking the icon brings the window back; right-clicking shows playback controls.
 export function createTray(actions: TrayActions, initial: TrayState): EncoreTray {
   const tray = new Tray(nativeImage.createFromPath(trayIcon))
+  let shown = ''
+  // Volume and the song's position change often but don't show in the tray, so those reports leave it alone.
   const update = (state: TrayState): void => {
-    tray.setToolTip(trayTooltip(state.now))
-    tray.setContextMenu(Menu.buildFromTemplate(trayMenuTemplate(state, actions)))
+    const tooltip = trayTooltip(state.now)
+    const template = trayMenuTemplate(state, actions)
+    const key = tooltip + JSON.stringify(template)
+    if (key === shown) return
+    shown = key
+    tray.setToolTip(tooltip)
+    tray.setContextMenu(Menu.buildFromTemplate(template))
   }
   update(initial)
   tray.on('click', actions.show)

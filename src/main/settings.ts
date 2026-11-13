@@ -5,9 +5,11 @@ import {
   ACCENT_PRESETS,
   Channels,
   DEFAULT_MINI_PLAYER_SHORTCUT,
+  MOTION_CHOICES,
   roundMixSize,
   TOP_MIX,
   type AccentChoice,
+  type MotionChoice,
   type PlayerPreferences,
   type PlayerSession,
   type Preferences
@@ -97,6 +99,8 @@ export const isAccentChoice = (value: unknown): value is AccentChoice =>
 
 export const isMixSize = (value: unknown): value is number => typeof value === 'number' && roundMixSize(value) === value
 
+export const isMotionChoice = (value: unknown): value is MotionChoice => MOTION_CHOICES.includes(value as MotionChoice)
+
 const isFolder = (value: unknown): value is string => typeof value === 'string' && value.length > 0 && value.length <= 1000
 
 // What's set on the Settings page, with anything missing or damaged in the file falling back to the default.
@@ -108,6 +112,7 @@ export function preferences(): Preferences {
         ? saved.miniPlayerShortcut
         : DEFAULT_MINI_PLAYER_SHORTCUT,
     accent: isAccentChoice(saved.accent) ? saved.accent : 'album',
+    motion: isMotionChoice(saved.motion) ? saved.motion : 'system',
     musicFolders: Array.isArray(saved.musicFolders) ? saved.musicFolders.filter(isFolder) : [],
     identifyNewSongs: saved.identifyNewSongs === true,
     startWithWindows: saved.startWithWindows === true,

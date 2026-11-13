@@ -76,6 +76,8 @@ test('popping out swaps the window for a floating pill at the bottom center of t
   await expect(pill).toContainText('Song B')
   await expect(pill).toContainText('Band')
   await expect(pill.locator('img')).toHaveAttribute('src', /^encore-art:\/\/local\//)
+  // A title that fits stays still.
+  await expect(pill.locator('[data-scrolling]')).toHaveCount(0)
   await expect.poll(async () => (await windowNamed('Encore mini player'))?.visible).toBe(true)
   expect((await windowNamed('Encore'))?.visible).toBe(false)
 
@@ -108,6 +110,89 @@ test('the pill controls the player in the main window', async () => {
 
   await pill.getByRole('button', { name: 'Previous song' }).click()
   await expect(pill).toContainText('Song A')
+})
+
+test('the pill sets the volume, mutes, and shows the volume set in Encore', async () => {
+  await dock().getByRole('button', { name: 'Mute' }).hover()
+  await dock().getByLabel('Volume').fill('0.6')
+  await page.getByRole('listitem').filter({ hasText: 'Song A' }).dblclick()
+  const mini = await popOut()
+  const pill = mini.getByRole('region', { name: 'Mini player' })
+  const slider = pill.getByRole('slider', { name: 'Volume' })
+  await expect(slider).toHaveValue('0.6')
+
+  await slider.fill('0.3')
+  await expect(dock().getByLabel('Volume')).toHaveValue('0.3')
+
+  await pill.getByRole('button', { name: 'Mute' }).click()
+  await expect(dock().getByRole('button', { name: 'Unmute' })).toBeVisible()
+  await expect(slider).toHaveValue('0')
+  await pill.getByRole('button', { name: 'Unmute' }).click()
+  await expect(slider).toHaveValue('0.3')
+
+  // The mouse wheel nudges it.
+  await slider.hover()
+  await mini.mouse.wheel(0, -100)
+  await expect(slider).toHaveValue('0.35')
+  await expect(dock().getByLabel('Volume')).toHaveValue('0.35')
+
+  // A volume that makes no sense is ignored.
+  await mini.evaluate(() => (window as unknown as { encore: EncoreApi }).encore.mini.send({ volume: 7 }))
+  await mini.waitForTimeout(300)
+  await expect(dock().getByLabel('Volume')).toHaveValue('0.35')
+})
+
+test('a title too long for the pill scrolls, so all of it can be read', async () => {
+  const title = 'A Song Title Far Too Long To Ever Fit In The Mini Player'
+  const longDir = mkdtempSync(join(tmpdir(), 'encore-mini-long-'))
+  try {
+    writeFileSync(join(longDir, 'Long.mp3'), makeMp3(6, { title, artist: 'Band' }))
+    await page.evaluate((dir) => (window as unknown as { encore: EncoreApi }).encore.library.importPaths([dir]), longDir)
+    await page.reload()
+    await page.getByRole('tab', { name: 'Local files' }).click()
+    await page.getByRole('listitem').filter({ hasText: title }).dblclick()
+
+    const mini = await popOut()
+    const pill = mini.getByRole('region', { name: 'Mini player' })
+    const scrolling = pill.locator('[data-scrolling]')
+    await expect(scrolling).toHaveCount(1)
+    await expect(scrolling).toHaveAttribute('title', title)
+    expect(await scrolling.locator(':scope > span').evaluate((track) => track.getAnimations().length)).toBe(1)
+    await mini.waitForTimeout(400)
+    await mini.screenshot({ path: 'test-results/mini-player-long.png' })
+  } finally {
+    rmSync(longDir, { recursive: true, force: true })
+  }
+})
+
+test('with motion off, a long title ends in an ellipsis and scrolls only while the pointer is on the pill', async () => {
+  const title = 'A Song Title Far Too Long To Ever Fit In The Mini Player'
+  const longDir = mkdtempSync(join(tmpdir(), 'encore-mini-long-'))
+  try {
+    writeFileSync(join(longDir, 'Long.mp3'), makeMp3(6, { title, artist: 'Band' }))
+    await page.evaluate(async (dir) => {
+      const { encore } = window as unknown as { encore: EncoreApi }
+      await encore.preferences.update({ motion: 'off' })
+      await encore.library.importPaths([dir])
+    }, longDir)
+    await page.reload()
+    await page.getByRole('tab', { name: 'Local files' }).click()
+    await page.getByRole('listitem').filter({ hasText: title }).dblclick()
+
+    const mini = await popOut()
+    const pill = mini.getByRole('region', { name: 'Mini player' })
+    const titleLine = pill.locator(`[title="${title}"]`)
+    await expect(titleLine).toHaveCount(1)
+    await expect(titleLine).not.toHaveAttribute('data-scrolling')
+    expect(await titleLine.evaluate((line) => getComputedStyle(line).textOverflow)).toBe('ellipsis')
+
+    await pill.getByRole('button', { name: 'Previous song' }).hover()
+    await expect(titleLine).toHaveAttribute('data-scrolling', 'true')
+    await mini.mouse.move(2, 2)
+    await expect(titleLine).not.toHaveAttribute('data-scrolling')
+  } finally {
+    rmSync(longDir, { recursive: true, force: true })
+  }
 })
 
 test('the progress line moves along while a song plays', async () => {

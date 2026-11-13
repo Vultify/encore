@@ -1,5 +1,13 @@
 import { useEffect, useId, useState, type ReactNode } from 'react'
-import { ACCENT_PRESETS, DEFAULT_MINI_PLAYER_SHORTCUT, roundMixSize, TOP_MIX, type AccentChoice, type PreferenceChanges } from '@shared/api'
+import {
+  ACCENT_PRESETS,
+  DEFAULT_MINI_PLAYER_SHORTCUT,
+  roundMixSize,
+  TOP_MIX,
+  type AccentChoice,
+  type MotionChoice,
+  type PreferenceChanges
+} from '@shared/api'
 import { shortcutFor, shortcutLabel } from '@shared/shortcut'
 import { Panel } from '@/components/Panel/Panel'
 import { Switch } from '@/components/Switch/Switch'
@@ -16,7 +24,7 @@ const MODIFIER_KEYS = ['Control', 'Alt', 'Shift', 'Meta']
 
 // Everything Encore lets you set, in a few short groups.
 export function SettingsView() {
-  const { miniPlayerShortcut, accent, musicFolders, identifyNewSongs, startWithWindows, topMixSize } = usePreferences()
+  const { miniPlayerShortcut, accent, motion, musicFolders, identifyNewSongs, startWithWindows, topMixSize } = usePreferences()
 
   return (
     <Panel label="Settings" header={<h2 className={views.heading}>Settings</h2>}>
@@ -26,6 +34,7 @@ export function SettingsView() {
         </Section>
         <Section title="Look">
           <AccentSetting accent={accent} />
+          <MotionSetting motion={motion} />
         </Section>
         <Section title="Home">
           <MixSizeSetting size={topMixSize} />
@@ -222,6 +231,34 @@ function AccentSetting({ accent }: { accent: AccentChoice }) {
         ))}
       </div>
     </Row>
+  )
+}
+
+const MOTION_OPTIONS: { value: MotionChoice; name: string }[] = [
+  { value: 'system', name: 'Match Windows' },
+  { value: 'on', name: 'On' },
+  { value: 'off', name: 'Off' }
+]
+
+// Whether Encore animates. Matching Windows follows its Animation effects setting, which some performance tools
+// turn off without saying so.
+function MotionSetting({ motion }: { motion: MotionChoice }) {
+  const titleId = useId()
+  return (
+    <Row
+      title="Motion"
+      titleId={titleId}
+      description="Covers fading in, views easing in, and long song names scrolling in the mini player. Match Windows follows its Animation effects setting."
+      control={
+        <div className={styles.segments} role="radiogroup" aria-labelledby={titleId}>
+          {MOTION_OPTIONS.map((option) => (
+            <button key={option.value} role="radio" aria-checked={motion === option.value} onClick={() => update({ motion: option.value })}>
+              {option.name}
+            </button>
+          ))}
+        </div>
+      }
+    />
   )
 }
 

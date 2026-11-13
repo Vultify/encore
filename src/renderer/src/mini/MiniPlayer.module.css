@@ -17,8 +17,8 @@
   height: 78px;
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 0 12px 0 13px;
+  gap: 12px;
+  padding: 0 14px 0 13px;
   border-radius: var(--radius-pill);
   /* Windows can't blur what's behind a window this shape, so the glass is more solid than the dock's
      to keep the text readable over any app. */
@@ -38,10 +38,8 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .pill {
-    animation: none;
-  }
+:global(:root[data-motion='reduce']) .pill {
+  animation: none;
 }
 
 /* The cover and title open Encore. */
@@ -50,7 +48,7 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   border-radius: 30px 14px 14px 30px;
   text-align: left;
   transition: background 0.15s ease;
@@ -92,13 +90,6 @@
   gap: 3px;
 }
 
-.title,
-.artist {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .title {
   font-size: 14.5px;
   font-weight: 700;
@@ -107,6 +98,14 @@
 .artist {
   font-size: 12.5px;
   color: var(--text-3);
+}
+
+/* Previous, play, and next sit close together, leaving room for the volume. */
+.controls {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .iconButton {
@@ -145,8 +144,66 @@
   transform: scale(1.05);
 }
 
-.pill button:disabled {
+.pill button:disabled,
+.pill input:disabled {
   opacity: 0.4;
+}
+
+/* Volume: mute, then a short slider. The mouse wheel works anywhere over either. */
+.volume {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.mute {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: #d4d4da;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.mute:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.volumeSlider {
+  display: block;
+  width: 68px;
+  height: 24px;
+  margin: 0;
+  background: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.volumeSlider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--accent) var(--fill), rgba(255, 255, 255, 0.16) var(--fill));
+}
+
+.volumeSlider::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  transition: transform 0.15s var(--ease);
+}
+
+.volumeSlider:hover:not(:disabled)::-webkit-slider-thumb {
+  transform: scale(1.2);
 }
 
 /* Runs along the bottom edge; the pill's rounded ends trim it. */

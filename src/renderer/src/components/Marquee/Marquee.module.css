@@ -1,0 +1,21 @@
+/* The box reaches 6px to the left of the text (EDGE in Marquee.tsx), so the fade has room there while the text
+   itself stays put. At rest, a name that doesn't fit ends in an ellipsis. */
+.marquee {
+  display: block;
+  min-width: 0;
+  margin-left: -6px;
+  padding-left: 6px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* While it scrolls, the text fades out at the edges instead of being sliced. */
+.marquee[data-scrolling] {
+  text-overflow: clip;
+  mask-image: linear-gradient(to right, transparent, #000 6px, #000 calc(100% - 18px), transparent);
+}
+
+.marquee[data-scrolling] .track {
+  display: inline-flex;
+}

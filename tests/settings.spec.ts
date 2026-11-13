@@ -83,6 +83,36 @@ test('a fixed accent color replaces the album color, and is kept after a restart
   await expect.poll(accent).toBe('rgb(43, 196, 168)')
 })
 
+test('Motion matches Windows unless set On or Off, and is kept after a restart', async () => {
+  const dataDir = makeDataDir()
+  dirs.push(dataDir)
+  await open(dataDir)
+  const motion = (): Promise<string | undefined> => page.evaluate(() => document.documentElement.dataset.motion)
+  const settings = await openSettings()
+  const choices = settings.getByRole('radiogroup', { name: 'Motion' })
+  await expect(choices.getByRole('radio', { name: 'Match Windows' })).toHaveAttribute('aria-checked', 'true')
+
+  // Matching Windows follows its Animation effects setting as it changes.
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await expect.poll(motion).toBe('full')
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await expect.poll(motion).toBe('reduce')
+
+  // On wins over Windows, and so does Off.
+  await choices.getByRole('radio', { name: 'On' }).click()
+  await expect.poll(motion).toBe('full')
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await choices.getByRole('radio', { name: 'Off' }).click()
+  await expect.poll(motion).toBe('reduce')
+  await settings.getByRole('region', { name: 'Look' }).screenshot({ path: 'test-results/settings-look.png' })
+  await app.close()
+
+  await open(dataDir)
+  await expect.poll(motion).toBe('reduce')
+  const again = await openSettings()
+  await expect(again.getByRole('radiogroup', { name: 'Motion' }).getByRole('radio', { name: 'Off' })).toHaveAttribute('aria-checked', 'true')
+})
+
 test('recording a new mini player shortcut swaps the global one, and Reset goes back', async () => {
   await open()
   await skipUnlessOwnsDefaultShortcut()

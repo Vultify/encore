@@ -179,9 +179,12 @@ export interface NowPlaying {
   // In seconds. The position is only reported when it jumps, so while playing it runs on from when it was sent.
   position: number
   duration: number
+  // Where the volume slider sits, from 0 to 1, and whether it's muted.
+  volume: number
+  muted: boolean
 }
 
-export type PlayerCommand = 'toggle' | 'next' | 'previous'
+export type PlayerCommand = 'toggle' | 'next' | 'previous' | 'toggleMute' | { volume: number }
 
 // Where listening left off, so Encore reopens on the same song with the rest of its list still queued.
 export interface PlayerSession {
@@ -247,10 +250,15 @@ export function roundMixSize(value: number, fallback: number = TOP_MIX.default):
   return Math.min(TOP_MIX.max, Math.max(TOP_MIX.min, Math.round(value / TOP_MIX.step) * TOP_MIX.step))
 }
 
+// Whether Encore animates: as Windows' Animation effects setting says, always, or never.
+export const MOTION_CHOICES = ['system', 'on', 'off'] as const
+export type MotionChoice = (typeof MOTION_CHOICES)[number]
+
 export interface Preferences {
   // An Electron accelerator, like Control+Alt+Space.
   miniPlayerShortcut: string
   accent: AccentChoice
+  motion: MotionChoice
   // Folders whose new songs are added to the library by themselves.
   musicFolders: string[]
   identifyNewSongs: boolean
@@ -258,7 +266,7 @@ export interface Preferences {
   topMixSize: number
 }
 
-export type PreferenceChanges = Partial<Pick<Preferences, 'accent' | 'identifyNewSongs' | 'startWithWindows' | 'topMixSize'>>
+export type PreferenceChanges = Partial<Pick<Preferences, 'accent' | 'motion' | 'identifyNewSongs' | 'startWithWindows' | 'topMixSize'>>
 
 export interface PreferenceControls {
   get: () => Promise<Preferences>
