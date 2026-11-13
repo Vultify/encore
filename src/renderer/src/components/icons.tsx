@@ -206,6 +206,15 @@ export const PauseIcon = (p: IconProps) => (
   </Icon>
 )
 
+export const EqualizerIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M6 4v5M6 13v7M12 4v9M12 17v3M18 4v2M18 10v10" />
+    <circle cx="6" cy="11" r="2" />
+    <circle cx="12" cy="15" r="2" />
+    <circle cx="18" cy="8" r="2" />
+  </Icon>
+)
+
 export const PopOutIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M14 4h6v6" />

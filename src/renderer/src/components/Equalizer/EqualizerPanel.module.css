@@ -1,0 +1,193 @@
+/* Floats just above the dock, centered on it, and rises in when opened. */
+.panel {
+  position: absolute;
+  left: 50%;
+  bottom: 118px;
+  z-index: 5;
+  width: min(500px, calc(100% - 32px));
+  padding: 18px 20px 16px;
+  border-radius: 24px;
+  background: var(--surface-dock);
+  backdrop-filter: blur(28px);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 24px 48px -14px rgba(0, 0, 0, 0.7);
+  transform: translateX(-50%);
+  animation: rise 0.22s var(--ease);
+  outline: none;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.presets button {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 700;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.presets button:hover {
+  color: var(--text);
+}
+
+.presets button[aria-checked='true'] {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+}
+
+.board {
+  display: flex;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+/* The scale's labels line up with the knob's center at the top, middle, and bottom of the sliders. */
+.scale {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: var(--track);
+  min-width: 24px;
+  font-size: 10.5px;
+  line-height: var(--knob);
+  text-align: right;
+  color: var(--text-faint);
+}
+
+.bands {
+  position: relative;
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+}
+
+.curve {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--track);
+  overflow: visible;
+  pointer-events: none;
+}
+
+.zero {
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  vector-effect: non-scaling-stroke;
+}
+
+.area {
+  fill: color-mix(in srgb, var(--accent) 14%, transparent);
+  transition: fill 0.2s ease;
+}
+
+.line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  transition: stroke 0.2s ease;
+}
+
+.band {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.slider {
+  display: block;
+  width: 28px;
+  height: var(--track);
+  margin: 0;
+  padding: 0;
+  background: none;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  appearance: none;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-runnable-track {
+  width: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  width: var(--knob);
+  height: var(--knob);
+  margin-left: calc((4px - var(--knob)) / 2);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
+  transition: transform 0.15s var(--ease);
+}
+
+.slider:hover::-webkit-slider-thumb,
+.slider:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+
+.slider:focus-visible {
+  outline: none;
+}
+
+.slider:focus-visible::-webkit-slider-thumb {
+  box-shadow:
+    0 0 0 3px var(--surface-dock),
+    0 0 0 5px var(--accent);
+}
+
+.hz {
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+/* While it's off, the curve goes grey and quiet. Moving anything turns it back on. */
+.panel[data-off] .line {
+  stroke: var(--text-faint);
+}
+
+.panel[data-off] .area {
+  fill: transparent;
+}
+
+.panel[data-off] .slider {
+  opacity: 0.55;
+}

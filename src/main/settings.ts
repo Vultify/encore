@@ -12,6 +12,7 @@ import {
   type PlayerSession,
   type Preferences
 } from '../shared/api'
+import { DEFAULT_EQUALIZER, isEqualizerSettings, type EqualizerSettings } from '../shared/equalizer'
 import { isAllowedShortcut } from '../shared/shortcut'
 
 export interface WindowState {
@@ -158,15 +159,24 @@ function isPlayOrder(order: unknown, length: number): order is number[] {
   return true
 }
 
+// A missing or damaged equalizer, like one from before Encore had it, starts off and flat.
+const validEqualizer = (value: unknown): EqualizerSettings => (isEqualizerSettings(value) ? value : DEFAULT_EQUALIZER)
+
 export function registerSettingsHandlers(): void {
-  ipcMain.handle(Channels.getPlayerSettings, (): PlayerPreferences => settings.player ?? { volume: 0.8, muted: false, session: null })
+  ipcMain.handle(Channels.getPlayerSettings, (): PlayerPreferences => {
+    const saved = settings.player
+    return saved
+      ? { ...saved, equalizer: validEqualizer(saved.equalizer) }
+      : { volume: 0.8, muted: false, session: null, equalizer: DEFAULT_EQUALIZER }
+  })
   ipcMain.on(Channels.savePlayerSettings, (_event, value: unknown) => {
     const preferences = value as PlayerPreferences | null
     if (!preferences || !Number.isFinite(preferences.volume) || typeof preferences.muted !== 'boolean') return
     settings.player = {
       volume: Math.min(1, Math.max(0, preferences.volume)),
       muted: preferences.muted,
-      session: validSession(preferences.session)
+      session: validSession(preferences.session),
+      equalizer: validEqualizer(preferences.equalizer)
     }
     saveSoon()
   })

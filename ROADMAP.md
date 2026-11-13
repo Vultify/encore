@@ -56,6 +56,7 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 - [x] Home: listening stats and a live mix of top songs
 - [x] Animations, empty states, and loading states
 - [x] Settings: keybind, accent color, music folders, identify new songs automatically
+- [x] Equalizer: ten bands, presets, and Custom, opened from the player dock
 - [ ] App icon and Windows installer
 - [ ] Start with Windows option
 - [ ] Release 1.0.0
@@ -63,7 +64,6 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 ## Later
 - [ ] Apple Music source (needs the $99/year Apple developer account)
 - [ ] Lyrics
-- [ ] Equalizer
 
 ## Notes
 - **Music sources are plug-ins.** Local files, and later Apple Music, follow one shared source interface, so adding a source never touches the rest of the app.

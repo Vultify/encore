@@ -1,3 +1,5 @@
+import type { EqualizerSettings } from './equalizer'
+
 // The API the preload script exposes to the interface as window.encore.
 export interface WindowControls {
   minimize: () => void
@@ -203,6 +205,7 @@ export interface PlayerPreferences {
   volume: number
   muted: boolean
   session: PlayerSession | null
+  equalizer: EqualizerSettings
 }
 
 export interface RemoteControls {

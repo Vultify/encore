@@ -65,6 +65,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Your Top 25: a live mix of the top songs on Home that plays or shuffles as a queue and changes as you listen. Its size is set in Settings, rounded to the nearest five.
 - Covers fade in as they load, views ease in when switching, and a quiet spinner shows while the library loads instead of an empty message.
 - Motion is turned off for anyone who has asked Windows for less of it.
+- An equalizer, opened from its button in the player dock: ten bands from deep bass to air, presets (Flat, Bass boost, Treble boost, Vocal, Rock, Pop, Hip-hop, Electronic, Acoustic), and Custom, which keeps your own levels while you try a preset. A curve behind the sliders shows the shape.
+- Boosting with the equalizer lowers the volume just enough that loud songs don't crackle. The equalizer, its preset, and Custom are remembered after a restart.
 
 ### Removed
 - The "Spotify not connected" badge in the title bar. Encore plays local music only.

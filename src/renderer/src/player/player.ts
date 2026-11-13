@@ -1,5 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import { mediaUrl, type PlayerSession, type Track } from '@shared/api'
+import { clampGain, DEFAULT_EQUALIZER, equalizerGains, type EqChoice, type EqualizerSettings } from '@shared/equalizer'
+import { EqualizerChain } from './equalizer'
 
 export type RepeatMode = 'off' | 'all' | 'one'
 
@@ -27,6 +29,7 @@ export interface PlayerState {
   hasNext: boolean
   // The last song that failed to play, so the interface can say so.
   failed: Track | null
+  equalizer: EqualizerSettings
 }
 
 // Going back within this many seconds of a song's start skips to the previous song instead of restarting.
@@ -49,6 +52,7 @@ const inOrder = (length: number): number[] => Array.from({ length }, (_, i) => i
 // One audio element for the whole app. Components read its state through usePlayer.
 class Player {
   private audio = new Audio()
+  private equalizerChain = new EqualizerChain(this.audio)
   private listeners = new Set<() => void>()
 
   // The list the songs came from, in its own order, and the key that names it.
@@ -76,14 +80,23 @@ class Player {
     queued: [],
     upcoming: [],
     hasNext: false,
-    failed: null
+    failed: null,
+    equalizer: DEFAULT_EQUALIZER
   }
 
   constructor() {
     this.applyVolume()
     this.audio.preload = 'auto'
-    this.audio.addEventListener('play', () => this.update({ playing: true }))
-    this.audio.addEventListener('pause', () => this.update({ playing: false }))
+    // Songs are fetched as readable by the page, or the equalizer would only hear silence.
+    this.audio.crossOrigin = 'anonymous'
+    this.audio.addEventListener('play', () => {
+      this.equalizerChain.setPlaying(true)
+      this.update({ playing: true })
+    })
+    this.audio.addEventListener('pause', () => {
+      this.equalizerChain.setPlaying(false)
+      this.update({ playing: false })
+    })
     this.audio.addEventListener('timeupdate', () => this.update({ position: this.audio.currentTime }))
     this.audio.addEventListener('loadedmetadata', () => {
       if (this.startAt !== null) this.audio.currentTime = this.startAt
@@ -284,6 +297,29 @@ class Player {
     this.publish({ repeat: REPEAT_CYCLE[this.state.repeat] })
   }
 
+  setEqualizer(equalizer: EqualizerSettings): void {
+    this.update({ equalizer })
+    this.equalizerChain.apply(equalizer)
+  }
+
+  // Off keeps the preset and levels for when it's turned back on.
+  setEqualizerOn(enabled: boolean): void {
+    this.setEqualizer({ ...this.state.equalizer, enabled })
+  }
+
+  // Picking a preset turns the equalizer on, since hearing it is the point of picking one.
+  chooseEqualizerPreset(preset: EqChoice): void {
+    this.setEqualizer({ ...this.state.equalizer, enabled: true, preset })
+  }
+
+  // Moving a band makes the levels Custom, starting from wherever the current preset had them.
+  setEqualizerBand(band: number, gain: number): void {
+    const custom = equalizerGains(this.state.equalizer)
+    if (!(band in custom)) return
+    custom[band] = clampGain(gain)
+    this.setEqualizer({ enabled: true, preset: 'custom', custom })
+  }
+
   // The list the current song is playing from, or null for a song added by hand to the queue.
   currentSourceKey(): string | null {
     return this.playingQueued ? null : this.sourceKey
@@ -355,6 +391,7 @@ class Player {
     this.audio.pause()
     this.audio.removeAttribute('src')
     this.audio.load()
+    this.equalizerChain.close()
   }
 
   private currentSourceTrack(): Track | undefined {

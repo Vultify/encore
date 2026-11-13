@@ -5,6 +5,7 @@ Encore is my own desktop music player for Windows. I built it because I wanted a
 ## What it does
 - Plays music saved on my PC. Drag and drop files or whole folders to add them, or pick music folders and new songs saved there show up on their own.
 - Playlists, shuffle, repeat, a queue, search, and album art.
+- A ten-band equalizer with presets and my own Custom setting.
 - A Home page of listening stats: how long I've listened, my top songs and artists, and a mix of my top songs that changes as I listen.
 - Fixes songs with missing info. It looks them up by name, or by listening to them when the name is no help, and can save the fixes into the files.
 - The app's accent color changes to match the album that's playing, or stays one color I pick.

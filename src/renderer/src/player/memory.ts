@@ -4,7 +4,7 @@ import { player } from './player'
 // While music plays, where it's at is saved at most this often. Quitting saves right away.
 const SAVE_EVERY_MS = 5000
 
-// Puts back the saved volume and listening session when Encore opens, then keeps them saved as they change.
+// Puts back the saved volume, equalizer, and listening session when Encore opens, then keeps them saved as they change.
 // The session waits for the library, since it's saved as song ids.
 export function rememberPlayer(libraryLoaded: Promise<void>): () => void {
   let stopped = false
@@ -14,8 +14,8 @@ export function rememberPlayer(libraryLoaded: Promise<void>): () => void {
   const save = (): void => {
     window.clearTimeout(timer)
     timer = undefined
-    const { volume, muted } = player.getState()
-    window.encore.settings.savePlayer({ volume, muted, session: player.snapshot() })
+    const { volume, muted, equalizer } = player.getState()
+    window.encore.settings.savePlayer({ volume, muted, session: player.snapshot(), equalizer })
   }
   const saveSoon = (): void => {
     timer ??= window.setTimeout(save, SAVE_EVERY_MS)
@@ -24,7 +24,10 @@ export function rememberPlayer(libraryLoaded: Promise<void>): () => void {
   void (async () => {
     const saved = await window.encore.settings.getPlayer().catch(() => null)
     if (stopped) return
-    if (saved) player.setSound(saved.volume, saved.muted)
+    if (saved) {
+      player.setSound(saved.volume, saved.muted)
+      player.setEqualizer(saved.equalizer)
+    }
     await libraryLoaded.catch(() => {})
     if (stopped) return
     if (saved?.session) {

@@ -8,7 +8,7 @@ import { servePreview } from './identify'
 export function registerSchemes(): void {
   protocol.registerSchemesAsPrivileged([
     { scheme: ARTWORK_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } },
-    { scheme: MEDIA_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } }
+    { scheme: MEDIA_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, corsEnabled: true } }
   ])
 }
 

@@ -21,15 +21,18 @@ function parseRange(header: string | null, size: number): { start: number; end: 
   return start <= end && start < size ? { start, end } : null
 }
 
+// The player reads songs through the equalizer, which only hears sound the page is allowed to read.
+const OPEN_TO_PAGE = { 'Access-Control-Allow-Origin': '*' }
+
 // Streams encore-media://track/<id>, answering range requests so the player can seek.
 export async function serveMedia(request: Request): Promise<Response> {
   const id = Number(new URL(request.url).pathname.slice(1))
   const file = Number.isInteger(id) && id > 0 ? trackFile(id) : null
   const info = file ? await stat(file.path).catch(() => null) : null
-  if (!file || !info?.isFile()) return new Response(null, { status: 404 })
+  if (!file || !info?.isFile()) return new Response(null, { status: 404, headers: OPEN_TO_PAGE })
 
   const size = info.size
-  const headers = { 'Content-Type': CONTENT_TYPES[file.format], 'Accept-Ranges': 'bytes' }
+  const headers = { ...OPEN_TO_PAGE, 'Content-Type': CONTENT_TYPES[file.format], 'Accept-Ranges': 'bytes' }
   const rangeHeader = request.headers.get('Range')
   const range = parseRange(rangeHeader, size)
 
