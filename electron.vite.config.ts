@@ -4,7 +4,19 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   main: {},
-  preload: {},
+  // The main window and the mini player get separate preloads. Sandboxed windows can't load shared chunks, so each
+  // preload is built as one standalone file.
+  preload: {
+    build: {
+      isolatedEntries: true,
+      rollupOptions: {
+        input: {
+          index: resolve('src/preload/index.ts'),
+          mini: resolve('src/preload/mini.ts')
+        }
+      }
+    }
+  },
   renderer: {
     resolve: {
       alias: {

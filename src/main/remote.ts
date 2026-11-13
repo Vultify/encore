@@ -1,5 +1,6 @@
 import { ipcMain, type BrowserWindow, type WebContents } from 'electron'
-import { Channels, type NowPlaying, type PlayerCommand } from '../shared/api'
+import { Channels, PLAYER_PRESSES, type NowPlaying, type PlayerCommand } from '../shared/api'
+import { isId, isOneOf, isText } from './validate'
 
 // The player lives in the main window. This passes its "now playing" summary out to the tray and the mini player,
 // and passes their presses and volume changes back in.
@@ -14,22 +15,19 @@ export function onNowPlaying(listener: (now: NowPlaying | null) => void): () => 
   return () => listeners.delete(listener)
 }
 
-const PRESSES: unknown[] = ['toggle', 'next', 'previous', 'toggleMute']
-
 const isSeconds = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0
 const isVolume = (value: unknown): value is number => isSeconds(value) && value <= 1
 
 const isCommand = (value: unknown): value is PlayerCommand =>
-  PRESSES.includes(value) || (typeof value === 'object' && value !== null && isVolume((value as { volume: unknown }).volume))
+  isOneOf(PLAYER_PRESSES, value) || (typeof value === 'object' && value !== null && isVolume((value as { volume: unknown }).volume))
 
 function isNowPlaying(value: unknown): value is NowPlaying {
   const now = value as NowPlaying
   return (
     Boolean(now) &&
-    (now.trackId === null || Number.isInteger(now.trackId)) &&
-    typeof now.title === 'string' &&
-    now.title.length <= 1000 &&
-    (now.artist === null || (typeof now.artist === 'string' && now.artist.length <= 1000)) &&
+    (now.trackId === null || isId(now.trackId)) &&
+    isText(now.title) &&
+    (now.artist === null || isText(now.artist)) &&
     (now.artworkId === null || typeof now.artworkId === 'string') &&
     typeof now.playing === 'boolean' &&
     typeof now.hasNext === 'boolean' &&

@@ -15,28 +15,6 @@
   gap: 8px;
 }
 
-.back {
-  align-self: flex-start;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 12px 0 8px;
-  margin-left: -8px;
-  border-radius: var(--radius-pill);
-  color: var(--text-3);
-  font-size: 13px;
-  font-weight: 600;
-  transition:
-    background 0.15s ease,
-    color 0.15s ease;
-}
-
-.back:hover {
-  background: var(--surface-hover);
-  color: var(--text);
-}
-
 .titleRow {
   display: flex;
   align-items: flex-end;
@@ -246,38 +224,6 @@
   background: linear-gradient(to bottom, rgba(16, 16, 20, 0), rgba(16, 16, 20, 0.96) 40%);
 }
 
-.primary,
-.secondary {
-  height: 42px;
-  padding: 0 20px;
-  border-radius: var(--radius-pill);
-  font-size: 13.5px;
-  font-weight: 800;
-}
-
-.primary {
-  background: var(--accent);
-  color: var(--on-accent);
-  transition: transform 0.15s var(--ease);
-}
-
-.primary:hover:not(:disabled) {
-  transform: scale(1.03);
-}
-
-.secondary {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.primary:disabled,
-.secondary:disabled {
-  opacity: 0.45;
-}
-
 .waiting {
   margin: auto;
   max-width: 380px;
@@ -314,13 +260,6 @@
   flex: 1 1 auto;
   min-width: 0;
   color: var(--text-2);
-}
-
-.banner .primary,
-.banner .secondary {
-  height: 36px;
-  padding: 0 16px;
-  font-size: 13px;
 }
 
 .summaryActions {

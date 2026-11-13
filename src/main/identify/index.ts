@@ -6,8 +6,7 @@ import { fetchImage, foundCandidate, LookupError, type FoundCandidate } from './
 import { artistSongs, findArtistId, searchSongs } from './itunes'
 import { matchBySound } from './acoustid'
 import { needsDeeperLook, preferLocalSpelling, rankCandidates, sameArtist, searchTerm, type SongClues } from './match'
-
-const isId = (value: unknown): value is number => Number.isInteger(value) && (value as number) > 0
+import { isId, isIdList } from '../validate'
 
 // The run in progress, if any. Only one runs at a time, and stopping it ends it after the current song.
 let current: { stopped: boolean } | null = null
@@ -125,7 +124,7 @@ export async function servePreview(request: Request): Promise<Response> {
 
 export function registerIdentifyHandlers(): void {
   ipcMain.handle(Channels.identifyStart, (event, trackIds: unknown) => {
-    if (!Array.isArray(trackIds) || trackIds.length === 0 || trackIds.length > 10_000 || !trackIds.every(isId)) return
+    if (!isIdList(trackIds) || trackIds.length === 0) return
     return identify(trackIds, event.sender)
   })
   ipcMain.on(Channels.identifyStop, () => {

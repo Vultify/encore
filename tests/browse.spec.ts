@@ -2,9 +2,8 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
-import type { EncoreApi } from '../src/shared/api'
 import { makeMp3 } from './fixtures/audio'
-import { launchEncore } from './launch'
+import { importFolder, launchEncore } from './launch'
 
 let app: ElectronApplication
 let page: Page
@@ -37,7 +36,7 @@ test.beforeEach(async () => {
   app = encore.app
   page = encore.page
   library = page.getByRole('region', { name: 'Library' })
-  await page.evaluate((dir) => (window as unknown as { encore: EncoreApi }).encore.library.importPaths([dir]), musicDir)
+  await importFolder(page, musicDir)
   await page.reload()
 })
 

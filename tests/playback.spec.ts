@@ -2,11 +2,10 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
-import type { EncoreApi } from '../src/shared/api'
 import { makeMp3, makeWav } from './fixtures/audio'
 import { makePng } from './fixtures/png'
 import { dropFiles } from './drop'
-import { launchEncore } from './launch'
+import { importFolder, launchEncore } from './launch'
 
 let app: ElectronApplication
 let page: Page
@@ -34,7 +33,7 @@ test.beforeEach(async () => {
   page = encore.page
   library = page.getByRole('region', { name: 'Library' })
   dock = page.getByRole('region', { name: 'Player' })
-  await page.evaluate((dir) => (window as unknown as { encore: EncoreApi }).encore.library.importPaths([dir]), musicDir)
+  await importFolder(page, musicDir)
   await page.reload()
   await library.getByRole('tab', { name: 'Local files' }).click()
 })
@@ -139,6 +138,20 @@ test('shuffle mixes up what comes next, and turning it off goes back to list ord
   expect(await listTitles(nextFromList())).toEqual(listOrder)
 })
 
+test('with shuffle on, liking a song leaves Up next in the same order', async () => {
+  await song('Song A').dblclick()
+  await dock.getByRole('button', { name: 'Shuffle' }).click()
+  await openNowPlaying()
+  const before = await listTitles(nextFromList())
+  await page.keyboard.press('Escape')
+
+  // Liking rebuilds the list on screen, which the player follows.
+  await dock.getByRole('button', { name: 'Like' }).click()
+  await expect(dock.getByRole('button', { name: 'Remove from Liked Songs' })).toBeVisible()
+  await openNowPlaying()
+  expect(await listTitles(nextFromList())).toEqual(before)
+})
+
 test('repeat all wraps from the last song back to the first', async () => {
   // Red Song is last in Local files.
   await song('Red Song').dblclick()
@@ -180,7 +193,7 @@ test('changing a song’s tags while it plays updates the dock, the stage, and N
   const file = join(changingDir, 'retag.mp3')
   try {
     writeFileSync(file, makeMp3(6, { title: 'Before', artist: 'Old Artist' }))
-    await page.evaluate((dir) => (window as unknown as { encore: EncoreApi }).encore.library.importPaths([dir]), changingDir)
+    await importFolder(page, changingDir)
     await page.reload()
     await library.getByRole('tab', { name: 'Local files' }).click()
     await song('Before').dblclick()

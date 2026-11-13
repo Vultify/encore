@@ -1,31 +1,23 @@
 /// <reference lib="dom" />
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
 import type { EncoreApi } from '../src/shared/api'
 import { makeTune, makeWav } from './fixtures/audio'
-import { launchEncore, makeDataDir } from './launch'
+import { importFolder, launchEncore, makeDataDir, TempDirs } from './launch'
 
 let app: ElectronApplication | undefined
 let page: Page
-let dirs: string[] = []
+const temp = new TempDirs()
 
 test.afterEach(async () => {
   await app?.close()
   app = undefined
-  for (const dir of dirs) rmSync(dir, { recursive: true, force: true })
-  dirs = []
+  temp.removeAll()
 })
 
 async function open(dataDir?: string): Promise<void> {
   ;({ app, page } = await launchEncore(dataDir))
-}
-
-function keptDataDir(): string {
-  const dir = makeDataDir()
-  dirs.push(dir)
-  return dir
 }
 
 const dock = (): Locator => page.getByRole('region', { name: 'Player' })
@@ -86,11 +78,10 @@ test('the equalizer opens from the dock, presets set the sliders, and moving one
 })
 
 test('Escape in the Now Playing view closes only the equalizer', async () => {
-  const music = mkdtempSync(join(tmpdir(), 'encore-eq-'))
-  dirs.push(music)
+  const music = temp.make('encore-eq-')
   writeFileSync(join(music, 'Band - Tone.wav'), makeWav(4))
   await open()
-  await page.evaluate((dir) => (window as unknown as { encore: EncoreApi }).encore.library.importPaths([dir]), music)
+  await importFolder(page, music)
   await page.reload()
   await page.getByRole('tab', { name: 'Local files' }).click()
   await page.getByRole('listitem').filter({ hasText: 'Tone' }).dblclick()
@@ -106,7 +97,7 @@ test('Escape in the Now Playing view closes only the equalizer', async () => {
 })
 
 test('the equalizer is the same after a restart, and an older settings file starts it off and flat', async () => {
-  const dataDir = keptDataDir()
+  const dataDir = temp.keep(makeDataDir())
   writeFileSync(join(dataDir, 'settings.json'), JSON.stringify({ player: { volume: 0.5, muted: false, session: null } }))
   await open(dataDir)
   await eqButton().click()
@@ -133,11 +124,10 @@ test('the equalizer is the same after a restart, and an older settings file star
 // Web Audio only hears songs the page is allowed to read. Without that, a song would play through the equalizer
 // as silence while its time still ticks along.
 test('songs reach the equalizer as real sound, not silence', async () => {
-  const music = mkdtempSync(join(tmpdir(), 'encore-eq-'))
-  dirs.push(music)
+  const music = temp.make('encore-eq-')
   writeFileSync(join(music, 'Tone.wav'), makeTune(3))
   await open()
-  await page.evaluate((dir) => (window as unknown as { encore: EncoreApi }).encore.library.importPaths([dir]), music)
+  await importFolder(page, music)
 
   const loudest = await page.evaluate(async () => {
     const [track] = await (window as unknown as { encore: EncoreApi }).encore.library.getTracks()

@@ -1,27 +1,19 @@
 /// <reference lib="dom" />
-import { mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
 import { makeWav } from './fixtures/audio'
 import { dropFiles } from './drop'
 import { startLookupServer, type LookupServer } from './fixtures/lookup-server'
-import { launchEncore, makeDataDir } from './launch'
+import { launchEncore, makeDataDir, TempDirs } from './launch'
 
 let app: ElectronApplication
 let page: Page
-let dirs: string[] = []
-
-const tempDir = (prefix: string): string => {
-  const dir = mkdtempSync(join(tmpdir(), prefix))
-  dirs.push(dir)
-  return dir
-}
+const temp = new TempDirs()
 
 test.afterEach(async () => {
   await app?.close()
-  for (const dir of dirs) rmSync(dir, { recursive: true, force: true })
-  dirs = []
+  temp.removeAll()
 })
 
 async function open(dataDir?: string, env: Record<string, string> = {}, args: string[] = []): Promise<void> {
@@ -66,7 +58,7 @@ test('the gear opens Settings with every group', async () => {
 
 test('a fixed accent color replaces the album color, and is kept after a restart', async () => {
   const dataDir = makeDataDir()
-  dirs.push(dataDir)
+  temp.keep(dataDir)
   await open(dataDir)
   const settings = await openSettings()
   await expect(settings.getByRole('radio', { name: 'Follow the album cover' })).toHaveAttribute('aria-checked', 'true')
@@ -85,7 +77,7 @@ test('a fixed accent color replaces the album color, and is kept after a restart
 
 test('Motion matches Windows unless set On or Off, and is kept after a restart', async () => {
   const dataDir = makeDataDir()
-  dirs.push(dataDir)
+  temp.keep(dataDir)
   await open(dataDir)
   const motion = (): Promise<string | undefined> => page.evaluate(() => document.documentElement.dataset.motion)
   const settings = await openSettings()
@@ -181,8 +173,8 @@ test('while recording, held keys show right away and the current shortcut steps 
 
 test('music folders: adding one reads its songs, new songs show up by themselves, and it is caught up after a restart', async () => {
   const dataDir = makeDataDir()
-  dirs.push(dataDir)
-  const folder = tempDir('encore-folder-')
+  temp.keep(dataDir)
+  const folder = temp.make('encore-folder-')
   writeFileSync(join(folder, 'Band - First.wav'), makeWav(3))
 
   await open(dataDir)
@@ -218,8 +210,8 @@ test('music folders: adding one reads its songs, new songs show up by themselves
 })
 
 test('a whole album folder moved into a music folder at once is read too', async () => {
-  const folder = tempDir('encore-folder-')
-  const elsewhere = tempDir('encore-elsewhere-')
+  const folder = temp.make('encore-folder-')
+  const elsewhere = temp.make('encore-elsewhere-')
   const album = join(elsewhere, 'Album')
   mkdirSync(album)
   writeFileSync(join(album, 'Band - Moved One.wav'), makeWav(3))
@@ -260,7 +252,7 @@ test('with Identify new songs automatically on, new songs are looked up without 
     await toggle.click()
     await expect(toggle).toHaveAttribute('aria-checked', 'true')
 
-    const music = tempDir('encore-auto-')
+    const music = temp.make('encore-auto-')
     writeFileSync(join(music, 'Linkin Park - Numb.wav'), makeWav(186))
     await dropFiles(page, [join(music, 'Linkin Park - Numb.wav')])
 

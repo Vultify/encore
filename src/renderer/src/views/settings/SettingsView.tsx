@@ -9,7 +9,9 @@ import {
   type PreferenceChanges
 } from '@shared/api'
 import { shortcutFor, shortcutLabel } from '@shared/shortcut'
+import { Button } from '@/components/Button/Button'
 import { Panel } from '@/components/Panel/Panel'
+import { Segmented } from '@/components/Segmented/Segmented'
 import { Switch } from '@/components/Switch/Switch'
 import { CloseIcon, FolderIcon } from '@/components/icons'
 import { identify } from '@/store/identify'
@@ -181,15 +183,15 @@ function ShortcutSetting({ shortcut }: { shortcut: string }) {
           <span className={styles.keys} data-recording={recording || undefined} aria-live="polite">
             {keys}
           </span>
-          <button
-            className={styles.secondary}
+          <Button
+            size="small"
             onClick={() => {
               setMessage(recording ? null : RECORDING_HINT)
               setRecording(!recording)
             }}
           >
             {recording ? 'Cancel' : 'Change'}
-          </button>
+          </Button>
           {!recording && shortcut !== DEFAULT_MINI_PLAYER_SHORTCUT && (
             <button className={styles.textButton} onClick={reset}>
               Reset
@@ -234,10 +236,10 @@ function AccentSetting({ accent }: { accent: AccentChoice }) {
   )
 }
 
-const MOTION_OPTIONS: { value: MotionChoice; name: string }[] = [
-  { value: 'system', name: 'Match Windows' },
-  { value: 'on', name: 'On' },
-  { value: 'off', name: 'Off' }
+const MOTION_OPTIONS: { value: MotionChoice; label: string }[] = [
+  { value: 'system', label: 'Match Windows' },
+  { value: 'on', label: 'On' },
+  { value: 'off', label: 'Off' }
 ]
 
 // Whether Encore animates. Matching Windows follows its Animation effects setting, which some performance tools
@@ -250,13 +252,7 @@ function MotionSetting({ motion }: { motion: MotionChoice }) {
       titleId={titleId}
       description="Covers fading in, views easing in, and long song names scrolling in the mini player. Match Windows follows its Animation effects setting."
       control={
-        <div className={styles.segments} role="radiogroup" aria-labelledby={titleId}>
-          {MOTION_OPTIONS.map((option) => (
-            <button key={option.value} role="radio" aria-checked={motion === option.value} onClick={() => update({ motion: option.value })}>
-              {option.name}
-            </button>
-          ))}
-        </div>
+        <Segmented labelledBy={titleId} options={MOTION_OPTIONS} value={motion} onChange={(next) => update({ motion: next })} />
       }
     />
   )
@@ -314,9 +310,9 @@ function FolderSetting({ folders }: { folders: string[] }) {
       title="Music folders"
       description="New songs saved in these folders show up in Encore by themselves. Removing a folder keeps its songs in your library."
       control={
-        <button className={styles.secondary} onClick={add}>
+        <Button size="small" onClick={add}>
           Add folder
-        </button>
+        </Button>
       }
     >
       {folders.length > 0 && (

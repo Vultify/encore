@@ -26,6 +26,8 @@ class IdentifyStore {
   private state: IdentifyState = { running: false, done: 0, total: 0, items: [], reviewRequest: 0 }
   private listeners = new Set<() => void>()
   private listening = false
+  // Songs asked for while a run was going. They're looked up as soon as it finishes.
+  private waiting = new Set<number>()
 
   subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener)
@@ -35,16 +37,37 @@ class IdentifyStore {
   getState = (): IdentifyState => this.state
 
   // Starts looking songs up and, unless told not to, asks for the review page. Matches show up there as they arrive.
+  // Matches still waiting for a decision are kept, and songs asked for during a run wait their turn.
   async start(trackIds: number[], { review = true } = {}): Promise<void> {
-    if (this.state.running || trackIds.length === 0) return
+    const waitingForReview = new Set(this.state.items.filter((item) => item.decision === 'pending').map((item) => item.trackId))
+    const fresh = trackIds.filter((id) => !waitingForReview.has(id))
+    if (review && trackIds.length > 0) this.update({ reviewRequest: this.state.reviewRequest + 1 })
+    if (fresh.length === 0) return
+    if (this.state.running) {
+      fresh.forEach((id) => this.waiting.add(id))
+      return
+    }
+
+    // A new review keeps only the matches still waiting. Ones already decided had their summary.
+    this.update({ items: this.state.items.filter((item) => item.decision === 'pending') })
+    await this.run(fresh)
+  }
+
+  // Looks songs up, then any asked for meanwhile, all as part of the same review.
+  private async run(trackIds: number[]): Promise<void> {
     this.listen()
-    this.update({ running: true, done: 0, total: trackIds.length, items: [], reviewRequest: this.state.reviewRequest + (review ? 1 : 0) })
+    this.update({ running: true, done: 0, total: trackIds.length })
     try {
       await api().start(trackIds)
     } catch {
       notify("Couldn't start looking songs up.")
     } finally {
       this.update({ running: false })
+    }
+    if (this.waiting.size > 0) {
+      const next = [...this.waiting]
+      this.waiting.clear()
+      await this.run(next)
     }
   }
 
@@ -55,7 +78,9 @@ class IdentifyStore {
     void this.start(needsIdentifying(added, library.getState().missing), { review: false })
   }
 
+  // Stopping also drops songs that were waiting to be looked up next.
   stop(): void {
+    this.waiting.clear()
     if (this.state.running) api().stop()
   }
 

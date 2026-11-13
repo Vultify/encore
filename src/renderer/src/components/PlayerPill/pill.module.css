@@ -1,0 +1,102 @@
+/* What the player dock and the mini player share, so the two pills look and act the same. Each adds its own size
+   and layout on top. */
+
+/* The cover with the song and artist beside it. */
+.song {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 30px 14px 14px 30px;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.song:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.cover {
+  position: relative;
+  flex: 0 0 auto;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #1c1c22, #111115);
+  border: 1px solid var(--border-strong);
+  overflow: hidden;
+}
+
+.cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.coverRing {
+  position: absolute;
+  inset: 30%;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.artist {
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+/* A line that's cut off with an ellipsis when it doesn't fit. */
+.cut {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.iconButton {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: var(--text-2);
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.iconButton:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: #fff;
+}
+
+.play {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  transition: transform 0.15s var(--ease);
+}
+
+.play:hover:not(:disabled) {
+  transform: scale(1.05);
+}

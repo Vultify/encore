@@ -1,18 +1,18 @@
 /// <reference lib="dom" />
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
 import type { Rectangle } from 'electron'
-import type { EncoreApi, NowPlaying } from '../src/shared/api'
+import type { NowPlaying } from '../src/shared/api'
 import { makeMp3, makeWav } from './fixtures/audio'
 import { makePng } from './fixtures/png'
-import { launchEncore, makeDataDir, type Encore } from './launch'
+import { type Encore, importFolder, launchEncore, makeDataDir, TempDirs } from './launch'
 
 let musicDir: string
 let encore: Encore | null
 // Data folders a test keeps across restarts, removed once Encore has closed.
-let keptDirs: string[] = []
+const temp = new TempDirs()
 
 test.beforeAll(() => {
   musicDir = mkdtempSync(join(tmpdir(), 'encore-desktop-'))
@@ -28,8 +28,7 @@ test.afterAll(() => {
 test.afterEach(async () => {
   await encore?.app.close()
   encore = null
-  for (const dir of keptDirs) rmSync(dir, { recursive: true, force: true })
-  keptDirs = []
+  temp.removeAll()
 })
 
 const dock = (page: Page): Locator => page.getByRole('region', { name: 'Player' })
@@ -46,17 +45,11 @@ async function open(dataDir?: string, importSongs = true): Promise<Page> {
   encore = await launchEncore(dataDir)
   const { page } = encore
   if (importSongs) {
-    await page.evaluate((dir) => (window as unknown as { encore: EncoreApi }).encore.library.importPaths([dir]), musicDir)
+    await importFolder(page, musicDir)
     await page.reload()
   }
   await page.getByRole('tab', { name: 'Local files' }).click()
   return page
-}
-
-function keptDataDir(): string {
-  const dir = makeDataDir()
-  keptDirs.push(dir)
-  return dir
 }
 
 const app = (): ElectronApplication => encore!.app
@@ -131,8 +124,33 @@ test('the Windows media overlay shows the song, its cover, and whether it plays'
   await expect.poll(async () => (await session()).state).toBe('paused')
 })
 
+// An album without an album artist tag is kept together by its folder, so its key holds the whole folder path.
+test('an album with a long name in a long folder still reopens where listening left off', async () => {
+  const dataDir = temp.keep(makeDataDir())
+  const parent = temp.make('encore-desktop-')
+  const albumDir = join(parent, 'Various Artists - Original Motion Picture Soundtrack [Deluxe]')
+  mkdirSync(albumDir)
+  const album = 'The Complete Original Motion Picture Soundtrack, Deluxe Anniversary Edition with Bonus Tracks and Alternate Takes'
+  writeFileSync(join(albumDir, '01 Main Theme.mp3'), makeMp3(6, { title: 'Main Theme', artist: 'Orchestra', album, track: '1' }))
+
+  encore = await launchEncore(dataDir)
+  let page = encore.page
+  await importFolder(page, albumDir)
+  await page.reload()
+  const library = page.getByRole('region', { name: 'Library' })
+  await library.getByRole('tab', { name: 'Albums' }).click()
+  await library.getByRole('button', { name: /^The Complete Original/ }).click()
+  await library.getByRole('button', { name: 'Play', exact: true }).click()
+  await expect(dock(page)).toContainText('Main Theme')
+  await dock(page).getByRole('button', { name: 'Pause' }).click()
+
+  page = await open(dataDir, false)
+  await expect(dock(page)).toContainText('Main Theme')
+  await expect(dock(page).getByRole('button', { name: 'Play', exact: true })).toBeEnabled()
+})
+
 test('reopens where listening left off, at the same size and spot', async () => {
-  const dataDir = keptDataDir()
+  const dataDir = temp.keep(makeDataDir())
   let page = await open(dataDir)
   await song(page, 'Song A').dblclick()
   await expect(dock(page)).toContainText('/ 0:08')
@@ -170,7 +188,7 @@ test('reopens where listening left off, at the same size and spot', async () => 
 })
 
 test('a window spot on a screen that is gone, or a damaged settings file, falls back to the default', async () => {
-  const dataDir = keptDataDir()
+  const dataDir = temp.keep(makeDataDir())
   writeFileSync(join(dataDir, 'settings.json'), JSON.stringify({ window: { x: -20000, y: -20000, width: 1100, height: 720, maximized: false } }))
   await open(dataDir)
   expect((await windowBounds()).x).toBeGreaterThan(-20000)

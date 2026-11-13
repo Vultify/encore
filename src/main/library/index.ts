@@ -1,6 +1,6 @@
 import { stat } from 'node:fs/promises'
 import { ipcMain } from 'electron'
-import { Channels, type ImportProgress, type ImportResult, type NewTrack, type Playlist, type SaveToFilesResult } from '../../shared/api'
+import { Channels, STATS_BUCKETS, type ImportProgress, type ImportResult, type NewTrack, type Playlist, type SaveToFilesResult } from '../../shared/api'
 import { allTracks, clearMatch, locationKey, removeTracks, saveTracks, setLiked, storedTracks, trackById, trackLocations, type FileStamp } from './database'
 import { artworkPath } from './artwork'
 import { writeTags, WriteError } from './writeTags'
@@ -19,6 +19,7 @@ import { accentForArtwork } from './accent'
 import { readTrack } from './tags'
 import { createFolderCoverLookup } from './fallbacks'
 import { preferences } from '../settings'
+import { isId, isIdList, isOneOf, isText, MAX_KEY } from '../validate'
 import { listeningStats, startListen, updateListen } from './history'
 
 // How many files are read at once, and how often progress is sent to the interface.
@@ -88,10 +89,6 @@ async function importPaths(paths: string[], onProgress?: (progress: ImportProgre
   }
 }
 
-// Checks for what the interface sends, since anything crossing into the main process is untrusted.
-const isId = (value: unknown): value is number => Number.isInteger(value) && (value as number) > 0
-const isIdList = (value: unknown): value is number[] => Array.isArray(value) && value.length <= 10_000 && value.every(isId)
-const isName = (value: unknown): value is string => typeof value === 'string' && value.length <= 1000
 const isIndex = (value: unknown): value is number => Number.isInteger(value) && (value as number) >= 0
 // A single listen can't be longer than a day; anything else is a mistake.
 const isListenLength = (value: unknown): value is number => typeof value === 'number' && value >= 0 && value <= 86_400
@@ -108,13 +105,13 @@ export function registerLibraryHandlers(): void {
   })
   ipcMain.handle(Channels.scanMusicFolders, () => importMusic(preferences().musicFolders))
   ipcMain.handle(Channels.startListen, (_event, trackId: unknown, sourceKey: unknown) =>
-    isId(trackId) && (sourceKey === null || (typeof sourceKey === 'string' && sourceKey.length <= 300)) ? startListen(trackId, sourceKey) : null
+    isId(trackId) && (sourceKey === null || isText(sourceKey, MAX_KEY)) ? startListen(trackId, sourceKey) : null
   )
   ipcMain.on(Channels.updateListen, (_event, listenId: unknown, seconds: unknown, counted: unknown) => {
     if (isId(listenId) && isListenLength(seconds) && typeof counted === 'boolean') updateListen(listenId, seconds, counted)
   })
   ipcMain.handle(Channels.listeningStats, (_event, since: unknown, bucket: unknown) =>
-    typeof since === 'number' && Number.isFinite(since) && (bucket === 'day' || bucket === 'month') ? listeningStats(since, bucket) : null
+    typeof since === 'number' && Number.isFinite(since) && isOneOf(STATS_BUCKETS, bucket) ? listeningStats(since, bucket) : null
   )
   ipcMain.handle(Channels.setLiked, (_event, trackIds: unknown, liked: unknown) =>
     isIdList(trackIds) && typeof liked === 'boolean' ? setLiked(trackIds, liked) : []
@@ -175,13 +172,13 @@ export function registerPlaylistHandlers(): void {
 
   ipcMain.handle(Channels.listPlaylists, () => allPlaylists())
   ipcMain.handle(Channels.createPlaylist, (_event, name: unknown, trackIds: unknown = []) => {
-    if (!isName(name) || !isIdList(trackIds)) throw new Error('Invalid playlist')
+    if (!isText(name) || !isIdList(trackIds)) throw new Error('Invalid playlist')
     const id = createPlaylist(name, trackIds)
     const playlists = allPlaylists()
     return { created: playlists.find((playlist) => playlist.id === id)!, playlists }
   })
   ipcMain.handle(Channels.renamePlaylist, (_event, id: unknown, name: unknown) =>
-    answer(isId(id) && isName(name), () => renamePlaylist(id as number, name as string))
+    answer(isId(id) && isText(name), () => renamePlaylist(id as number, name as string))
   )
   ipcMain.handle(Channels.removePlaylist, (_event, id: unknown) => answer(isId(id), () => removePlaylist(id as number)))
   ipcMain.handle(Channels.reorderPlaylists, (_event, ids: unknown) => answer(isIdList(ids), () => reorderPlaylists(ids as number[])))

@@ -73,6 +73,24 @@ test('a loose search finds the artist and their songs, five at a time', async ()
   await expect(songs).toHaveCount(5)
 })
 
+test('playing a song from the results keeps Encore calm instead of redrawing nonstop', async () => {
+  const errors: string[] = []
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text())
+  })
+  // How busy the window's renderer has been since the last call, in percent of one core.
+  const busy = (): Promise<number> =>
+    app.evaluate(({ app }) => Math.max(...app.getAppMetrics().filter((metric) => metric.type === 'Tab').map((metric) => metric.cpu.percentCPUUsage)))
+
+  await search('lin park')
+  await searchPanel().getByRole('list', { name: 'Song results' }).getByRole('listitem').first().dblclick()
+  await expect(page.getByRole('region', { name: 'Player' }).getByRole('button', { name: 'Pause' })).toBeVisible()
+  await busy()
+  await page.waitForTimeout(1500)
+  expect(await busy()).toBeLessThan(50)
+  expect(errors.filter((text) => text.includes('Maximum update depth'))).toEqual([])
+})
+
 test('accents and album names match too', async () => {
   await search('beyonce')
   await expect(searchPanel().getByRole('list', { name: 'Song results' })).toContainText('Halo')

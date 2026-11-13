@@ -1,8 +1,10 @@
 import { useCallback, useRef, useState, type CSSProperties } from 'react'
-import { Artwork } from '../Artwork/Artwork'
 import { EqualizerPanel } from '../Equalizer/EqualizerPanel'
-import { player, usePlayer, type RepeatMode } from '@/player/player'
+import { SongButton } from '../PlayerPill/SongButton'
+import type { RepeatMode } from '@shared/api'
+import { player, usePlayer } from '@/player/player'
 import { formatDuration } from '@/lib/format'
+import { wheelVolume } from '@/lib/volume'
 import { library } from '@/store/library'
 import {
   EqualizerIcon,
@@ -18,6 +20,7 @@ import {
   VolumeIcon,
   VolumeMutedIcon
 } from '../icons'
+import pill from '../PlayerPill/pill.module.css'
 import styles from './PlayerDock.module.css'
 
 const REPEAT_LABELS: Record<RepeatMode, string> = { off: 'Repeat off', all: 'Repeat all', one: 'Repeat one' }
@@ -44,19 +47,19 @@ export function PlayerDock({ compact, onOpenNowPlaying }: PlayerDockProps) {
       {equalizerOpen && <EqualizerPanel id="equalizer" toggle={equalizerButton} onClose={closeEqualizer} />}
       <div className={styles.dock} role="region" aria-label="Player" data-compact={compact || undefined}>
         {!compact && (
-          <button className={styles.nowPlaying} aria-label="Open Now Playing" disabled={idle} onClick={onOpenNowPlaying}>
-            <span className={styles.cover} aria-hidden="true">
-              {track?.artworkId ? <Artwork id={track.artworkId} /> : <span className={styles.coverRing} />}
-            </span>
-            <span className={styles.meta}>
-              <span className={styles.title}>{track?.title ?? 'Not playing'}</span>
-              <span className={styles.artist}>{track ? (track.artist ?? 'Unknown artist') : 'Pick a song to start'}</span>
-            </span>
-          </button>
+          <SongButton
+            className={styles.nowPlaying}
+            label="Open Now Playing"
+            artworkId={track?.artworkId ?? null}
+            title={track?.title ?? 'Not playing'}
+            artist={track ? (track.artist ?? 'Unknown artist') : 'Pick a song to start'}
+            disabled={idle}
+            onClick={onOpenNowPlaying}
+          />
         )}
 
         <button
-          className={`${styles.iconButton} ${styles.toggle}`}
+          className={`${pill.iconButton} ${styles.toggle}`}
           aria-label={liked ? 'Remove from Liked Songs' : 'Like'}
           aria-pressed={liked}
           disabled={idle}
@@ -67,7 +70,7 @@ export function PlayerDock({ compact, onOpenNowPlaying }: PlayerDockProps) {
 
         <div className={styles.controls}>
           <button
-            className={`${styles.iconButton} ${styles.toggle}`}
+            className={`${pill.iconButton} ${styles.toggle}`}
             aria-label="Shuffle"
             aria-pressed={shuffle}
             disabled={idle}
@@ -75,17 +78,17 @@ export function PlayerDock({ compact, onOpenNowPlaying }: PlayerDockProps) {
           >
             <ShuffleIcon size={18} />
           </button>
-          <button className={styles.iconButton} aria-label="Previous song" disabled={idle} onClick={() => player.previous()}>
+          <button className={pill.iconButton} aria-label="Previous song" disabled={idle} onClick={() => player.previous()}>
             <PreviousIcon size={19} />
           </button>
-          <button className={styles.play} aria-label={playing ? 'Pause' : 'Play'} disabled={idle} onClick={() => player.toggle()}>
+          <button className={pill.play} aria-label={playing ? 'Pause' : 'Play'} disabled={idle} onClick={() => player.toggle()}>
             {playing ? <PauseIcon size={20} /> : <PlayIcon size={20} />}
           </button>
-          <button className={styles.iconButton} aria-label="Next song" disabled={!hasNext} onClick={() => player.next()}>
+          <button className={pill.iconButton} aria-label="Next song" disabled={!hasNext} onClick={() => player.next()}>
             <NextIcon size={19} />
           </button>
           <button
-            className={`${styles.iconButton} ${styles.toggle}`}
+            className={`${pill.iconButton} ${styles.toggle}`}
             aria-label={REPEAT_LABELS[repeat]}
             aria-pressed={repeat !== 'off'}
             title="Repeat: off, all, or one"
@@ -104,7 +107,7 @@ export function PlayerDock({ compact, onOpenNowPlaying }: PlayerDockProps) {
 
         <button
           ref={equalizerButton}
-          className={styles.iconButton}
+          className={`${pill.iconButton} ${styles.toggle}`}
           aria-label="Equalizer"
           aria-expanded={equalizerOpen}
           aria-controls={equalizerOpen ? 'equalizer' : undefined}
@@ -117,10 +120,13 @@ export function PlayerDock({ compact, onOpenNowPlaying }: PlayerDockProps) {
 
         <div className={styles.volume}>
           <button
-            className={styles.iconButton}
+            className={pill.iconButton}
             aria-label={muted ? 'Unmute' : 'Mute'}
             onClick={() => player.toggleMute()}
-            onWheel={(event) => player.setVolume(volume - Math.sign(event.deltaY) * 0.05)}
+            onWheel={(event) => {
+              const next = wheelVolume(volume, muted, event.deltaY)
+              if (next !== null) player.setVolume(next)
+            }}
           >
             {level === 0 ? <VolumeMutedIcon size={18} /> : <VolumeIcon size={18} />}
           </button>
@@ -140,7 +146,7 @@ export function PlayerDock({ compact, onOpenNowPlaying }: PlayerDockProps) {
         </div>
 
         <button
-          className={styles.iconButton}
+          className={pill.iconButton}
           aria-label="Pop out to mini player"
           title="Switch to the mini player"
           onClick={() => window.encore.window.popOut()}

@@ -2,6 +2,7 @@ import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { Readable } from 'node:stream'
 import type { AudioFormat } from '../../shared/api'
+import { isId } from '../validate'
 import { trackFile } from './database'
 
 const CONTENT_TYPES: Record<AudioFormat, string> = {
@@ -27,7 +28,7 @@ const OPEN_TO_PAGE = { 'Access-Control-Allow-Origin': '*' }
 // Streams encore-media://track/<id>, answering range requests so the player can seek.
 export async function serveMedia(request: Request): Promise<Response> {
   const id = Number(new URL(request.url).pathname.slice(1))
-  const file = Number.isInteger(id) && id > 0 ? trackFile(id) : null
+  const file = isId(id) ? trackFile(id) : null
   const info = file ? await stat(file.path).catch(() => null) : null
   if (!file || !info?.isFile()) return new Response(null, { status: 404, headers: OPEN_TO_PAGE })
 

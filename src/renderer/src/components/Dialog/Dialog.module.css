@@ -48,42 +48,6 @@
   margin-top: 10px;
 }
 
-.cancel,
-.danger,
-.primary {
-  height: 40px;
-  padding: 0 18px;
-  border-radius: var(--radius-pill);
-  font-size: 13.5px;
-  font-weight: 700;
-}
-
-.cancel {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.cancel:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.danger {
-  background: var(--danger-bg);
-  color: var(--danger-text);
-}
-
-.danger:hover {
-  filter: brightness(1.2);
-}
-
-.primary {
-  background: var(--accent);
-  color: var(--on-accent);
-}
-
-.primary:disabled {
-  opacity: 0.4;
-}
-
 .form {
   display: flex;
   flex-direction: column;

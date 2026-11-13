@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { previewUrl, type MatchCandidate, type Track } from '@shared/api'
 import { Artwork } from '@/components/Artwork/Artwork'
+import { BackButton, Button } from '@/components/Button/Button'
 import { SaveToFileDialog } from '@/components/Dialog/SaveToFileDialog'
-import { BackIcon, MusicIcon } from '@/components/icons'
+import { MusicIcon } from '@/components/icons'
 import { formatDuration, songCount } from '@/lib/format'
 import { UNKNOWN_ARTIST } from '@/lib/library'
 import { identify, useIdentify, type ReviewItem } from '@/store/identify'
@@ -32,17 +33,14 @@ export function IdentifyPage({ onBack }: { onBack: () => void }) {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <button className={styles.back} onClick={onBack}>
-          <BackIcon size={16} />
-          Local files
-        </button>
+        <BackButton label="Local files" onClick={onBack} />
         <div className={styles.titleRow}>
           <div>
             <span className={styles.kind}>Identify songs</span>
             <h2 className={styles.title}>Review matches</h2>
           </div>
           <span className={styles.progress} role="status">
-            {running ? `Looking up ${done} of ${total}` : total > 0 && pending ? `Song ${position} of ${total}` : ''}
+            {running ? `Looking up ${done} of ${total}` : pending ? `Song ${position} of ${items.length}` : ''}
           </span>
         </div>
       </header>
@@ -55,9 +53,7 @@ export function IdentifyPage({ onBack }: { onBack: () => void }) {
       ) : running ? (
         <div className={styles.waiting}>
           <p>Looking up your songs. Matches show up here as they're found.</p>
-          <button className={styles.secondary} onClick={() => identify.stop()}>
-            Stop
-          </button>
+          <Button onClick={() => identify.stop()}>Stop</Button>
         </div>
       ) : (
         <Summary items={items} onDone={finish} />
@@ -126,13 +122,13 @@ function Review({ item, track }: { item: ReviewItem; track: Track }) {
       </section>
 
       <div className={styles.actions}>
-        <button className={styles.secondary} onClick={() => identify.skip(item.trackId)} disabled={saving}>
+        <Button onClick={() => identify.skip(item.trackId)} disabled={saving}>
           Skip
-        </button>
+        </Button>
         {item.candidates.length > 0 && (
-          <button className={styles.primary} onClick={use} disabled={!picked || saving}>
+          <Button variant="primary" onClick={use} disabled={!picked || saving}>
             {saving ? 'Saving' : 'Use this match'}
-          </button>
+          </Button>
         )}
       </div>
     </>
@@ -208,13 +204,11 @@ function Summary({ items, onDone }: { items: ReviewItem[]; onDone: () => void })
       )}
       <div className={styles.summaryActions}>
         {toSave.length > 0 && !saved && (
-          <button className={styles.secondary} onClick={() => setConfirming(true)}>
-            Save to the files too
-          </button>
+          <Button onClick={() => setConfirming(true)}>Save to the files too</Button>
         )}
-        <button className={styles.primary} onClick={onDone}>
+        <Button variant="primary" onClick={onDone}>
           Back to Local files
-        </button>
+        </Button>
       </div>
       {confirming && <SaveToFileDialog songs={toSave} onConfirm={save} onCancel={() => setConfirming(false)} />}
     </div>

@@ -4,10 +4,11 @@ import { app, ipcMain } from 'electron'
 import {
   ACCENT_PRESETS,
   Channels,
-  DEFAULT_MINI_PLAYER_SHORTCUT,
+  DEFAULT_PREFERENCES,
+  DEFAULT_VOLUME,
   MOTION_CHOICES,
+  REPEAT_MODES,
   roundMixSize,
-  TOP_MIX,
   type AccentChoice,
   type MotionChoice,
   type PlayerPreferences,
@@ -16,6 +17,7 @@ import {
 } from '../shared/api'
 import { DEFAULT_EQUALIZER, isEqualizerSettings, type EqualizerSettings } from '../shared/equalizer'
 import { isAllowedShortcut } from '../shared/shortcut'
+import { isId, isIdList, isOneOf, isText, MAX_KEY } from './validate'
 
 export interface WindowState {
   x: number
@@ -99,9 +101,9 @@ export const isAccentChoice = (value: unknown): value is AccentChoice =>
 
 export const isMixSize = (value: unknown): value is number => typeof value === 'number' && roundMixSize(value) === value
 
-export const isMotionChoice = (value: unknown): value is MotionChoice => MOTION_CHOICES.includes(value as MotionChoice)
+export const isMotionChoice = (value: unknown): value is MotionChoice => isOneOf(MOTION_CHOICES, value)
 
-const isFolder = (value: unknown): value is string => typeof value === 'string' && value.length > 0 && value.length <= 1000
+const isFolder = (value: unknown): value is string => isText(value) && value.length > 0
 
 // What's set on the Settings page, with anything missing or damaged in the file falling back to the default.
 export function preferences(): Preferences {
@@ -110,13 +112,13 @@ export function preferences(): Preferences {
     miniPlayerShortcut:
       typeof saved.miniPlayerShortcut === 'string' && isAllowedShortcut(saved.miniPlayerShortcut)
         ? saved.miniPlayerShortcut
-        : DEFAULT_MINI_PLAYER_SHORTCUT,
-    accent: isAccentChoice(saved.accent) ? saved.accent : 'album',
-    motion: isMotionChoice(saved.motion) ? saved.motion : 'system',
-    musicFolders: Array.isArray(saved.musicFolders) ? saved.musicFolders.filter(isFolder) : [],
-    identifyNewSongs: saved.identifyNewSongs === true,
-    startWithWindows: saved.startWithWindows === true,
-    topMixSize: isMixSize(saved.topMixSize) ? saved.topMixSize : TOP_MIX.default
+        : DEFAULT_PREFERENCES.miniPlayerShortcut,
+    accent: isAccentChoice(saved.accent) ? saved.accent : DEFAULT_PREFERENCES.accent,
+    motion: isMotionChoice(saved.motion) ? saved.motion : DEFAULT_PREFERENCES.motion,
+    musicFolders: Array.isArray(saved.musicFolders) ? saved.musicFolders.filter(isFolder) : DEFAULT_PREFERENCES.musicFolders,
+    identifyNewSongs: typeof saved.identifyNewSongs === 'boolean' ? saved.identifyNewSongs : DEFAULT_PREFERENCES.identifyNewSongs,
+    startWithWindows: typeof saved.startWithWindows === 'boolean' ? saved.startWithWindows : DEFAULT_PREFERENCES.startWithWindows,
+    topMixSize: isMixSize(saved.topMixSize) ? saved.topMixSize : DEFAULT_PREFERENCES.topMixSize
   }
 }
 
@@ -125,31 +127,26 @@ export function savePreferences(next: Preferences): void {
   saveSoon()
 }
 
-const isIdList = (value: unknown): value is number[] =>
-  Array.isArray(value) && value.length <= MAX_SESSION_SONGS && value.every((id) => Number.isInteger(id) && id > 0)
-
 // Checks what the interface sends, since anything crossing into the main process is untrusted.
 function validSession(value: unknown): PlayerSession | null {
   const session = value as PlayerSession | null
   if (!session || typeof session !== 'object') return null
   const valid =
-    typeof session.sourceKey === 'string' &&
-    session.sourceKey.length <= 200 &&
-    typeof session.sourceName === 'string' &&
-    session.sourceName.length <= 300 &&
-    isIdList(session.sourceIds) &&
+    isText(session.sourceKey, MAX_KEY) &&
+    isText(session.sourceName) &&
+    isIdList(session.sourceIds, MAX_SESSION_SONGS) &&
     isPlayOrder(session.order, session.sourceIds.length) &&
     isWhole(session.cursor) &&
     session.cursor >= -1 &&
     session.cursor < session.order.length &&
-    isIdList(session.queuedIds) &&
-    isWhole(session.trackId) &&
+    isIdList(session.queuedIds, MAX_SESSION_SONGS) &&
+    isId(session.trackId) &&
     typeof session.fromQueue === 'boolean' &&
     typeof session.position === 'number' &&
     Number.isFinite(session.position) &&
     session.position >= 0 &&
     typeof session.shuffle === 'boolean' &&
-    ['off', 'all', 'one'].includes(session.repeat)
+    isOneOf(REPEAT_MODES, session.repeat)
   return valid ? session : null
 }
 
@@ -172,7 +169,7 @@ export function registerSettingsHandlers(): void {
     const saved = settings.player
     return saved
       ? { ...saved, equalizer: validEqualizer(saved.equalizer) }
-      : { volume: 0.8, muted: false, session: null, equalizer: DEFAULT_EQUALIZER }
+      : { volume: DEFAULT_VOLUME, muted: false, session: null, equalizer: DEFAULT_EQUALIZER }
   })
   ipcMain.on(Channels.savePlayerSettings, (_event, value: unknown) => {
     const preferences = value as PlayerPreferences | null

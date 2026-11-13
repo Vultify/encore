@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { Button } from '@/components/Button/Button'
 import { songCount } from '@/lib/format'
 import { identify, needsIdentifying, useIdentify } from '@/store/identify'
 import { useLibrary } from '@/store/library'
@@ -14,9 +15,9 @@ export function IdentifyBanner({ onReview }: { onReview: () => void }) {
   if (!running && waiting === 0 && needed.length === 0) return null
 
   const reviewButton = waiting > 0 && (
-    <button className={styles.primary} onClick={onReview}>
+    <Button variant="primary" size="small" onClick={onReview}>
       Review {waiting === 1 ? 'match' : `${waiting} matches`}
-    </button>
+    </Button>
   )
 
   return (
@@ -27,9 +28,9 @@ export function IdentifyBanner({ onReview }: { onReview: () => void }) {
             Looking up songs {done} of {total}
           </span>
           {reviewButton}
-          <button className={styles.secondary} onClick={() => identify.stop()}>
+          <Button size="small" onClick={() => identify.stop()}>
             Stop
-          </button>
+          </Button>
         </>
       ) : waiting > 0 ? (
         <>
@@ -41,9 +42,9 @@ export function IdentifyBanner({ onReview }: { onReview: () => void }) {
           <span className={styles.bannerText}>
             {songCount(needed.length)} {needed.length === 1 ? 'is' : 'are'} missing an album or cover.
           </span>
-          <button className={styles.primary} onClick={() => identify.start(needed)}>
+          <Button variant="primary" size="small" onClick={() => identify.start(needed)}>
             Identify songs
-          </button>
+          </Button>
         </>
       )}
     </div>

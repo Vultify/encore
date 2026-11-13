@@ -5,7 +5,7 @@ import { expect, test, type ElectronApplication, type Locator, type Page } from 
 import type { EncoreApi } from '../src/shared/api'
 import { makeWav } from './fixtures/audio'
 import { dropFiles } from './drop'
-import { launchEncore, makeDataDir } from './launch'
+import { importFolder, launchEncore, makeDataDir } from './launch'
 
 let app: ElectronApplication
 let page: Page
@@ -17,7 +17,7 @@ test.beforeEach(async () => {
   musicDir = mkdtempSync(join(tmpdir(), 'encore-manage-'))
   for (const name of ['Alpha', 'Bravo', 'Charlie']) writeFileSync(join(musicDir, `Band - ${name}.wav`), makeWav(4))
   await start()
-  await page.evaluate((dir) => (window as unknown as { encore: EncoreApi }).encore.library.importPaths([dir]), musicDir)
+  await importFolder(page, musicDir)
   await page.reload()
   await library.getByRole('tab', { name: 'Local files' }).click()
 })
@@ -93,7 +93,7 @@ test('a song whose file was deleted shows as missing and can be removed', async 
     // Import into a data folder that survives a restart, delete a file while Encore is closed, then reopen.
     await app.close()
     await start(dataDir)
-    await page.evaluate((dir) => (window as unknown as { encore: EncoreApi }).encore.library.importPaths([dir]), musicDir)
+    await importFolder(page, musicDir)
     await app.close()
     rmSync(songPath('Bravo'))
     await start(dataDir)
@@ -121,6 +121,57 @@ test('a file deleted while Encore is open is marked missing when it fails to pla
   await song('Charlie').dblclick()
   await expect(page.getByRole('status').filter({ hasText: "Couldn't play Charlie" })).toBeVisible()
   await expect(song('Charlie')).toHaveAttribute('data-missing', 'true')
+  // It was the last song, so the player stops instead of showing Pause with nothing playing.
+  await expect(page.getByRole('region', { name: 'Player' }).getByRole('button', { name: 'Play', exact: true })).toBeVisible()
+})
+
+test('when the songs after a failed one fail too, the player stops at the end of the list', async () => {
+  rmSync(songPath('Bravo'))
+  rmSync(songPath('Charlie'))
+  await song('Bravo').click()
+  await song('Bravo').dblclick()
+  await expect(song('Charlie')).toHaveAttribute('data-missing', 'true')
+  await expect(page.getByRole('region', { name: 'Player' }).getByRole('button', { name: 'Play', exact: true })).toBeVisible()
+})
+
+test('with repeat all, a list where nothing plays stops after trying each song once instead of going round forever', async () => {
+  // A playlist of two songs whose files go missing. The playlist's Play button doesn't check for missing files.
+  await page.evaluate(async () => {
+    const { encore } = window as unknown as { encore: EncoreApi }
+    const tracks = await encore.library.getTracks()
+    await encore.playlists.create('Gone', tracks.filter((track) => track.title !== 'Alpha').map((track) => track.id))
+  })
+  await page.reload()
+  await library.getByRole('tab', { name: 'Local files' }).click()
+
+  // Repeat can only be set while something plays.
+  const dock = page.getByRole('region', { name: 'Player' })
+  await song('Alpha').dblclick()
+  await dock.getByRole('button', { name: 'Repeat off' }).click()
+  await expect(dock.getByRole('button', { name: 'Repeat all' })).toBeVisible()
+  await dock.getByRole('button', { name: 'Pause' }).click()
+  rmSync(songPath('Bravo'))
+  rmSync(songPath('Charlie'))
+
+  await library.getByRole('tab', { name: 'Playlists' }).click()
+  await library.getByRole('button', { name: /^Gone/ }).click()
+  await library.getByRole('button', { name: 'Play', exact: true }).click()
+  const status = page.getByRole('status').filter({ hasText: 'None of the songs in Gone could be played' })
+  await expect(status).toBeVisible()
+  await expect(dock.getByRole('button', { name: 'Play', exact: true })).toBeVisible()
+
+  // It stays stopped rather than trying the songs again.
+  const shown = await dock.getByRole('button', { name: 'Open Now Playing' }).textContent()
+  await page.waitForTimeout(1500)
+  await expect(status).toBeVisible()
+  expect(await dock.getByRole('button', { name: 'Open Now Playing' }).textContent()).toBe(shown)
+
+  // Once the file is back, pressing Play tries that song again.
+  const title = shown!.includes('Bravo') ? 'Bravo' : 'Charlie'
+  writeFileSync(songPath(title), makeWav(4))
+  await dock.getByRole('button', { name: 'Play', exact: true }).click()
+  await expect(dock.getByRole('button', { name: 'Pause' })).toBeVisible()
+  await expect(dock).toContainText(title)
 })
 
 test('putting a missing file back and adding it again brings the song back to normal', async () => {
@@ -133,4 +184,13 @@ test('putting a missing file back and adding it again brings the song back to no
   await expect(page.getByRole('status').filter({ hasText: 'Updated 1 song' })).toBeVisible()
   await expect(song('Alpha')).not.toHaveAttribute('data-missing', 'true')
   await expect(song('Alpha')).toContainText('wav')
+
+  // It plays again, even though it failed earlier in this session.
+  await song('Bravo').dblclick()
+  const dock = page.getByRole('region', { name: 'Player' })
+  await expect(dock).toContainText('Bravo')
+  await song('Alpha').dblclick()
+  await expect(dock).toContainText('Alpha')
+  await expect(dock.getByRole('button', { name: 'Pause' })).toBeVisible()
+  await expect.poll(async () => (await dock.getByText(/\d+:\d\d \//).textContent())!.startsWith('0:00'), { timeout: 4000 }).toBe(false)
 })

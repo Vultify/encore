@@ -2,6 +2,7 @@ import { watch, type FSWatcher } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { extname, join } from 'node:path'
 import { AUDIO_FORMATS, type AudioFormat } from '../../shared/api'
+import { isSystemFolder } from './scan'
 
 // A song being downloaded or copied fires many changes in a row, so files are only read once things go quiet.
 const SETTLE_MS = 2000
@@ -52,7 +53,8 @@ export function createFolderWatcher(onSongs: (paths: string[]) => void): FolderW
         if (watchers.has(folder)) continue
         try {
           const watcher = watch(folder, { recursive: true }, (_event, name) => {
-            if (!name) return
+            // A song deleted on a watched drive lands in its Recycle Bin, which isn't music to add.
+            if (!name || name.split(/[\\/]/).some(isSystemFolder)) return
             changed.add(join(folder, name))
             settle()
           })

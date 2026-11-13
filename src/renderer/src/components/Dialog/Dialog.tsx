@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { PLAYLIST_NAME_MAX } from '@shared/api'
+import { Button } from '../Button/Button'
 import styles from './Dialog.module.css'
 
 interface ModalProps {
@@ -52,12 +53,12 @@ export function ConfirmDialog({ title, message, confirmLabel, onConfirm, onCance
     <Modal role="alertdialog" title={title} onCancel={onCancel}>
       <p className={styles.message}>{message}</p>
       <div className={styles.buttons}>
-        <button ref={cancel} className={styles.cancel} onClick={onCancel}>
+        <Button ref={cancel} onClick={onCancel}>
           Cancel
-        </button>
-        <button className={styles.danger} onClick={onConfirm}>
+        </Button>
+        <Button variant="danger" onClick={onConfirm}>
           {confirmLabel}
-        </button>
+        </Button>
       </div>
     </Modal>
   )
@@ -95,12 +96,10 @@ export function NameDialog({ title, initial, confirmLabel, onConfirm, onCancel }
           onChange={(event) => setName(event.target.value)}
         />
         <div className={styles.buttons}>
-          <button type="button" className={styles.cancel} onClick={onCancel}>
-            Cancel
-          </button>
-          <button type="submit" className={styles.primary} disabled={!trimmed}>
+          <Button onClick={onCancel}>Cancel</Button>
+          <Button type="submit" variant="primary" disabled={!trimmed}>
             {confirmLabel}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>

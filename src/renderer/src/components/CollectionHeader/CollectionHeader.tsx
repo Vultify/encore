@@ -1,7 +1,8 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { PLAYLIST_NAME_MAX } from '@shared/api'
 import { Artwork } from '../Artwork/Artwork'
-import { BackIcon, MusicIcon, PlayIcon } from '../icons'
+import { BackButton, Button } from '../Button/Button'
+import { MusicIcon, PlayIcon } from '../icons'
 import styles from './CollectionHeader.module.css'
 
 interface CollectionHeaderProps {
@@ -29,10 +30,7 @@ export function CollectionHeader(props: CollectionHeaderProps) {
 
   return (
     <div className={styles.header}>
-      <button className={styles.back} onClick={onBack}>
-        <BackIcon size={16} />
-        {backLabel}
-      </button>
+      <BackButton label={backLabel} onClick={onBack} />
       <div className={styles.body}>
         <span className={styles.cover} data-round={round}>
           {cover ?? (artworkId ? <Artwork id={artworkId} /> : <MusicIcon size={34} />)}
@@ -44,10 +42,10 @@ export function CollectionHeader(props: CollectionHeaderProps) {
         </div>
         <div className={styles.actions}>
           {actions}
-          <button className={styles.play} onClick={onPlay} disabled={!canPlay}>
+          <Button variant="primary" size="large" onClick={onPlay} disabled={!canPlay}>
             <PlayIcon size={16} />
             Play
-          </button>
+          </Button>
         </div>
       </div>
     </div>

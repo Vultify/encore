@@ -1,10 +1,14 @@
 import { useEffect, useRef, type CSSProperties, type KeyboardEvent, type RefObject } from 'react'
 import { EQ_BANDS, EQ_PRESETS, EQ_RANGE, equalizerGains, type EqChoice } from '@shared/equalizer'
 import { player, usePlayer } from '@/player/player'
+import { Segmented } from '../Segmented/Segmented'
 import { Switch } from '../Switch/Switch'
 import styles from './EqualizerPanel.module.css'
 
-const CHOICES: { id: EqChoice; name: string }[] = [...EQ_PRESETS, { id: 'custom', name: 'Custom' }]
+const CHOICES: { value: EqChoice; label: string }[] = [
+  ...EQ_PRESETS.map((preset) => ({ value: preset.id, label: preset.name })),
+  { value: 'custom', label: 'Custom' }
+]
 
 // Slider size in pixels. The curve is drawn on the same scale so it runs through the middle of every knob.
 const TRACK = 150
@@ -83,13 +87,14 @@ export function EqualizerPanel({ id, toggle, onClose }: EqualizerPanelProps) {
         <Switch checked={equalizer.enabled} onChange={(on) => player.setEqualizerOn(on)} labelledBy={`${id}-title`} />
       </div>
 
-      <div className={styles.presets} role="radiogroup" aria-label="Preset">
-        {CHOICES.map((choice) => (
-          <button key={choice.id} role="radio" aria-checked={equalizer.preset === choice.id} onClick={() => player.chooseEqualizerPreset(choice.id)}>
-            {choice.name}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        className={styles.presets}
+        layout="chips"
+        label="Preset"
+        options={CHOICES}
+        value={equalizer.preset}
+        onChange={(preset) => player.chooseEqualizerPreset(preset)}
+      />
 
       <div className={styles.board}>
         <div className={styles.scale} aria-hidden="true">

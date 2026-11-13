@@ -39,7 +39,7 @@ function createWindow(): BrowserWindow {
     focusable: false,
     title: 'Encore mini player',
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, '../preload/mini.js'),
       sandbox: true,
       contextIsolation: true
     }

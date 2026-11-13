@@ -1,35 +1,22 @@
-import { contextBridge, ipcRenderer, webUtils, type IpcRendererEvent } from 'electron'
-import { Channels, type EncoreApi, type ImportProgress } from '../shared/api'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
+import { Channels, type EncoreApi } from '../shared/api'
+import { listen } from './listen'
 
-// Subscribes to a message from the main process and returns a function that unsubscribes.
-function listen<T>(channel: string, listener: (payload: T) => void): () => void {
-  const handler = (_event: IpcRendererEvent, payload: T): void => listener(payload)
-  ipcRenderer.on(channel, handler)
-  return () => ipcRenderer.removeListener(channel, handler)
-}
-
+// Everything the main window can ask of the main process. The mini player has its own, much smaller set in mini.ts.
 const api: EncoreApi = {
   window: {
     minimize: () => ipcRenderer.send(Channels.minimize),
     toggleMaximize: () => ipcRenderer.send(Channels.toggleMaximize),
     closeToTray: () => ipcRenderer.send(Channels.closeToTray),
     isMaximized: () => ipcRenderer.invoke(Channels.isMaximized),
-    onMaximizedChange: (listener) => {
-      const handler = (_event: IpcRendererEvent, maximized: boolean): void => listener(maximized)
-      ipcRenderer.on(Channels.maximizedChanged, handler)
-      return () => ipcRenderer.removeListener(Channels.maximizedChanged, handler)
-    },
+    onMaximizedChange: (listener) => listen(Channels.maximizedChanged, listener),
     popOut: () => ipcRenderer.send(Channels.popOut)
   },
   library: {
     pathForFile: (file) => webUtils.getPathForFile(file),
     getTracks: () => ipcRenderer.invoke(Channels.getTracks),
     importPaths: (paths) => ipcRenderer.invoke(Channels.importPaths, paths),
-    onImportProgress: (listener) => {
-      const handler = (_event: IpcRendererEvent, progress: ImportProgress): void => listener(progress)
-      ipcRenderer.on(Channels.importProgress, handler)
-      return () => ipcRenderer.removeListener(Channels.importProgress, handler)
-    },
+    onImportProgress: (listener) => listen(Channels.importProgress, listener),
     setLiked: (trackIds, liked) => ipcRenderer.invoke(Channels.setLiked, trackIds, liked),
     removeTracks: (trackIds) => ipcRenderer.invoke(Channels.removeTracks, trackIds),
     findMissing: () => ipcRenderer.invoke(Channels.findMissing),
@@ -62,13 +49,6 @@ const api: EncoreApi = {
   remote: {
     report: (nowPlaying) => ipcRenderer.send(Channels.nowPlaying, nowPlaying),
     onCommand: (listener) => listen(Channels.playerCommand, listener)
-  },
-  mini: {
-    current: () => ipcRenderer.invoke(Channels.getNowPlaying),
-    onNowPlaying: (listener) => listen(Channels.nowPlayingChanged, listener),
-    send: (command) => ipcRenderer.send(Channels.remoteCommand, command),
-    openEncore: () => ipcRenderer.send(Channels.openEncore),
-    setInteractive: (interactive) => ipcRenderer.send(Channels.miniInteractive, interactive)
   },
   settings: {
     getPlayer: () => ipcRenderer.invoke(Channels.getPlayerSettings),

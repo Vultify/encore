@@ -1,9 +1,7 @@
 import { useSyncExternalStore } from 'react'
-import { mediaUrl, type PlayerSession, type Track } from '@shared/api'
+import { DEFAULT_VOLUME, mediaUrl, type PlayerSession, type RepeatMode, type Track } from '@shared/api'
 import { clampGain, DEFAULT_EQUALIZER, equalizerGains, type EqChoice, type EqualizerSettings } from '@shared/equalizer'
 import { EqualizerChain } from './equalizer'
-
-export type RepeatMode = 'off' | 'all' | 'one'
 
 // A song added with Play next or Add to queue. The key tells two copies of the same song apart.
 export interface QueuedTrack {
@@ -29,6 +27,8 @@ export interface PlayerState {
   hasNext: boolean
   // The last song that failed to play, so the interface can say so.
   failed: Track | null
+  // True once every song left failed to play in a row, so playback stopped rather than going round again.
+  unplayable: boolean
   equalizer: EqualizerSettings
 }
 
@@ -66,6 +66,12 @@ class Player {
   private nextQueueKey = 1
   // Where a restored song should start, applied once the file's length is known and seeking is possible.
   private startAt: number | null = null
+  // Songs that failed to play in a row, and how many there were to try when the first one failed. Once all of
+  // them have failed, playback stops, or repeat all would try the same broken list forever.
+  private failures = 0
+  private toTry = 0
+  // True while moving on from a failed song, so the move doesn't count as a fresh start.
+  private recovering = false
 
   private state: PlayerState = {
     track: null,
@@ -73,7 +79,7 @@ class Player {
     playing: false,
     position: 0,
     duration: 0,
-    volume: 0.8,
+    volume: DEFAULT_VOLUME,
     muted: false,
     shuffle: false,
     repeat: 'off',
@@ -81,6 +87,7 @@ class Player {
     upcoming: [],
     hasNext: false,
     failed: null,
+    unplayable: false,
     equalizer: DEFAULT_EQUALIZER
   }
 
@@ -106,11 +113,10 @@ class Player {
       if (Number.isFinite(this.audio.duration)) this.update({ duration: this.audio.duration })
     })
     this.audio.addEventListener('ended', () => this.advance(false))
-    this.audio.addEventListener('error', () => {
-      if (!this.state.track) return
-      this.update({ failed: this.state.track })
-      this.advance(true)
+    this.audio.addEventListener('playing', () => {
+      this.failures = 0
     })
+    this.audio.addEventListener('error', () => this.skipFailed())
   }
 
   subscribe = (listener: () => void): (() => void) => {
@@ -142,6 +148,15 @@ class Player {
   // New songs join what's still to come; with shuffle on, they're mixed in at random.
   syncQueue(sourceKey: string, tracks: Track[]): void {
     if (sourceKey !== this.sourceKey || tracks === this.source) return
+    // A fresh copy of the same list moves nothing, and only announces a change when a song's details changed.
+    // Announcing every copy would redraw the list, which makes another copy, over and over.
+    if (tracks.length === this.source.length && tracks.every((track, i) => track.id === this.source[i].id)) {
+      const changed = tracks.some((track, i) => track !== this.source[i])
+      this.source = tracks
+      if (changed) this.publishSource()
+      return
+    }
+
     const newIndex = new Map(tracks.map((track, i) => [track.id, i]))
     const mapped = this.order.map((i) => newIndex.get(this.source[i].id)).filter((i): i is number => i !== undefined)
     const currentId = this.currentSourceTrack()?.id
@@ -151,16 +166,16 @@ class Player {
 
     this.source = tracks
     if (this.state.shuffle) {
-      const rest = [...mapped.slice(played.length), ...added]
-      this.order = [...played, ...shuffled(rest)]
+      // What's still to come keeps its order, so Up next doesn't reshuffle under you.
+      const rest = mapped.slice(played.length)
+      for (const i of added) rest.splice(Math.floor(Math.random() * (rest.length + 1)), 0, i)
+      this.order = [...played, ...rest]
       this.cursor = played.length - 1
     } else {
       this.order = inOrder(tracks.length)
       this.cursor = currentId === undefined ? -1 : (newIndex.get(currentId) ?? played.length - 1)
     }
-    // A song whose tags changed shows the new ones right away.
-    const fresh = this.currentSourceTrack()
-    this.publish(!this.playingQueued && fresh && fresh.id === this.state.track?.id ? { track: fresh } : {})
+    this.publishSource()
   }
 
   // Swaps in the library's latest copy of every song the player holds, so a song identified, re-read,
@@ -227,7 +242,11 @@ class Player {
   }
 
   play(): void {
-    if (this.state.track && this.audio.paused) this.resume()
+    const { track } = this.state
+    if (!track || !this.audio.paused) return
+    // A song that failed to load is loaded again, in case its file is back.
+    if (this.audio.error) return this.load(track, true)
+    this.resume()
   }
 
   pause(): void {
@@ -398,6 +417,12 @@ class Player {
     return this.cursor >= 0 ? this.source[this.order[this.cursor]] : undefined
   }
 
+  // Announces a changed source. A song whose tags changed shows the new ones right away.
+  private publishSource(): void {
+    const fresh = this.currentSourceTrack()
+    this.publish(!this.playingQueued && fresh && fresh.id === this.state.track?.id ? { track: fresh } : {})
+  }
+
   private enqueue(tracks: Track[], first: boolean): void {
     if (tracks.length === 0) return
     const items = tracks.map((track) => ({ key: this.nextQueueKey++, track }))
@@ -410,25 +435,57 @@ class Player {
     this.publish({ queued: first ? [...items, ...this.state.queued] : [...this.state.queued, ...items] })
   }
 
-  // Moves on when a song ends, fails, or Next is pressed. Repeat one replays the song only when it ends by itself.
-  private advance(manual: boolean): void {
+  // Moves on when a song ends, fails, or Next is pressed, and says whether another song started. Repeat one replays
+  // the song only when it ends by itself.
+  private advance(manual: boolean): boolean {
     const { queued, repeat } = this.state
     if (!manual && repeat === 'one' && this.state.track) {
       this.audio.currentTime = 0
-      return this.resume()
+      this.resume()
+      return true
     }
     if (queued.length > 0) {
       const [first, ...rest] = queued
       this.publish({ queued: rest })
-      return this.playQueued(first.track)
+      this.playQueued(first.track)
+      return true
     }
-    if (this.cursor < this.order.length - 1) return this.playFromSource(this.cursor + 1)
+    if (this.cursor < this.order.length - 1) {
+      this.playFromSource(this.cursor + 1)
+      return true
+    }
     if (repeat === 'all' && this.order.length > 0) {
       // Each lap around a shuffled list gets a fresh order.
       if (this.state.shuffle) this.order = shuffled(this.order)
-      return this.playFromSource(0)
+      this.playFromSource(0)
+      return true
     }
     if (!manual) {
+      this.audio.pause()
+      this.update({ playing: false })
+    }
+    return false
+  }
+
+  // A song that can't be played is reported and skipped. When every song left has failed in a row, playback
+  // stops there instead.
+  private skipFailed(): void {
+    const { track } = this.state
+    if (!track) return
+    if (this.failures === 0) this.toTry = this.order.length + this.state.queued.length + (this.playingQueued ? 1 : 0)
+    this.failures++
+    this.update({ failed: track })
+    if (this.failures >= this.toTry) {
+      this.failures = 0
+      this.audio.pause()
+      return this.update({ playing: false, unplayable: true })
+    }
+    this.recovering = true
+    const moved = this.advance(true)
+    this.recovering = false
+    // The list ran out before every song had been tried, so playback stops on this one.
+    if (!moved) {
+      this.failures = 0
       this.audio.pause()
       this.update({ playing: false })
     }
@@ -447,10 +504,12 @@ class Player {
     this.load(track)
   }
 
-  private load(track: Track): void {
+  // A retry gets a fresh address, since loading the very address that just failed again doesn't try again.
+  private load(track: Track, retry = false): void {
     this.startAt = null
-    this.audio.src = mediaUrl(track.id)
-    this.publish({ track, position: 0, duration: track.duration ?? 0 })
+    if (!this.recovering) this.failures = 0
+    this.audio.src = retry ? `${mediaUrl(track.id)}?retry=${Date.now()}` : mediaUrl(track.id)
+    this.publish({ track, position: 0, duration: track.duration ?? 0, unplayable: false })
     this.resume()
   }
 

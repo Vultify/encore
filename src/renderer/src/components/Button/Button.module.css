@@ -1,0 +1,88 @@
+/* The app's pill buttons. Views size and color them with these instead of styling their own. */
+.button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  font-weight: 800;
+  transition:
+    transform 0.15s var(--ease),
+    background 0.15s ease,
+    filter 0.15s ease;
+}
+
+.button:disabled {
+  opacity: 0.4;
+}
+
+.small {
+  height: 36px;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.medium {
+  height: 40px;
+  padding: 0 18px;
+  font-size: 13.5px;
+}
+
+/* The big Play at the top of an album, artist, or playlist page. */
+.large {
+  height: 44px;
+  padding: 0 20px 0 16px;
+  font-size: 13.5px;
+}
+
+.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.primary:hover:not(:disabled) {
+  transform: scale(1.03);
+}
+
+.secondary {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.danger {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+.danger:hover:not(:disabled) {
+  filter: brightness(1.2);
+}
+
+/* The quiet link back to where a page came from. */
+.back {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px 0 8px;
+  margin-left: -8px;
+  border-radius: var(--radius-pill);
+  color: var(--text-3);
+  font-size: 13px;
+  font-weight: 600;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.back:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}

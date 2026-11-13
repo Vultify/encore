@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
+import type { EncoreApi } from '../src/shared/api'
 
 export interface Encore {
   app: ElectronApplication
@@ -10,6 +11,30 @@ export interface Encore {
 }
 
 export const makeDataDir = (): string => mkdtempSync(join(tmpdir(), 'encore-data-'))
+
+// Adds a folder of songs to the library, the same way dropping it in would.
+export async function importFolder(page: Page, dir: string): Promise<void> {
+  await page.evaluate((path) => (window as unknown as { encore: EncoreApi }).encore.library.importPaths([path]), dir)
+}
+
+// Temporary folders a test makes or keeps, removed together once it's done.
+export class TempDirs {
+  private dirs: string[] = []
+
+  make(prefix: string): string {
+    return this.keep(mkdtempSync(join(tmpdir(), prefix)))
+  }
+
+  keep(dir: string): string {
+    this.dirs.push(dir)
+    return dir
+  }
+
+  removeAll(): void {
+    for (const dir of this.dirs) rmSync(dir, { recursive: true, force: true })
+    this.dirs = []
+  }
+}
 
 // Song lookups go nowhere unless a test sets up its own stand-in, so no test ever reaches Apple's servers,
 // AcoustID, or the Cover Art Archive. Matching by sound is off unless a test supplies a key.

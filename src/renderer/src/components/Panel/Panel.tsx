@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Button } from '../Button/Button'
 import styles from './Panel.module.css'
 
 interface PanelProps {
@@ -37,9 +38,9 @@ export function EmptyState({ icon, title, children, action }: EmptyStateProps) {
       <h2 className={styles.emptyTitle}>{title}</h2>
       <p className={styles.emptyText}>{children}</p>
       {action && (
-        <button className={styles.emptyAction} onClick={action.onClick}>
+        <Button variant="primary" className={styles.emptyAction} onClick={action.onClick}>
           {action.label}
-        </button>
+        </Button>
       )}
     </div>
   )

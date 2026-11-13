@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { artworkUrl, type NowPlaying, type PlayerCommand } from '@shared/api'
-import { Marquee } from '@/components/Marquee/Marquee'
+import type { MiniEncoreApi, NowPlaying, PlayerCommand } from '@shared/api'
+import { SongButton } from '@/components/PlayerPill/SongButton'
+import pill from '@/components/PlayerPill/pill.module.css'
 import { NextIcon, PauseIcon, PlayIcon, PreviousIcon, VolumeIcon, VolumeMutedIcon } from '@/components/icons'
 import { useAccentColor } from '@/hooks/useAccentColor'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
+import { wheelVolume } from '@/lib/volume'
 import styles from './MiniPlayer.module.css'
 
 // How often the progress line moves along while a song plays.
 const TICK_MS = 250
-// How much one turn of the mouse wheel moves the volume.
-const WHEEL_STEP = 0.05
 
 interface Report {
   now: NowPlaying | null
@@ -23,9 +23,12 @@ function elapsed({ now, at }: Report): number {
   return Math.min(position, now.duration)
 }
 
-const send = (command: PlayerCommand): void => window.encore.mini.send(command)
+// This window's preload gives it only the mini player's own controls, not the main window's whole set.
+const mini = (window as unknown as { encore: MiniEncoreApi }).encore.mini
 
-const setInteractive = (interactive: boolean): void => window.encore.mini.setInteractive(interactive)
+const send = (command: PlayerCommand): void => mini.send(command)
+
+const setInteractive = (interactive: boolean): void => mini.setInteractive(interactive)
 
 // The floating pill: the song, previous, play or pause, next, volume, and a thin progress line. It only shows what
 // the main window's player is doing; every press goes back there. Clicking the song opens Encore.
@@ -55,10 +58,10 @@ export function MiniPlayer() {
       setReport({ now: next, at: performance.now() })
     }
     // A change that arrives first is newer than the starting snapshot, so the snapshot is dropped then.
-    window.encore.mini.current().then((first) => {
+    mini.current().then((first) => {
       if (!heard) setReport({ now: first, at: performance.now() })
     })
-    return window.encore.mini.onNowPlaying(take)
+    return mini.onNowPlaying(take)
   }, [])
 
   useEffect(() => {
@@ -113,30 +116,37 @@ export function MiniPlayer() {
           if (!dragging.current) setInteractive(false)
         }}
       >
-        <button className={styles.song} aria-label="Open Encore" title="Open Encore" onClick={() => window.encore.mini.openEncore()}>
-          <span className={styles.cover} aria-hidden="true">
-            {song?.artworkId ? <img src={artworkUrl(song.artworkId)} alt="" draggable={false} /> : <span className={styles.coverRing} />}
-          </span>
-          <span className={styles.meta}>
-            <Marquee className={styles.title} text={song ? song.title : 'Not playing'} play={hovered} />
-            <Marquee className={styles.artist} text={song ? (song.artist ?? 'Unknown artist') : 'Pick a song in Encore'} play={hovered} />
-          </span>
-        </button>
+        <SongButton
+          className={styles.song}
+          label="Open Encore"
+          tooltip="Open Encore"
+          artworkId={song?.artworkId ?? null}
+          title={song ? song.title : 'Not playing'}
+          artist={song ? (song.artist ?? 'Unknown artist') : 'Pick a song in Encore'}
+          scroll={{ play: hovered }}
+          onClick={() => mini.openEncore()}
+        />
 
         <div className={styles.controls}>
-          <button className={styles.iconButton} aria-label="Previous song" disabled={!song} onClick={() => send('previous')}>
+          <button className={pill.iconButton} aria-label="Previous song" disabled={!song} onClick={() => send('previous')}>
             <PreviousIcon size={19} />
           </button>
-          <button className={styles.play} aria-label={song?.playing ? 'Pause' : 'Play'} disabled={!song} onClick={() => send('toggle')}>
+          <button className={pill.play} aria-label={song?.playing ? 'Pause' : 'Play'} disabled={!song} onClick={() => send('toggle')}>
             {song?.playing ? <PauseIcon size={20} /> : <PlayIcon size={20} />}
           </button>
-          <button className={styles.iconButton} aria-label="Next song" disabled={!song?.hasNext} onClick={() => send('next')}>
+          <button className={pill.iconButton} aria-label="Next song" disabled={!song?.hasNext} onClick={() => send('next')}>
             <NextIcon size={19} />
           </button>
         </div>
 
-        <div className={styles.volume} onWheel={(event) => now && setVolume(level - Math.sign(event.deltaY) * WHEEL_STEP)}>
-          <button className={styles.mute} aria-label={now?.muted ? 'Unmute' : 'Mute'} disabled={!now} onClick={() => send('toggleMute')}>
+        <div
+          className={styles.volume}
+          onWheel={(event) => {
+            const next = now && wheelVolume(now.volume, now.muted, event.deltaY)
+            if (next != null) setVolume(next)
+          }}
+        >
+          <button className={`${pill.iconButton} ${styles.mute}`} aria-label={now?.muted ? 'Unmute' : 'Mute'} disabled={!now} onClick={() => send('toggleMute')}>
             {level === 0 ? <VolumeMutedIcon size={17} /> : <VolumeIcon size={17} />}
           </button>
           <input

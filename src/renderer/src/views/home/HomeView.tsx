@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { ListeningStats, Track } from '@shared/api'
 import { Artwork } from '@/components/Artwork/Artwork'
+import { Button } from '@/components/Button/Button'
 import { EmptyState, LoadingState, Panel } from '@/components/Panel/Panel'
+import { Segmented } from '@/components/Segmented/Segmented'
 import { TrackList } from '@/components/TrackList/TrackList'
 import { ChevronDownIcon, MusicIcon, PlayIcon, ShuffleIcon, UploadIcon } from '@/components/icons'
 import { useLibraryGroups } from '@/hooks/useLibraryGroups'
@@ -17,6 +19,8 @@ import styles from './home.module.css'
 
 // How many songs and artists each top list shows.
 const TOP_COUNT = 5
+
+const SPAN_OPTIONS = SPANS.map((info) => ({ value: info.id, label: info.label }))
 
 function greeting(hour = new Date().getHours()): string {
   if (hour >= 5 && hour < 12) return 'Good morning'
@@ -64,13 +68,7 @@ export function HomeView({ span, onSpanChange, onNavigate, onOpenLibrary, onOpen
     <>
       <h2 className={views.heading}>{greeting()}</h2>
       {loaded && tracks.length > 0 && result?.stats.firstPlayedAt != null && (
-        <div className={styles.spans} role="radiogroup" aria-label="Time span">
-          {SPANS.map((info) => (
-            <button key={info.id} role="radio" aria-checked={span === info.id} onClick={() => onSpanChange(info.id)}>
-              {info.label}
-            </button>
-          ))}
-        </div>
+        <Segmented label="Time span" options={SPAN_OPTIONS} value={span} onChange={onSpanChange} />
       )}
     </>
   )
@@ -122,11 +120,10 @@ export function HomeView({ span, onSpanChange, onNavigate, onOpenLibrary, onOpen
 const mixName = (size: number): string => `Your Top ${size}`
 const mixQueue = (span: StatsSpan): string => `top-mix:${span}`
 
-// The mix is only rebuilt when its songs or their order change, not every time the stats refresh.
+// The mix follows the latest song details, so a like or an identified title shows up in it right away. The player
+// only reorders its queue when the songs themselves change.
 function useMix(songs: SongStat[], size: number): Track[] {
-  const picked = songs.slice(0, size).map((song) => song.track)
-  const ids = picked.map((track) => track.id).join(',')
-  return useMemo(() => picked, [ids])
+  return useMemo(() => songs.slice(0, size).map((song) => song.track), [songs, size])
 }
 
 function TopSongs({ songs, phrase, mixSize, span }: { songs: SongStat[]; phrase: string; mixSize: number; span: StatsSpan }) {
@@ -215,14 +212,14 @@ function TopMix({ songs, size, span }: { songs: SongStat[]; size: number; span: 
           <span className={styles.mixDetails}>{details.join(' · ')}</span>
         </div>
         <div className={styles.mixActions}>
-          <button className={styles.secondary} onClick={() => player.playShuffled(mix, queue, name)}>
+          <Button onClick={() => player.playShuffled(mix, queue, name)}>
             <ShuffleIcon size={16} />
             Shuffle
-          </button>
-          <button className={styles.primary} onClick={() => player.playQueue(mix, 0, queue, name)}>
+          </Button>
+          <Button variant="primary" onClick={() => player.playQueue(mix, 0, queue, name)}>
             <PlayIcon size={16} />
             Play
-          </button>
+          </Button>
         </div>
       </div>
       <button className={styles.showSongs} aria-expanded={open} onClick={() => setOpen(!open)}>

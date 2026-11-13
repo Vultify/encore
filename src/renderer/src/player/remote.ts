@@ -1,11 +1,11 @@
-import type { NowPlaying, PlayerCommand } from '@shared/api'
+import type { NowPlaying, PlayerCommand, PlayerPress } from '@shared/api'
 import { player } from './player'
 
 // The mini player runs its progress line on from the last report, so the position is only sent again when it
 // drifts from that by more than this.
 const DRIFT_SECONDS = 1
 
-const PRESSES: Record<Exclude<PlayerCommand, object>, () => void> = {
+const PRESSES: Record<PlayerPress, () => void> = {
   toggle: () => player.toggle(),
   next: () => player.next(),
   previous: () => player.previous(),

@@ -40,6 +40,11 @@ export function SearchView({ query, onQueryChange, onNavigate, focusRequest }: S
     [deferredQuery, library.tracks, library.artists, library.albums, library.playlists]
   )
   const tracksById = useMemo(() => new Map(library.tracks.map((track) => [track.id, track])), [library.tracks])
+  // Kept as the same list between redraws, since the player follows the list a song was played from.
+  const shownSongs = useMemo(
+    () => (showAllSongs ? results.songs : results.songs.slice(0, SONGS_SHOWN)),
+    [results.songs, showAllSongs]
+  )
 
   useEffect(() => input.current?.focus(), [focusRequest])
   useEffect(() => setShowAllSongs(false), [deferredQuery])
@@ -97,8 +102,6 @@ export function SearchView({ query, onQueryChange, onNavigate, focusRequest }: S
         </EmptyState>
       )
     }
-
-    const shownSongs = showAllSongs ? songs : songs.slice(0, SONGS_SHOWN)
 
     return (
       <div className={`${pages.page} ${pages.scroll}`}>

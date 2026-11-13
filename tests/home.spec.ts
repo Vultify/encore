@@ -1,32 +1,23 @@
 /// <reference lib="dom" />
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
-import type { EncoreApi } from '../src/shared/api'
 import { makeMp3 } from './fixtures/audio'
-import { launchEncore, makeDataDir } from './launch'
+import { importFolder, launchEncore, makeDataDir, TempDirs } from './launch'
 
 let app: ElectronApplication
 let page: Page
-let dirs: string[] = []
-
-const tempDir = (prefix: string): string => {
-  const dir = mkdtempSync(join(tmpdir(), prefix))
-  dirs.push(dir)
-  return dir
-}
+const temp = new TempDirs()
 
 test.afterEach(async () => {
   await app?.close()
-  for (const dir of dirs) rmSync(dir, { recursive: true, force: true })
-  dirs = []
+  temp.removeAll()
 })
 
 // Two albums by two artists. Six-second songs count as played after three seconds of listening, so tests listen
 // for four, since the dock rounds the time it shows.
 function makeAlbums(): string {
-  const dir = tempDir('encore-home-')
+  const dir = temp.make('encore-home-')
   writeFileSync(join(dir, '01 Opening.mp3'), makeMp3(6, { title: 'Opening', artist: 'Band', album: 'First Album', track: '1' }))
   writeFileSync(join(dir, '02 Middle.mp3'), makeMp3(6, { title: 'Middle', artist: 'Band', album: 'First Album', track: '2' }))
   writeFileSync(join(dir, '03 Arrival.mp3'), makeMp3(6, { title: 'Arrival', artist: 'Other Band', album: 'Second Album', track: '1' }))
@@ -36,7 +27,7 @@ function makeAlbums(): string {
 async function open(dataDir?: string, music?: string): Promise<void> {
   ;({ app, page } = await launchEncore(dataDir))
   if (music) {
-    await page.evaluate((dir) => (window as unknown as { encore: EncoreApi }).encore.library.importPaths([dir]), music)
+    await importFolder(page, music)
     await page.reload()
   }
   await nav('Home')
@@ -81,7 +72,7 @@ test('before anything is played, Home explains that stats grow with listening', 
 
 test('listening fills in the time, top songs, top artists, and the mix, and it all stays after a restart', async () => {
   const dataDir = makeDataDir()
-  dirs.push(dataDir)
+  temp.keep(dataDir)
   await open(dataDir, makeAlbums())
 
   // Played past halfway: one play. Skipped after a second: listening time, but no play.
@@ -140,6 +131,19 @@ test('the time span switch changes the chart, and the mix plays and shuffles', a
   await card('Your Top 25').getByRole('button', { name: 'Shuffle', exact: true }).click()
   await expect(dock().getByRole('button', { name: 'Shuffle' })).toHaveAttribute('aria-pressed', 'true')
   await expect(dock().getByRole('button', { name: 'Pause' })).toBeVisible()
+})
+
+test('liking a song in the mix shows the heart right away', async () => {
+  await open(undefined, makeAlbums())
+  await listen('Opening', 4)
+
+  const mix = card('Your Top 25')
+  await mix.getByRole('button', { name: 'Show the songs' }).click()
+  const row = mix.getByRole('list', { name: 'Your Top 25' }).getByRole('listitem').filter({ hasText: 'Opening' })
+  await expect(row.getByRole('img', { name: 'Liked' })).toHaveCount(0)
+  await row.click({ button: 'right' })
+  await page.getByRole('menu').getByRole('menuitem', { name: 'Like', exact: true }).click()
+  await expect(row.getByRole('img', { name: 'Liked' })).toBeVisible()
 })
 
 test('the mix size is set in Settings and rounds to the nearest five', async () => {

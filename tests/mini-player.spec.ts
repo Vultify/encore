@@ -3,10 +3,10 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
-import type { EncoreApi } from '../src/shared/api'
+import type { EncoreApi, MiniEncoreApi } from '../src/shared/api'
 import { makeMp3, makeWav } from './fixtures/audio'
 import { makePng } from './fixtures/png'
-import { launchEncore } from './launch'
+import { importFolder, launchEncore } from './launch'
 
 let musicDir: string
 let app: ElectronApplication
@@ -24,7 +24,7 @@ test.afterAll(() => {
 
 test.beforeEach(async () => {
   ;({ app, page } = await launchEncore())
-  await page.evaluate((dir) => (window as unknown as { encore: EncoreApi }).encore.library.importPaths([dir]), musicDir)
+  await importFolder(page, musicDir)
   await page.reload()
   await page.getByRole('tab', { name: 'Local files' }).click()
 })
@@ -137,7 +137,7 @@ test('the pill sets the volume, mutes, and shows the volume set in Encore', asyn
   await expect(dock().getByLabel('Volume')).toHaveValue('0.35')
 
   // A volume that makes no sense is ignored.
-  await mini.evaluate(() => (window as unknown as { encore: EncoreApi }).encore.mini.send({ volume: 7 }))
+  await mini.evaluate(() => (window as unknown as { encore: MiniEncoreApi }).encore.mini.send({ volume: 7 }))
   await mini.waitForTimeout(300)
   await expect(dock().getByLabel('Volume')).toHaveValue('0.35')
 })
@@ -147,7 +147,7 @@ test('a title too long for the pill scrolls, so all of it can be read', async ()
   const longDir = mkdtempSync(join(tmpdir(), 'encore-mini-long-'))
   try {
     writeFileSync(join(longDir, 'Long.mp3'), makeMp3(6, { title, artist: 'Band' }))
-    await page.evaluate((dir) => (window as unknown as { encore: EncoreApi }).encore.library.importPaths([dir]), longDir)
+    await importFolder(page, longDir)
     await page.reload()
     await page.getByRole('tab', { name: 'Local files' }).click()
     await page.getByRole('listitem').filter({ hasText: title }).dblclick()
@@ -222,11 +222,18 @@ test('with nothing playing, the pill says so and its buttons are off', async () 
   await expect(pill.getByRole('button', { name: 'Previous song' })).toBeDisabled()
 })
 
-test('only the mini player can send presses to the player', async () => {
-  await page.getByRole('listitem').filter({ hasText: 'Song A' }).dblclick()
-  await expect(dock().getByRole('button', { name: 'Pause' })).toBeVisible()
-  // The main window trying the mini player's channel is ignored.
-  await page.evaluate(() => (window as unknown as { encore: EncoreApi }).encore.mini.send('toggle'))
-  await page.waitForTimeout(300)
-  await expect(dock().getByRole('button', { name: 'Pause' })).toBeVisible()
+test('the mini player can reach only its own controls, not the library or any files', async () => {
+  const mini = await popOut()
+  const reachable = await mini.evaluate(() =>
+    Object.fromEntries(Object.entries((window as unknown as { encore: object }).encore).map(([group, calls]) => [group, Object.keys(calls).sort()]))
+  )
+  expect(reachable).toEqual({
+    mini: ['current', 'onNowPlaying', 'openEncore', 'send', 'setInteractive'],
+    library: ['accentColor'],
+    preferences: ['get', 'onChange']
+  })
+})
+
+test("the main window doesn't get the mini player's controls", async () => {
+  expect(await page.evaluate(() => 'mini' in (window as unknown as { encore: object }).encore)).toBe(false)
 })

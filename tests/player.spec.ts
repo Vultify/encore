@@ -3,10 +3,9 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
-import type { EncoreApi } from '../src/shared/api'
 import { makeMp3, makeWav } from './fixtures/audio'
 import { dropFiles } from './drop'
-import { launchEncore } from './launch'
+import { importFolder, launchEncore } from './launch'
 
 let app: ElectronApplication
 let page: Page
@@ -30,7 +29,7 @@ test.beforeEach(async () => {
   app = encore.app
   page = encore.page
   dock = page.getByRole('region', { name: 'Player' })
-  await page.evaluate((dir) => (window as unknown as { encore: EncoreApi }).encore.library.importPaths([dir]), musicDir)
+  await importFolder(page, musicDir)
   await page.reload()
   await page.getByRole('tab', { name: 'Local files' }).click()
 })
@@ -150,7 +149,7 @@ test('volume slider and mute', async () => {
 test('a song whose file is gone is caught before it plays', async () => {
   const goneDir = mkdtempSync(join(tmpdir(), 'encore-gone-'))
   writeFileSync(join(goneDir, 'Ghost - Vanished.wav'), makeWav(3))
-  await page.evaluate((dir) => (window as unknown as { encore: EncoreApi }).encore.library.importPaths([dir]), goneDir)
+  await importFolder(page, goneDir)
   rmSync(goneDir, { recursive: true, force: true })
   await page.reload()
   await page.getByRole('tab', { name: 'Local files' }).click()

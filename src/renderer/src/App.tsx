@@ -48,7 +48,7 @@ export default function App() {
   const [nowPlayingOpen, setNowPlayingOpen] = useState(false)
   const notice = useNotice()
 
-  const { failed, track } = usePlayer()
+  const { failed, unplayable, sourceName, track } = usePlayer()
   const { tracks } = useLibrary()
 
   // The player holds its own copies of songs. Whenever the library changes, it swaps in the latest ones.
@@ -70,6 +70,11 @@ export default function App() {
     notify(`Couldn't play ${failed.title}. The file may have moved.`)
     library.markMissing(failed.id)
   }, [failed])
+
+  // Declared after the effect above, so when the last song fails this notice is the one that stays.
+  useEffect(() => {
+    if (unplayable) notify(`None of the songs in ${sourceName || 'this list'} could be played. The drive or folder may be gone.`)
+  }, [unplayable])
 
   // Space plays and pauses, unless it's typing or pressing a focused control. Ctrl + F opens search.
   useEffect(() => {

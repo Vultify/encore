@@ -4,9 +4,10 @@ import { join } from 'node:path'
 import { expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
 import { parseFile } from 'music-metadata'
 import type { EncoreApi } from '../src/shared/api'
-import { makeWav } from './fixtures/audio'
+import { makeMp3, makeWav } from './fixtures/audio'
+import { makePng } from './fixtures/png'
 import { startLookupServer, type CatalogSong, type LookupServer } from './fixtures/lookup-server'
-import { launchEncore, makeDataDir } from './launch'
+import { importFolder, launchEncore, makeDataDir } from './launch'
 
 let app: ElectronApplication
 let page: Page
@@ -76,12 +77,12 @@ test.afterEach(async () => {
   rmSync(musicDir, { recursive: true, force: true })
 })
 
-async function start(dataDir?: string, lookupUrl = lookup.url): Promise<void> {
-  const encore = await launchEncore(dataDir, { ENCORE_LOOKUP_URL: lookupUrl })
+async function start(dataDir?: string, lookupUrl = lookup.url, env: Record<string, string> = {}): Promise<void> {
+  const encore = await launchEncore(dataDir, { ENCORE_LOOKUP_URL: lookupUrl, ...env })
   app = encore.app
   page = encore.page
   library = page.getByRole('region', { name: 'Library' })
-  await page.evaluate((dir) => (window as unknown as { encore: EncoreApi }).encore.library.importPaths([dir]), musicDir)
+  await importFolder(page, musicDir)
   await page.reload()
   await library.getByRole('tab', { name: 'Local files' }).click()
 }
@@ -136,7 +137,7 @@ test('identify songs: pick the best match, skip what has none, and the library u
 
 test('a song the search skips is found through the artist’s own songs', async () => {
   writeFileSync(join(musicDir, 'Coheed and Cambria - Welcome Home (Lyrics).wav'), makeWav(375))
-  await page.evaluate((dir) => (window as unknown as { encore: EncoreApi }).encore.library.importPaths([dir]), musicDir)
+  await importFolder(page, musicDir)
   await page.reload()
   await library.getByRole('tab', { name: 'Local files' }).click()
 
@@ -176,6 +177,47 @@ test('identify one song from its menu, then restore its original tags', async ()
   await menuItem('Restore original tags').click()
   await expect(row('Numb')).not.toContainText('Meteora')
   await expect(row('Numb')).toContainText('Linkin Park')
+})
+
+test('a match left waiting for review stays when another song is identified', async () => {
+  await row('Numb').click({ button: 'right' })
+  await menuItem('Identify song').click()
+  await expect(library.getByRole('region', { name: 'Your song' })).toContainText('Numb')
+  await library.getByRole('button', { name: 'Local files', exact: true }).click()
+  await expect(banner()).toContainText('1 match is ready to review.')
+
+  // The waiting match comes first, then the new one.
+  await row('Uptown Funk').click({ button: 'right' })
+  await menuItem('Identify song').click()
+  await expect(library.getByRole('region', { name: 'Your song' })).toContainText('Numb')
+  await library.getByRole('button', { name: 'Use this match' }).click()
+  await expect(library.getByRole('region', { name: 'Your song' })).toContainText('Uptown Funk')
+  await library.getByRole('button', { name: 'Use this match' }).click()
+  await expect(library.getByText('All done. 2 songs updated.')).toBeVisible()
+})
+
+test('a song asked for during a run is looked up next, and the review keeps the matches already decided', async () => {
+  // A tagged song with a cover isn't part of the banner's run, but can be identified from its menu.
+  writeFileSync(join(musicDir, 'Tagged.mp3'), makeMp3(30, { title: 'Tagged Song', artist: 'Someone', album: 'Something', cover: makePng(20, 20, [90, 90, 90]) }))
+  await app.close()
+  // Lookups a couple of seconds apart, so the run is still going while another song is asked for.
+  await start(undefined, lookup.url, { ENCORE_LOOKUP_GAP_MS: '2500' })
+
+  await banner().getByRole('button', { name: 'Identify songs' }).click()
+  await expect(library.getByRole('region', { name: 'Your song' })).toContainText('Numb')
+  await library.getByRole('button', { name: 'Use this match' }).click()
+  await library.getByRole('button', { name: 'Local files', exact: true }).click()
+  await expect(banner()).toContainText('Looking up songs')
+  await row('Tagged Song').click({ button: 'right' })
+  await menuItem('Identify song').click()
+
+  await expect(library.getByRole('region', { name: 'Your song' })).toContainText('Uptown Funk', { timeout: 15_000 })
+  await library.getByRole('button', { name: 'Use this match' }).click()
+  await expect(library.getByRole('region', { name: 'Your song' })).toContainText('Unheard Song', { timeout: 15_000 })
+  await library.getByRole('button', { name: 'Skip' }).click()
+  await expect(library.getByRole('region', { name: 'Your song' })).toContainText('Tagged Song', { timeout: 15_000 })
+  await library.getByRole('button', { name: 'Skip' }).click()
+  await expect(library.getByText('All done. 2 songs updated, 2 skipped.')).toBeVisible()
 })
 
 test('picking a different match than the best one', async () => {

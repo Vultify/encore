@@ -35,32 +35,7 @@
 }
 
 .presets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
   margin-top: 14px;
-}
-
-.presets button {
-  height: 30px;
-  padding: 0 12px;
-  border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-muted);
-  font-size: 12.5px;
-  font-weight: 700;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease;
-}
-
-.presets button:hover {
-  color: var(--text);
-}
-
-.presets button[aria-checked='true'] {
-  background: rgba(255, 255, 255, 0.12);
-  color: var(--text);
 }
 
 .board {

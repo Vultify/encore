@@ -95,7 +95,8 @@ export interface LibraryControls {
 }
 
 // Listening time is grouped by day for a week or month, and by month for longer spans.
-export type StatsBucket = 'day' | 'month'
+export const STATS_BUCKETS = ['day', 'month'] as const
+export type StatsBucket = (typeof STATS_BUCKETS)[number]
 
 export interface ListeningStats {
   totalSeconds: number
@@ -184,7 +185,16 @@ export interface NowPlaying {
   muted: boolean
 }
 
-export type PlayerCommand = 'toggle' | 'next' | 'previous' | 'toggleMute' | { volume: number }
+// Presses the tray and the mini player pass to the player, or a new volume from 0 to 1.
+export const PLAYER_PRESSES = ['toggle', 'next', 'previous', 'toggleMute'] as const
+export type PlayerPress = (typeof PLAYER_PRESSES)[number]
+export type PlayerCommand = PlayerPress | { volume: number }
+
+export const REPEAT_MODES = ['off', 'all', 'one'] as const
+export type RepeatMode = (typeof REPEAT_MODES)[number]
+
+// Where the volume slider starts on a first run.
+export const DEFAULT_VOLUME = 0.8
 
 // Where listening left off, so Encore reopens on the same song with the rest of its list still queued.
 export interface PlayerSession {
@@ -201,7 +211,7 @@ export interface PlayerSession {
   fromQueue: boolean
   position: number
   shuffle: boolean
-  repeat: 'off' | 'all' | 'one'
+  repeat: RepeatMode
 }
 
 export interface PlayerPreferences {
@@ -266,6 +276,17 @@ export interface Preferences {
   topMixSize: number
 }
 
+// What Settings starts with, and what anything missing or damaged in the settings file falls back to.
+export const DEFAULT_PREFERENCES: Preferences = {
+  miniPlayerShortcut: DEFAULT_MINI_PLAYER_SHORTCUT,
+  accent: 'album',
+  motion: 'system',
+  musicFolders: [],
+  identifyNewSongs: false,
+  startWithWindows: false,
+  topMixSize: TOP_MIX.default
+}
+
 export type PreferenceChanges = Partial<Pick<Preferences, 'accent' | 'motion' | 'identifyNewSongs' | 'startWithWindows' | 'topMixSize'>>
 
 export interface PreferenceControls {
@@ -294,9 +315,15 @@ export interface EncoreApi {
   playlists: PlaylistControls
   identify: IdentifyControls
   remote: RemoteControls
-  mini: MiniPlayerControls
   settings: SettingsControls
   preferences: PreferenceControls
+}
+
+// The mini player's much smaller set: its own controls, the accent color, and the preferences it follows.
+export interface MiniEncoreApi {
+  mini: MiniPlayerControls
+  library: Pick<LibraryControls, 'accentColor'>
+  preferences: Pick<PreferenceControls, 'get' | 'onChange'>
 }
 
 export const PLAYLIST_NAME_MAX = 100

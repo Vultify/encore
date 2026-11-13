@@ -1,19 +1,9 @@
 import { useSyncExternalStore } from 'react'
-import { DEFAULT_MINI_PLAYER_SHORTCUT, TOP_MIX, type Preferences } from '@shared/api'
-
-const DEFAULTS: Preferences = {
-  miniPlayerShortcut: DEFAULT_MINI_PLAYER_SHORTCUT,
-  accent: 'album',
-  motion: 'system',
-  musicFolders: [],
-  identifyNewSongs: false,
-  startWithWindows: false,
-  topMixSize: TOP_MIX.default
-}
+import { DEFAULT_PREFERENCES, type Preferences } from '@shared/api'
 
 // What's set on the Settings page. The main process owns it and tells every window about each change.
 class PreferenceStore {
-  private state = DEFAULTS
+  private state = DEFAULT_PREFERENCES
   private listeners = new Set<() => void>()
 
   constructor() {

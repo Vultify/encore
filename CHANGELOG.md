@@ -78,6 +78,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tall pages could squeeze the title bar shorter.
 - Songs whose files keep their title, artist, and album only in the "sort as" fields, like some iTunes purchases, now show them.
 - The player dock showed a song's old details after it was identified or re-read while playing.
+- Playing a song from search results could blank the whole window.
+- With repeat all, a list where no song could be played skipped through it forever, and pause couldn't stop it. It now stops after trying each song once and says so, and pressing Play tries again once a file is back.
+- When the last songs in a list couldn't be played, the player kept showing Pause with nothing playing.
+- Albums kept in long folder paths lost the spot to pick up from when Encore reopened.
+- Scrolling down on the player's mute button while muted turned the sound back on.
+- With shuffle on, liking a song reshuffled Up next.
+- The mix on Home didn't show a like or an identified song's new details until it changed order.
+- Identifying a song cleared matches still waiting for review, and songs added during a lookup were never looked up. Waiting matches now stay, and new songs are looked up right after as part of the same review.
+- Adding a whole drive, or any folder with a subfolder Windows won't open, found no songs. A drive's Recycle Bin is left out, so deleted songs don't come back.
+
+### Changed
+- Buttons and switches share one style across the app, and the mini player shows covers and colors the same way as the player dock.
 
 ### Security
 - Updated Electron to 44.10.1 for its fix to trusted website certificates.
+- The mini player can only reach its own controls, not the library or song files.

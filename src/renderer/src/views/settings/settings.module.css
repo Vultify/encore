@@ -109,20 +109,6 @@
   }
 }
 
-.secondary {
-  height: 36px;
-  padding: 0 16px;
-  border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.07);
-  font-size: 13px;
-  font-weight: 700;
-  transition: background 0.15s ease;
-}
-
-.secondary:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
 .textButton {
   height: 36px;
   padding: 0 6px;
@@ -188,37 +174,6 @@
 }
 
 .swatch[aria-checked='true'] .swatchName {
-  color: var(--text);
-}
-
-/* A row of choices where one is picked, like Motion. */
-.segments {
-  display: flex;
-  gap: 2px;
-  padding: 3px;
-  border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.segments button {
-  height: 30px;
-  padding: 0 14px;
-  border-radius: var(--radius-pill);
-  color: var(--text-muted);
-  font-size: 12.5px;
-  font-weight: 700;
-  white-space: nowrap;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease;
-}
-
-.segments button:hover {
-  color: var(--text);
-}
-
-.segments button[aria-checked='true'] {
-  background: rgba(255, 255, 255, 0.1);
   color: var(--text);
 }
 
