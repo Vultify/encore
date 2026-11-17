@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { candidatesFromAcoustId, type AcoustIdAnswer } from '../src/main/identify/soundMatch'
 
-// Shaped like AcoustID's real answer for Caleb's "Numb" download: one fingerprint, linked to a live bootleg,
+// Shaped like AcoustID's real answer for a "Numb" download from my library: one fingerprint, linked to a live bootleg,
 // the album recording, and a video compilation. The album shows up as a 2014 reissue before the 2003 original.
 const id = (n: number): string => `0000000${n}-0000-4000-8000-00000000000${n}`.slice(-36)
 const LINKIN = [{ name: 'Linkin Park' }]

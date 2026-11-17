@@ -74,7 +74,7 @@ test('a live song stays a candidate when the song itself is live', () => {
   expect(albums(ranked)[0]).toBe('Numb (Live) / One More Light: Live')
 })
 
-// Real results Apple's search returned while checking Caleb's own songs.
+// Real results Apple's search returned while checking songs from my library.
 test('a song with the same name by a different artist is not offered', () => {
   const ranked = rankCandidates({ title: 'Numb', artist: 'Linkin Park', duration: 186 }, [
     result('Numb', 'LINKIN PARK', 'Meteora', 188),

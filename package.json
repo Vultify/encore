@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "My personal desktop music player for local music files.",
-  "author": "Caleb Castro",
+  "author": "Vultify <233528661+Vultify@users.noreply.github.com>",
   "license": "UNLICENSED",
   "main": "out/main/index.js",
   "engines": {
