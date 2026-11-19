@@ -53,6 +53,9 @@ export function SettingsView() {
         <Section title="Startup">
           <StartupSetting on={startWithWindows} />
         </Section>
+        <Section title="About">
+          <AboutRow />
+        </Section>
       </div>
     </Panel>
   )
@@ -336,6 +339,31 @@ function FolderSetting({ folders }: { folders: string[] }) {
         </ul>
       )}
     </Row>
+  )
+}
+
+const ABOUT_LINKS = [
+  { label: 'Privacy', url: 'https://vultify.dev/encore/privacy' },
+  { label: 'License', url: 'https://github.com/Vultify/encore/blob/main/LICENSE' },
+  { label: 'Source code', url: 'https://github.com/Vultify/encore' }
+]
+
+// Which version this is, and where to read the privacy note, the license, and the code. Links open in the browser.
+function AboutRow() {
+  return (
+    <Row
+      title={`Encore ${__APP_VERSION__}`}
+      description="A free, open-source player for the music on your computer, made by Vultify."
+      control={
+        <nav className={styles.links} aria-label="About Encore">
+          {ABOUT_LINKS.map((link) => (
+            <a key={link.url} className={styles.link} href={link.url} target="_blank" rel="noreferrer">
+              {link.label}
+            </a>
+          ))}
+        </nav>
+      }
+    />
   )
 }
 

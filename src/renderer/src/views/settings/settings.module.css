@@ -121,6 +121,31 @@
   color: var(--text);
 }
 
+.links {
+  display: flex;
+  gap: 4px;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.link:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
 .note {
   margin-top: 12px;
   font-size: 12.5px;

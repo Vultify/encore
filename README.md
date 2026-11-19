@@ -27,6 +27,9 @@ To identify songs by their sound, copy `.env.example` to `.env` and add a free k
 ## Status
 In development. See `ROADMAP.md` for progress.
 
+## Privacy
+Encore has no accounts, ads, or analytics, and it doesn't collect anything about you. It only goes online to identify songs and check for updates. `PRIVACY.md` says exactly what it sends and where.
+
 ## Credits
 - Song fingerprints come from Chromaprint's `fpcalc` (LGPL 2.1), bundled in `resources/bin`. Source: https://github.com/acoustid/chromaprint
 - Tags are read with music-metadata (MIT) and written with node-taglib-sharp (LGPL 2.1).

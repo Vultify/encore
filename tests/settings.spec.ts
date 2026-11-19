@@ -1,5 +1,5 @@
 /// <reference lib="dom" />
-import { mkdirSync, renameSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
 import { makeWav } from './fixtures/audio'
@@ -49,11 +49,35 @@ const localFiles = (): Locator => page.getByRole('list', { name: 'Local files' }
 test('the gear opens Settings with every group', async () => {
   await open()
   const settings = await openSettings()
-  for (const group of ['Mini player', 'Look', 'Home', 'Music', 'Startup']) {
+  for (const group of ['Mini player', 'Look', 'Home', 'Music', 'Startup', 'About']) {
     await expect(settings.getByRole('region', { name: group })).toBeVisible()
   }
   await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Settings' })).toHaveAttribute('aria-current', 'page')
   await page.screenshot({ path: 'test-results/settings.png' })
+})
+
+test('About shows the version and opens the privacy note, license, and code in the browser', async () => {
+  await open()
+  // Links open in the browser through Electron's shell, which the test records instead.
+  await app.evaluate(({ shell }) => {
+    const opened: string[] = []
+    ;(globalThis as unknown as { opened: string[] }).opened = opened
+    shell.openExternal = (async (url: string) => {
+      opened.push(url)
+    }) as typeof shell.openExternal
+  })
+  const about = (await openSettings()).getByRole('region', { name: 'About' })
+  const { version } = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string }
+  await expect(about).toContainText(`Encore ${version}`)
+  await about.screenshot({ path: 'test-results/settings-about.png' })
+
+  const links = about.getByRole('navigation', { name: 'About Encore' })
+  for (const name of ['Privacy', 'License', 'Source code']) await links.getByRole('link', { name }).click()
+  await expect
+    .poll(() => app.evaluate(() => (globalThis as unknown as { opened: string[] }).opened))
+    .toEqual(['https://vultify.dev/encore/privacy', 'https://github.com/Vultify/encore/blob/main/LICENSE', 'https://github.com/Vultify/encore'])
+  // Encore itself stays where it was.
+  await expect(about).toBeVisible()
 })
 
 test('a fixed accent color replaces the album color, and is kept after a restart', async () => {

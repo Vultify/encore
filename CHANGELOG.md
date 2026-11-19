@@ -69,6 +69,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Boosting with the equalizer lowers the volume just enough that loud songs don't crackle. The equalizer, its preset, and Custom are remembered after a restart.
 - The mini player has a volume slider and a mute button to the right of its controls, and the mouse wheel works over them. A title or artist too long to fit scrolls slowly, so all of it can be read.
 - Motion setting under Look: Match Windows, On, or Off. Matching Windows follows its Animation effects setting, which some performance tools turn off. With motion off, a long name in the mini player ends in an ellipsis and scrolls while the pointer is on the pill, and hovering shows the whole name.
+- About section at the bottom of Settings, with the version and links to the privacy note, the license, and the source code.
+- A privacy note, `PRIVACY.md`, saying what Encore keeps on your computer and exactly when it goes online.
 
 ### Removed
 - The "Spotify not connected" badge in the title bar. Encore plays local music only.
