@@ -8,6 +8,8 @@ Encore is a music player for the music on your own computer. It has no accounts,
 
 Your library, playlists, likes, listening history and stats, equalizer, and settings are saved on your computer only, in Encore's folder at `%APPDATA%\encore`. Uninstalling Encore leaves that folder in place, so you can delete it yourself if you want it gone.
 
+Encore also keeps a small log of errors in that folder, so a bug report has something to go on. It never leaves your computer unless you attach it to a report yourself.
+
 Encore only changes your song files when you ask it to, with Save tags to file.
 
 ## When Encore goes online

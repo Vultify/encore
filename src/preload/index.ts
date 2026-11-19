@@ -28,7 +28,8 @@ const api: EncoreApi = {
     startListen: (trackId, sourceKey) => ipcRenderer.invoke(Channels.startListen, trackId, sourceKey),
     updateListen: (listenId, seconds, counted) => ipcRenderer.send(Channels.updateListen, listenId, seconds, counted),
     listeningStats: (since, bucket) => ipcRenderer.invoke(Channels.listeningStats, since, bucket),
-    onFolderImport: (listener) => listen(Channels.folderImport, listener)
+    onFolderImport: (listener) => listen(Channels.folderImport, listener),
+    setAsideLibrary: () => ipcRenderer.invoke(Channels.setAsideLibrary)
   },
   playlists: {
     list: () => ipcRenderer.invoke(Channels.listPlaylists),
@@ -54,7 +55,8 @@ const api: EncoreApi = {
   },
   settings: {
     getPlayer: () => ipcRenderer.invoke(Channels.getPlayerSettings),
-    savePlayer: (preferences) => ipcRenderer.send(Channels.savePlayerSettings, preferences)
+    savePlayer: (preferences) => ipcRenderer.send(Channels.savePlayerSettings, preferences),
+    openLogFolder: () => ipcRenderer.send(Channels.openLogFolder)
   },
   preferences: {
     get: () => ipcRenderer.invoke(Channels.getPreferences),

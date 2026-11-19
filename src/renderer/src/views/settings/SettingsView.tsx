@@ -463,6 +463,9 @@ function AboutRow() {
               {link.label}
             </a>
           ))}
+          <button className={styles.link} title="Opens the folder with Encore's log, to attach to a bug report" onClick={window.encore.settings.openLogFolder}>
+            Error log
+          </button>
         </nav>
       }
     />

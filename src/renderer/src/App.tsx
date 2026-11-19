@@ -115,6 +115,13 @@ export default function App() {
   // media overlay can control the player, and new songs in the music folders show up by themselves.
   useEffect(() => {
     const loaded = library.load()
+    void window.encore.library.setAsideLibrary().then((kept) => {
+      if (!kept) return
+      notify(`Your library file was damaged, so Encore started a new one. The old file is kept in Encore's folder as ${kept}.`, {
+        persist: true,
+        action: { label: 'Got it', run: () => {} }
+      })
+    })
     const forgetPlayer = rememberPlayer(loaded)
     void loaded.then(() => window.encore.library.scanMusicFolders().catch(() => null)).then(addFolderSongs)
     const stopWatching = window.encore.library.onFolderImport(addFolderSongs)

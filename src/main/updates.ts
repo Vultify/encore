@@ -1,6 +1,7 @@
 import { app, ipcMain, type BrowserWindow, type WebContents } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import { Channels, type UpdateStatus } from '../shared/api'
+import { log } from './log'
 
 // Tests hand Encore an update config pointing at their own stand-in server, which also works while developing.
 // What a test feed serves is never installed, so a test can't replace the real installed Encore.
@@ -46,7 +47,9 @@ export function registerUpdates({ getMainWindow, onChange }: UpdateOptions): Upd
     autoUpdater.updateConfigPath = TEST_CONFIG
     autoUpdater.forceDevUpdateConfig = true
   }
-  // Failures already show in Settings; this keeps the updater from also throwing them as unhandled errors.
+  // The updater writes its own steps and errors to Encore's log.
+  autoUpdater.logger = log
+  // Failures show in Settings and the log; this keeps the updater from also throwing them as unhandled errors.
   autoUpdater.on('error', () => {})
   autoUpdater.on('download-progress', ({ percent }) => {
     const rounded = Math.floor(percent)

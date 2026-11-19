@@ -1,3 +1,4 @@
+import { renameSync } from 'node:fs'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { app } from 'electron'
@@ -159,12 +160,38 @@ function migrate(database: DatabaseSync): void {
   }
 }
 
+const libraryPath = (): string => join(app.getPath('userData'), 'library.db')
+
 // Opens library.db in Encore's data folder, creating or upgrading it as needed.
 export function openLibrary(): void {
-  db = new DatabaseSync(join(app.getPath('userData'), 'library.db'))
-  db.exec('PRAGMA journal_mode = WAL')
-  db.exec('PRAGMA foreign_keys = ON')
-  migrate(db)
+  try {
+    db = new DatabaseSync(libraryPath())
+    db.exec('PRAGMA journal_mode = WAL')
+    db.exec('PRAGMA foreign_keys = ON')
+    migrate(db)
+  } catch (error) {
+    closeLibrary()
+    throw error
+  }
+}
+
+// SQLite's words for a file that isn't a readable database anymore, as opposed to one that's locked or busy.
+export const isDamagedLibrary = (error: unknown): boolean =>
+  error instanceof Error && /not a database|malformed/i.test(error.message)
+
+// Moves a damaged library out of the way, along with its journal files, so a new one can start. Returns the name the
+// old file was kept under.
+export function setAsideLibrary(): string {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')
+  const kept = `library.damaged-${stamp}.db`
+  for (const suffix of ['', '-wal', '-shm']) {
+    try {
+      renameSync(`${libraryPath()}${suffix}`, join(app.getPath('userData'), `${kept}${suffix}`))
+    } catch {
+      // The journal files only exist sometimes.
+    }
+  }
+  return kept
 }
 
 export function closeLibrary(): void {

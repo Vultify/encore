@@ -95,6 +95,8 @@ export interface LibraryControls {
   listeningStats: (since: number, bucket: StatsBucket) => Promise<ListeningStats>
   // Songs that showed up in a music folder while Encore is open, already saved to the library.
   onFolderImport: (listener: (result: ImportResult) => void) => () => void
+  // When the library file was damaged and Encore started a new one, the name the old file was kept under.
+  setAsideLibrary: () => Promise<string | null>
 }
 
 // Listening time is grouped by day for a week or month, and by month for longer spans.
@@ -324,6 +326,8 @@ export const SOUND_KEY_URL = 'https://acoustid.org/new-application'
 export interface SettingsControls {
   getPlayer: () => Promise<PlayerPreferences>
   savePlayer: (preferences: PlayerPreferences) => void
+  // Opens the folder with Encore's log in File Explorer, for attaching to a bug report.
+  openLogFolder: () => void
 }
 
 // Where updating stands. Only the installed app updates, so while developing it's always off.
@@ -418,6 +422,7 @@ export const Channels = {
   startListen: 'library:start-listen',
   updateListen: 'library:update-listen',
   listeningStats: 'library:listening-stats',
+  setAsideLibrary: 'library:set-aside',
   getPreferences: 'preferences:get',
   preferencesChanged: 'preferences:changed',
   updatePreferences: 'preferences:update',
@@ -430,6 +435,7 @@ export const Channels = {
   setSoundKey: 'preferences:set-sound-key',
   removeSoundKey: 'preferences:remove-sound-key',
   savePlayerSettings: 'settings:save-player',
+  openLogFolder: 'settings:open-log-folder',
   updateStatus: 'updates:status',
   updateStatusChanged: 'updates:status-changed',
   checkForUpdate: 'updates:check',
