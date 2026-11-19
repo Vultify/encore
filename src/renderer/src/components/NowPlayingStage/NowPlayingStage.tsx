@@ -1,11 +1,11 @@
 import { Artwork } from '../Artwork/Artwork'
-import { usePlayer } from '@/player/player'
+import { usePlayerValue } from '@/player/player'
 import styles from './NowPlayingStage.module.css'
 
 // The big album on the left. Clicking it opens the Now Playing view. Without a song, or a song without
 // a cover, it shows Encore's ring mark.
 export function NowPlayingStage({ onOpen }: { onOpen: () => void }) {
-  const { track } = usePlayer()
+  const track = usePlayerValue((state) => state.track)
 
   const art = (
     <>

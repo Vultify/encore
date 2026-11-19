@@ -9,7 +9,7 @@ import { useAccentColor } from './hooks/useAccentColor'
 import { useReducedMotion } from './hooks/useReducedMotion'
 import { useWindowShown } from './hooks/useWindowShown'
 import { useFileDrop } from './hooks/useFileDrop'
-import { player, usePlayer } from './player/player'
+import { player, usePlayerValue } from './player/player'
 import { connectHistory } from './player/history'
 import { connectMediaSession } from './player/mediaSession'
 import { rememberPlayer } from './player/memory'
@@ -50,7 +50,10 @@ export default function App() {
   const [nowPlayingOpen, setNowPlayingOpen] = useState(false)
   const notice = useNotice()
 
-  const { failed, unplayable, sourceName, track } = usePlayer()
+  const failed = usePlayerValue((state) => state.failed)
+  const unplayable = usePlayerValue((state) => state.unplayable)
+  const sourceName = usePlayerValue((state) => state.sourceName)
+  const track = usePlayerValue((state) => state.track)
   const { tracks } = useLibrary()
 
   // The player holds its own copies of songs. Whenever the library changes, it swaps in the latest ones.

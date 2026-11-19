@@ -1,6 +1,6 @@
 import { useEffect, useRef, type CSSProperties, type KeyboardEvent, type RefObject } from 'react'
 import { EQ_BANDS, EQ_PRESETS, EQ_RANGE, equalizerGains, type EqChoice } from '@shared/equalizer'
-import { player, usePlayer } from '@/player/player'
+import { player, usePlayerValue } from '@/player/player'
 import { Segmented } from '../Segmented/Segmented'
 import { Switch } from '../Switch/Switch'
 import styles from './EqualizerPanel.module.css'
@@ -45,7 +45,7 @@ interface EqualizerPanelProps {
 
 // The glass panel above the dock: an on/off switch, presets, and a slider per band with the curve behind them.
 export function EqualizerPanel({ id, toggle, onClose }: EqualizerPanelProps) {
-  const { equalizer } = usePlayer()
+  const equalizer = usePlayerValue((state) => state.equalizer)
   const gains = equalizerGains(equalizer)
   const panel = useRef<HTMLDivElement>(null)
   const { line, area } = curvePaths(gains)

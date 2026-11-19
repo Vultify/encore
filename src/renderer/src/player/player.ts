@@ -547,4 +547,10 @@ export const player = new Player()
 // or it would keep playing where no button can reach it.
 import.meta.hot?.dispose(() => player.dispose())
 
+// Redraws on every change, including the position about four times a second. Only views that show the position
+// should use it.
 export const usePlayer = (): PlayerState => useSyncExternalStore(player.subscribe, player.getState)
+
+// Reads one part of the player, so a component only redraws when that part changes.
+export const usePlayerValue = <T,>(select: (state: PlayerState) => T): T =>
+  useSyncExternalStore(player.subscribe, () => select(player.getState()))

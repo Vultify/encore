@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react'
 import { type Track } from '@shared/api'
 import { Artwork } from '../Artwork/Artwork'
-import { player, usePlayer } from '@/player/player'
+import { player, usePlayerValue } from '@/player/player'
 import { identify } from '@/store/identify'
 import { library, useLibrary } from '@/store/library'
 import { notify } from '@/store/notice'
@@ -38,7 +38,8 @@ interface OpenMenu {
 }
 
 export function TrackList({ label, tracks, queueSource, queueName, numbered = false, contained = true, playlistId, entryIds, onMove }: TrackListProps) {
-  const { track: current, playing } = usePlayer()
+  const currentId = usePlayerValue((state) => state.track?.id)
+  const playing = usePlayerValue((state) => state.playing)
   const { playlists, missing } = useLibrary()
   const [menu, setMenu] = useState<OpenMenu | null>(null)
   const closeMenu = useCallback(() => setMenu(null), [])
@@ -170,7 +171,7 @@ export function TrackList({ label, tracks, queueSource, queueName, numbered = fa
     <>
       <ul className={classes} aria-label={label} onDragLeave={(event) => event.currentTarget === event.target && setDropAt(null)}>
         {tracks.map((track, index) => {
-          const isCurrent = track.id === current?.id
+          const isCurrent = track.id === currentId
           const isLiked = track.likedAt !== null
           const isMissing = missing.has(track.id)
           return (
