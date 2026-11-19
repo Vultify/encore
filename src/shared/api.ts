@@ -311,7 +311,7 @@ export interface PreferenceControls {
   // Starting with Windows only works in the installed app, not while developing.
   canStartWithWindows: () => Promise<boolean>
   // Your own AcoustID key turns on identifying songs by their sound. Once saved it's never sent back to the window,
-  // only whether there is one. Saving returns false for something that can't be a key.
+  // only whether there is one. Saving returns false for something that can't be a key, or if Windows can't lock it away.
   hasSoundKey: () => Promise<boolean>
   setSoundKey: (key: string) => Promise<boolean>
   removeSoundKey: () => Promise<void>

@@ -4,13 +4,14 @@ import { join } from 'node:path'
 import { expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
 import { makeTune } from './fixtures/audio'
 import { startLookupServer, type LookupServer } from './fixtures/lookup-server'
-import { importFolder, launchEncore, makeDataDir } from './launch'
+import { importFolder, launchEncore, makeDataDir, TempDirs } from './launch'
 
 let app: ElectronApplication
 let page: Page
 let musicDir: string
 let lookup: LookupServer
 let library: Locator
+const temp = new TempDirs()
 
 const id = (n: number): string => `0000000${n}-0000-4000-8000-00000000000${n}`.slice(-36)
 const LINKIN = [{ name: 'Linkin Park' }]
@@ -74,6 +75,7 @@ test.beforeEach(async () => {
 test.afterEach(async () => {
   await app.close()
   rmSync(musicDir, { recursive: true, force: true })
+  temp.removeAll()
 })
 
 async function start(files: Record<string, Buffer>, key = 'test-key', dataDir?: string): Promise<void> {
@@ -156,47 +158,42 @@ async function soundKeyRow(): Promise<Locator> {
 }
 
 test('a key saved in Settings turns on sound matching, stays locked away, and can be removed', async () => {
-  const dataDir = makeDataDir()
-  try {
-    await start({ 'track01.wav': makeTune(20) }, '', dataDir)
-    let music = await soundKeyRow()
-    await expect(music.getByRole('link', { name: 'Get a free key' })).toHaveAttribute('href', 'https://acoustid.org/new-application')
+  const dataDir = temp.keep(makeDataDir())
+  await start({ 'track01.wav': makeTune(20) }, '', dataDir)
+  let music = await soundKeyRow()
+  await expect(music.getByRole('link', { name: 'Get a free key' })).toHaveAttribute('href', 'https://acoustid.org/new-application')
 
-    const input = music.getByRole('textbox', { name: 'AcoustID key' })
-    await input.fill('not a key!')
-    await music.getByRole('button', { name: 'Save key' }).click()
-    await expect(music.getByText("That doesn't look like an AcoustID key.")).toBeVisible()
+  const input = music.getByRole('textbox', { name: 'AcoustID key' })
+  await input.fill('not a key!')
+  await music.getByRole('button', { name: 'Save key' }).click()
+  await expect(music.getByText("That doesn't look like an AcoustID key.")).toBeVisible()
 
-    await input.fill('  MyOwnKey123 ')
-    await music.getByRole('button', { name: 'Save key' }).click()
-    await expect(music.getByText('Key saved')).toBeVisible()
-    await expect(music.getByRole('textbox', { name: 'AcoustID key' })).toHaveCount(0)
-    await page.screenshot({ path: 'test-results/settings-sound-key.png' })
+  await input.fill('  MyOwnKey123 ')
+  await music.getByRole('button', { name: 'Save key' }).click()
+  await expect(music.getByText('Key saved')).toBeVisible()
+  await expect(music.getByRole('textbox', { name: 'AcoustID key' })).toHaveCount(0)
+  await page.screenshot({ path: 'test-results/settings-sound-key.png' })
 
-    // The key is encrypted on disk, never written out as plain text.
-    await expect.poll(() => readFileSync(join(dataDir, 'settings.json'), 'utf8')).toContain('"soundKey"')
-    expect(readFileSync(join(dataDir, 'settings.json'), 'utf8')).not.toContain('MyOwnKey123')
+  // The key is encrypted on disk, never written out as plain text.
+  await expect.poll(() => readFileSync(join(dataDir, 'settings.json'), 'utf8')).toContain('"soundKey"')
+  expect(readFileSync(join(dataDir, 'settings.json'), 'utf8')).not.toContain('MyOwnKey123')
 
-    // It's still there after a restart, and identifying by sound sends it.
-    await app.close()
-    await start({}, '', dataDir)
-    await identify('track01')
-    await expect(matches().nth(0)).toContainText('Closest by sound')
-    expect(lookup.soundLookups.at(-1)?.client).toBe('MyOwnKey123')
+  // It's still there after a restart, and identifying by sound sends it.
+  await app.close()
+  await start({}, '', dataDir)
+  await identify('track01')
+  await expect(matches().nth(0)).toContainText('Closest by sound')
+  expect(lookup.soundLookups.at(-1)?.client).toBe('MyOwnKey123')
 
-    music = await soundKeyRow()
-    await music.getByRole('button', { name: 'Remove' }).click()
-    await expect(music.getByRole('textbox', { name: 'AcoustID key' })).toBeVisible()
+  music = await soundKeyRow()
+  await music.getByRole('button', { name: 'Remove' }).click()
+  await expect(music.getByRole('textbox', { name: 'AcoustID key' })).toBeVisible()
 
-    // Opened again, so the matches still waiting from before are gone, the song can't be recognized anymore.
-    await app.close()
-    lookup.soundLookups.length = 0
-    await start({}, '', dataDir)
-    await identify('track01')
-    await expect(library.getByText('No matches found')).toBeVisible()
-    expect(lookup.soundLookups).toHaveLength(0)
-  } finally {
-    await app.close()
-    rmSync(dataDir, { recursive: true, force: true })
-  }
+  // Opened again, so the matches still waiting from before are gone, the song can't be recognized anymore.
+  await app.close()
+  lookup.soundLookups.length = 0
+  await start({}, '', dataDir)
+  await identify('track01')
+  await expect(library.getByText('No matches found')).toBeVisible()
+  expect(lookup.soundLookups).toHaveLength(0)
 })

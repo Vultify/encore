@@ -8,6 +8,7 @@ import {
   DEFAULT_VOLUME,
   MOTION_CHOICES,
   REPEAT_MODES,
+  SOUND_KEY,
   roundMixSize,
   type AccentChoice,
   type MotionChoice,
@@ -35,9 +36,8 @@ interface Settings {
   soundKey?: SavedKey
 }
 
-// Encrypted by Windows for this account when it can be, so the key can't be read by copying the settings file.
+// Encrypted by Windows for this account, so the key can't be read by copying the settings file.
 interface SavedKey {
-  encrypted: boolean
   value: string
 }
 
@@ -136,22 +136,37 @@ export function savePreferences(next: Preferences): void {
   saveSoon()
 }
 
+// Unlocked once and kept in memory, since every song identified by sound asks for it.
+let unlockedKey: { key: string | null } | null = null
+
 export function soundKey(): string | null {
+  if (!unlockedKey) unlockedKey = { key: unlockSoundKey() }
+  return unlockedKey.key
+}
+
+function unlockSoundKey(): string | null {
   const saved = settings.soundKey
   if (!saved || typeof saved.value !== 'string') return null
   try {
-    return saved.encrypted ? safeStorage.decryptString(Buffer.from(saved.value, 'base64')) : saved.value
+    const key = safeStorage.decryptString(Buffer.from(saved.value, 'base64'))
+    return SOUND_KEY.test(key) ? key : null
   } catch {
     // Settings copied from another account or computer can't be unlocked here.
     return null
   }
 }
 
-export function saveSoundKey(key: string | null): void {
-  if (key === null) delete settings.soundKey
-  else if (safeStorage.isEncryptionAvailable()) settings.soundKey = { encrypted: true, value: safeStorage.encryptString(key).toString('base64') }
-  else settings.soundKey = { encrypted: false, value: key }
+// Returns false when Windows can't encrypt it, rather than leaving the key readable in the settings file.
+export function saveSoundKey(key: string | null): boolean {
+  if (key === null) {
+    delete settings.soundKey
+  } else {
+    if (!safeStorage.isEncryptionAvailable()) return false
+    settings.soundKey = { value: safeStorage.encryptString(key).toString('base64') }
+  }
+  unlockedKey = { key }
   saveSoon()
+  return true
 }
 
 // Checks what the interface sends, since anything crossing into the main process is untrusted.

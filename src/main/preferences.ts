@@ -77,9 +77,7 @@ export function registerPreferenceHandlers({ getMainWindow, onChange }: Preferen
   ipcMain.handle(Channels.setSoundKey, (event, key: unknown) => {
     if (!fromMainWindow(event.sender) || typeof key !== 'string') return false
     const trimmed = key.trim()
-    if (!SOUND_KEY.test(trimmed)) return false
-    saveSoundKey(trimmed)
-    return true
+    return SOUND_KEY.test(trimmed) && saveSoundKey(trimmed)
   })
   ipcMain.handle(Channels.removeSoundKey, (event) => {
     if (fromMainWindow(event.sender)) saveSoundKey(null)

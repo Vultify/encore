@@ -22,8 +22,6 @@ const LISTEN_SECONDS = 120
 const FINGERPRINT_TIMEOUT_MS = 30_000
 const INVALID_KEY = 4
 
-export const canMatchBySound = (): boolean => key().length > 0
-
 let lastRequest = 0
 async function waitTurn(): Promise<void> {
   const wait = lastRequest + REQUEST_GAP_MS - Date.now()
@@ -48,13 +46,15 @@ async function fingerprint(path: string): Promise<{ duration: number; fingerprin
 // Recognizes a song by its sound: makes its fingerprint, sends only that to AcoustID, and ranks the releases
 // it's on. Returns nothing when there's no key, the song can't be fingerprinted, or AcoustID doesn't know it.
 export async function matchBySound(path: string, songLength: number | null): Promise<FoundCandidate[]> {
-  if (!canMatchBySound()) return []
+  // Read once, so removing the key while a song is fingerprinted can't send an empty one.
+  const client = key()
+  if (!client) return []
   const print = await fingerprint(path)
   if (!print) return []
 
   await waitTurn()
   const body = new URLSearchParams({
-    client: key(),
+    client,
     duration: String(Math.round(print.duration)),
     fingerprint: print.fingerprint,
     meta: 'recordings releasegroups releases tracks',

@@ -368,7 +368,7 @@ function SoundKeySetting() {
   const { preferences } = window.encore
 
   useEffect(() => {
-    void preferences.hasSoundKey().then(setSaved)
+    preferences.hasSoundKey().then(setSaved, () => setSaved(false))
   }, [preferences])
 
   const save = async (): Promise<void> => {
@@ -377,7 +377,11 @@ function SoundKeySetting() {
       setMessage("That doesn't look like an AcoustID key. It's a short mix of letters and numbers, like 8XaBELgH.")
       return
     }
-    if (!(await preferences.setSoundKey(key))) return
+    const stored = await preferences.setSoundKey(key).catch(() => false)
+    if (!stored) {
+      setMessage("Windows couldn't lock the key away safely, so it wasn't saved. Try again after restarting Encore.")
+      return
+    }
     setText('')
     setMessage(null)
     setSaved(true)
@@ -401,7 +405,7 @@ function SoundKeySetting() {
             </Button>
           </>
         ) : (
-          <a className={styles.link} href={SOUND_KEY_URL} target="_blank" rel="noreferrer">
+          saved === false && <a className={styles.link} href={SOUND_KEY_URL} target="_blank" rel="noreferrer">
             Get a free key
           </a>
         )
