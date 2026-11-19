@@ -7,6 +7,7 @@ import { DropOverlay } from './components/DropOverlay/DropOverlay'
 import { Toast } from './components/Toast/Toast'
 import { useAccentColor } from './hooks/useAccentColor'
 import { useReducedMotion } from './hooks/useReducedMotion'
+import { useWindowShown } from './hooks/useWindowShown'
 import { useFileDrop } from './hooks/useFileDrop'
 import { player, usePlayer } from './player/player'
 import { connectHistory } from './player/history'
@@ -67,13 +68,17 @@ export default function App() {
   const closeNowPlaying = useCallback(() => setNowPlayingOpen(false), [])
 
   // A new version gets one short notice, and the tray's update item opens Settings, where the update card is.
+  // The notice waits until the window is in front and nothing in progress is showing, so it's never missed while
+  // Encore sits in the tray.
   const update = useUpdateStatus()
   const newVersion = update.state === 'available' ? update.version : null
+  const shown = useWindowShown()
+  const busyNotice = Boolean(notice?.persist)
   useEffect(() => {
-    if (newVersion && shouldAnnounce(newVersion)) {
+    if (newVersion && shown && !busyNotice && shouldAnnounce(newVersion)) {
       notify(`Encore ${newVersion} is out`, { action: { label: 'See update', run: () => showView('settings') } })
     }
-  }, [newVersion, showView])
+  }, [newVersion, shown, busyNotice, showView])
   useEffect(() => window.encore.updates.onShowUpdate(() => showView('settings')), [showView])
 
   useEffect(() => {

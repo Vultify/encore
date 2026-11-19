@@ -62,7 +62,7 @@ export function SettingsView() {
         </Section>
         <Section title="About">
           <AboutRow />
-          <UpdatesRow update={updateStatus} />
+          <UpdatesRow update={updateStatus} automatic={checkForUpdates} />
           <SwitchSetting
             title="Check for updates automatically"
             description="Looks for a new version when Encore opens and every few hours. Nothing downloads until you say so."
@@ -436,8 +436,12 @@ const UPDATE_NOTES: Record<Exclude<UpdateStatus['state'], NewVersion['state']>, 
 }
 
 // Where updating stands, with a way to check right now.
-function UpdatesRow({ update }: { update: UpdateStatus }) {
-  const description = hasNewVersion(update) ? `Encore ${update.version} is waiting at the top of Settings.` : UPDATE_NOTES[update.state]
+function UpdatesRow({ update, automatic }: { update: UpdateStatus; automatic: boolean }) {
+  const description = hasNewVersion(update)
+    ? `Encore ${update.version} is waiting at the top of Settings.`
+    : update.state === 'idle' && !automatic
+      ? 'Encore only checks for new versions when you click Check now.'
+      : UPDATE_NOTES[update.state]
   const busy = update.state === 'off' || update.state === 'checking' || hasNewVersion(update)
   return (
     <Row

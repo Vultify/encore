@@ -7,6 +7,9 @@ export interface WindowControls {
   closeToTray: () => void
   isMaximized: () => Promise<boolean>
   onMaximizedChange: (listener: (maximized: boolean) => void) => () => void
+  // Whether the window is on screen: not hidden in the tray and not minimized.
+  isShown: () => Promise<boolean>
+  onShownChange: (listener: (shown: boolean) => void) => () => void
   // Swaps the full window for the mini player.
   popOut: () => void
 }
@@ -368,6 +371,8 @@ export const Channels = {
   closeToTray: 'window:close-to-tray',
   isMaximized: 'window:is-maximized',
   maximizedChanged: 'window:maximized-changed',
+  isShown: 'window:is-shown',
+  shownChanged: 'window:shown-changed',
   getTracks: 'library:get-tracks',
   importPaths: 'library:import-paths',
   importProgress: 'library:import-progress',

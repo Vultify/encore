@@ -64,6 +64,13 @@ export function createMainWindow(shouldQuit: () => boolean, startHidden = false)
     win.hide()
   })
 
+  // The window can still be loading when it's first shown, so it asks with isShown too.
+  const reportShown = (): void => win.webContents.send(Channels.shownChanged, isShown(win))
+  win.on('show', reportShown)
+  win.on('hide', reportShown)
+  win.on('minimize', reportShown)
+  win.on('restore', reportShown)
+
   win.on('maximize', () => {
     remember()
     win.webContents.send(Channels.maximizedChanged, true)
@@ -103,7 +110,13 @@ export function registerWindowControls(getWindow: () => BrowserWindow | null): v
     else win.maximize()
   })
   ipcMain.handle(Channels.isMaximized, () => getWindow()?.isMaximized() ?? false)
+  ipcMain.handle(Channels.isShown, () => {
+    const win = getWindow()
+    return win ? isShown(win) : false
+  })
 }
+
+const isShown = (win: BrowserWindow): boolean => win.isVisible() && !win.isMinimized()
 
 // Brings the window back from the tray or from behind other windows.
 export function revealWindow(win: BrowserWindow | null): void {

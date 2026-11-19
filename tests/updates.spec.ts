@@ -74,6 +74,11 @@ test('a new version shows a dot on the gear and one notice, then downloads and o
   await expect(updateCard().getByRole('button', { name: 'Restart to update' })).toBeVisible()
   await page.screenshot({ path: 'test-results/update-ready.png' })
 
+  // Something served by a test feed is never installed, so Restart leaves this Encore running as it is.
+  await updateCard().getByRole('button', { name: 'Restart to update' }).click()
+  await page.waitForTimeout(1000)
+  await expect(updateCard().getByText('Encore 99.0.0 is ready')).toBeVisible()
+
   // The download landed in the test's own cache folder, never the real Encore's.
   const pending = join(cache, 'encore-updater-test', 'pending')
   expect(existsSync(pending) && readdirSync(pending).some((file) => file.endsWith('.exe'))).toBe(true)
@@ -97,9 +102,13 @@ test('Check now says when Encore is already on the newest version', async () => 
   await expect(gear()).toHaveAccessibleName('Settings')
 })
 
-test("Check now says so when GitHub can't be reached", async () => {
+test("a check Encore makes by itself fails quietly, and Check now says when GitHub can't be reached", async () => {
   await open({ version: '99.0.0', failWith: 404 })
   const settings = await openSettings()
+  await expect.poll(() => server?.requests.length).toBeGreaterThan(0)
+  await page.waitForTimeout(500)
+  await expect(updatesRow(settings).getByText('Encore checks GitHub for new versions.')).toBeVisible()
+
   await updatesRow(settings).getByRole('button', { name: 'Check now' }).click()
   await expect(updatesRow(settings).getByText("Couldn't reach GitHub to check. Try again in a bit.")).toBeVisible()
   await expect(updateCard()).toHaveCount(0)
@@ -131,7 +140,26 @@ test('with automatic checks off, Encore only checks when asked', async () => {
   await expect(gear()).toHaveAccessibleName('Settings')
 
   const reopened = await openSettings()
+  await expect(updatesRow(reopened).getByText('Encore only checks for new versions when you click Check now.')).toBeVisible()
   await updatesRow(reopened).getByRole('button', { name: 'Check now' }).click()
   await expect(gear()).toHaveAccessibleName('Settings, update available')
   expect(server.requests).toContain('/latest.yml')
+})
+
+test('a new version found while Encore is in the tray waits to be announced until the window opens', async () => {
+  const cache = temp.make('encore-cache-')
+  server = await startUpdateServer(temp.make('encore-feed-'), { version: '99.0.0' })
+  ;({ app, page } = await launchEncore(undefined, { LOCALAPPDATA: cache, ENCORE_UPDATE_CONFIG: server.configPath }, ['--hidden']))
+
+  await expect(gear()).toHaveAccessibleName('Settings, update available')
+  await page.waitForTimeout(1000)
+  const notice = page.getByRole('status').filter({ hasText: 'Encore 99.0.0 is out' })
+  await expect(notice).toHaveCount(0)
+
+  await app.evaluate(({ BrowserWindow }) => {
+    const [win] = BrowserWindow.getAllWindows()
+    win.show()
+    win.focus()
+  })
+  await expect(notice).toBeVisible()
 })

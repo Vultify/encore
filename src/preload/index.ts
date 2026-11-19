@@ -10,6 +10,8 @@ const api: EncoreApi = {
     closeToTray: () => ipcRenderer.send(Channels.closeToTray),
     isMaximized: () => ipcRenderer.invoke(Channels.isMaximized),
     onMaximizedChange: (listener) => listen(Channels.maximizedChanged, listener),
+    isShown: () => ipcRenderer.invoke(Channels.isShown),
+    onShownChange: (listener) => listen(Channels.shownChanged, listener),
     popOut: () => ipcRenderer.send(Channels.popOut)
   },
   library: {

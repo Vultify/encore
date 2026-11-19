@@ -3,12 +3,13 @@ import { autoUpdater } from 'electron-updater'
 import { Channels, type UpdateStatus } from '../shared/api'
 
 // Tests hand Encore an update config pointing at their own stand-in server, which also works while developing.
-// What a test downloads is never installed on quit, so closing a test can't replace the real installed Encore.
+// What a test feed serves is never installed, so a test can't replace the real installed Encore.
 const TEST_CONFIG = process.env.ENCORE_UPDATE_CONFIG
 
 // The first check waits a little, so it never slows down opening Encore.
 const FIRST_CHECK_DELAY_MS = TEST_CONFIG ? 500 : 10_000
 const CHECK_EVERY_MS = 4 * 60 * 60 * 1000
+const RETRY_MS = 15 * 60 * 1000
 
 export interface Updates {
   status: () => UpdateStatus
@@ -52,18 +53,26 @@ export function registerUpdates({ getMainWindow, onChange }: UpdateOptions): Upd
     if (status.state === 'downloading' && rounded !== status.percent) set({ ...status, percent: rounded })
   })
 
-  // Checks started by Encore itself stay quiet: no "Checking" in Settings, and a failure keeps an update already found.
-  const check = async (asked: boolean): Promise<void> => {
-    if (!active || status.state === 'checking' || status.state === 'downloading' || status.state === 'ready') return
+  // Checks started by Encore itself stay quiet: no "Checking" in Settings, and a failure changes nothing on screen.
+  // Returns false when the check couldn't reach GitHub.
+  const check = async (asked: boolean): Promise<boolean> => {
+    if (!active || status.state === 'checking' || status.state === 'downloading' || status.state === 'ready') return true
     checkedOnce = true
-    const before = status
     if (asked) set({ state: 'checking' })
+    const started = status
     try {
       const result = await autoUpdater.checkForUpdates()
-      if (result?.isUpdateAvailable) set({ state: 'available', version: result.updateInfo.version })
-      else set({ state: 'current' })
+      // Clicking Download, or a check asked for meanwhile, has moved things on, so this answer is out of date.
+      if (status !== started) return true
+      if (!result?.isUpdateAvailable) set({ state: 'current' })
+      // The same version again keeps its card as it is, including why a download failed.
+      else if (!(status.state === 'available' && status.version === result.updateInfo.version)) {
+        set({ state: 'available', version: result.updateInfo.version })
+      }
+      return true
     } catch {
-      set(!asked && before.state === 'available' ? before : { state: 'error' })
+      if (asked && status === started) set({ state: 'error' })
+      return false
     }
   }
 
@@ -80,14 +89,18 @@ export function registerUpdates({ getMainWindow, onChange }: UpdateOptions): Upd
   }
 
   const install = (): void => {
+    // Only a real release is ever installed, never something a test feed served.
+    if (TEST_CONFIG || status.state !== 'ready') return
     // Silent, then Encore opens again on its own once the new version is in.
-    if (status.state === 'ready') autoUpdater.quitAndInstall(true, true)
+    autoUpdater.quitAndInstall(true, true)
   }
 
+  // A check that couldn't get through, like one at sign-in before Wi-Fi connects, tries again sooner.
   const scheduleCheck = (delay: number): void => {
-    timer = setTimeout(() => {
-      void check(false)
-      scheduleCheck(CHECK_EVERY_MS)
+    timer = setTimeout(async () => {
+      timer = null
+      const reached = await check(false)
+      if (automatic && !timer) scheduleCheck(reached ? CHECK_EVERY_MS : RETRY_MS)
     }, delay)
   }
 
