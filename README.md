@@ -22,7 +22,7 @@ npm run dev
 
 `npm test` checks the types, builds the app, and runs the app tests.
 
-To identify songs by their sound, copy `.env.example` to `.env` and add a free key from https://acoustid.org/new-application. Without one, everything else still works.
+To identify songs by their sound, get a free key from https://acoustid.org/new-application and paste it under Music in Settings. Without one, everything else still works.
 
 ## Status
 In development. See `ROADMAP.md` for progress.

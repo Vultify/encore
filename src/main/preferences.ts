@@ -1,8 +1,8 @@
 import { app, BrowserWindow, dialog, ipcMain, type WebContents } from 'electron'
-import { Channels, type PreferenceChanges, type Preferences } from '../shared/api'
+import { Channels, SOUND_KEY, type PreferenceChanges, type Preferences } from '../shared/api'
 import { isAllowedShortcut } from '../shared/shortcut'
 import { pauseMiniPlayerShortcut, setMiniPlayerShortcut } from './miniPlayer'
-import { isAccentChoice, isMixSize, isMotionChoice, preferences, savePreferences } from './settings'
+import { isAccentChoice, isMixSize, isMotionChoice, preferences, savePreferences, saveSoundKey, soundKey } from './settings'
 
 // Windows passes this when it starts Encore at sign-in, so Encore opens quietly in the tray.
 export const STARTED_HIDDEN_FLAG = '--hidden'
@@ -71,6 +71,18 @@ export function registerPreferenceHandlers({ getMainWindow, onChange }: Preferen
       change({ ...current, musicFolders: [...current.musicFolders, folder] })
     }
     return folder
+  })
+
+  ipcMain.handle(Channels.hasSoundKey, (event) => fromMainWindow(event.sender) && soundKey() !== null)
+  ipcMain.handle(Channels.setSoundKey, (event, key: unknown) => {
+    if (!fromMainWindow(event.sender) || typeof key !== 'string') return false
+    const trimmed = key.trim()
+    if (!SOUND_KEY.test(trimmed)) return false
+    saveSoundKey(trimmed)
+    return true
+  })
+  ipcMain.handle(Channels.removeSoundKey, (event) => {
+    if (fromMainWindow(event.sender)) saveSoundKey(null)
   })
 
   ipcMain.handle(Channels.removeMusicFolder, (event, folder: unknown) => {

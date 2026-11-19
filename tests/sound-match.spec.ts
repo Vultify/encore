@@ -1,10 +1,10 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
 import { makeTune } from './fixtures/audio'
 import { startLookupServer, type LookupServer } from './fixtures/lookup-server'
-import { importFolder, launchEncore } from './launch'
+import { importFolder, launchEncore, makeDataDir } from './launch'
 
 let app: ElectronApplication
 let page: Page
@@ -76,9 +76,9 @@ test.afterEach(async () => {
   rmSync(musicDir, { recursive: true, force: true })
 })
 
-async function start(files: Record<string, Buffer>, key = 'test-key'): Promise<void> {
+async function start(files: Record<string, Buffer>, key = 'test-key', dataDir?: string): Promise<void> {
   for (const [name, data] of Object.entries(files)) writeFileSync(join(musicDir, name), data)
-  const encore = await launchEncore(undefined, {
+  const encore = await launchEncore(dataDir, {
     ENCORE_LOOKUP_URL: lookup.url,
     ENCORE_ACOUSTID_URL: lookup.acoustidUrl,
     ENCORE_COVERART_URL: lookup.coverArtUrl,
@@ -145,7 +145,58 @@ test('without a key, sound matching stays off', async () => {
 test('a key AcoustID rejects stops the run with a message saying where to fix it', async () => {
   await start({ 'track01.wav': makeTune(20) }, 'bad-key')
   await identify('track01')
-  const message = page.getByRole('status').filter({ hasText: "Encore's AcoustID key isn't working" })
+  const message = page.getByRole('status').filter({ hasText: "Your AcoustID key isn't working" })
   await expect(message).toBeVisible()
-  await expect(message).toContainText('MAIN_VITE_ACOUSTID_KEY in the .env file')
+  await expect(message).toContainText('Check it under Music in Settings.')
+})
+
+async function soundKeyRow(): Promise<Locator> {
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Settings' }).click()
+  return page.getByRole('region', { name: 'Music' })
+}
+
+test('a key saved in Settings turns on sound matching, stays locked away, and can be removed', async () => {
+  const dataDir = makeDataDir()
+  try {
+    await start({ 'track01.wav': makeTune(20) }, '', dataDir)
+    let music = await soundKeyRow()
+    await expect(music.getByRole('link', { name: 'Get a free key' })).toHaveAttribute('href', 'https://acoustid.org/new-application')
+
+    const input = music.getByRole('textbox', { name: 'AcoustID key' })
+    await input.fill('not a key!')
+    await music.getByRole('button', { name: 'Save key' }).click()
+    await expect(music.getByText("That doesn't look like an AcoustID key.")).toBeVisible()
+
+    await input.fill('  MyOwnKey123 ')
+    await music.getByRole('button', { name: 'Save key' }).click()
+    await expect(music.getByText('Key saved')).toBeVisible()
+    await expect(music.getByRole('textbox', { name: 'AcoustID key' })).toHaveCount(0)
+    await page.screenshot({ path: 'test-results/settings-sound-key.png' })
+
+    // The key is encrypted on disk, never written out as plain text.
+    await expect.poll(() => readFileSync(join(dataDir, 'settings.json'), 'utf8')).toContain('"soundKey"')
+    expect(readFileSync(join(dataDir, 'settings.json'), 'utf8')).not.toContain('MyOwnKey123')
+
+    // It's still there after a restart, and identifying by sound sends it.
+    await app.close()
+    await start({}, '', dataDir)
+    await identify('track01')
+    await expect(matches().nth(0)).toContainText('Closest by sound')
+    expect(lookup.soundLookups.at(-1)?.client).toBe('MyOwnKey123')
+
+    music = await soundKeyRow()
+    await music.getByRole('button', { name: 'Remove' }).click()
+    await expect(music.getByRole('textbox', { name: 'AcoustID key' })).toBeVisible()
+
+    // Opened again, so the matches still waiting from before are gone, the song can't be recognized anymore.
+    await app.close()
+    lookup.soundLookups.length = 0
+    await start({}, '', dataDir)
+    await identify('track01')
+    await expect(library.getByText('No matches found')).toBeVisible()
+    expect(lookup.soundLookups).toHaveLength(0)
+  } finally {
+    await app.close()
+    rmSync(dataDir, { recursive: true, force: true })
+  }
 })

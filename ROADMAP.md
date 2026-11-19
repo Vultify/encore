@@ -60,7 +60,7 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 - [x] App icon and Windows installer: installs per user with no admin prompt, installs silently with `/S`, and upgrades cleanly over older versions, so it works with winget
 - [ ] Start with Windows option, tested in the installed app
 - [x] In-app updates: Encore checks GitHub Releases for new versions and offers to update itself. Tested against a local stand-in for GitHub; checks reach the real Releases once the repo is public
-- [ ] AcoustID key in Settings, so anyone can turn on identify by sound with their own free key
+- [x] AcoustID key in Settings, so anyone can turn on identify by sound with their own free key
 - [ ] Open source: MIT license, a README written for everyone, a project audit, then make the repo public
 - [x] About section in Settings and a privacy note (`PRIVACY.md`)
 - [ ] Release 1.0.0 on GitHub Releases. Before publishing, check that what the About section and `PRIVACY.md` promise is all true: update checks work, the repo is public under MIT, vultify.dev/encore/privacy is live, and the License and Source code links open

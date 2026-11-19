@@ -4,6 +4,8 @@ import {
   DEFAULT_MINI_PLAYER_SHORTCUT,
   hasNewVersion,
   roundMixSize,
+  SOUND_KEY,
+  SOUND_KEY_URL,
   TOP_MIX,
   type AccentChoice,
   type MotionChoice,
@@ -56,6 +58,7 @@ export function SettingsView() {
             checked={identifyNewSongs}
             onChange={(on) => update({ identifyNewSongs: on })}
           />
+          <SoundKeySetting />
         </Section>
         <Section title="Startup">
           <StartupSetting on={startWithWindows} />
@@ -352,6 +355,87 @@ function FolderSetting({ folders }: { folders: string[] }) {
           ))}
         </ul>
       )}
+    </Row>
+  )
+}
+
+// Your own AcoustID key turns on identifying songs by sound. Once saved it's never shown again, only that it's there.
+function SoundKeySetting() {
+  const inputId = useId()
+  const [saved, setSaved] = useState<boolean | null>(null)
+  const [text, setText] = useState('')
+  const [message, setMessage] = useState<string | null>(null)
+  const { preferences } = window.encore
+
+  useEffect(() => {
+    void preferences.hasSoundKey().then(setSaved)
+  }, [preferences])
+
+  const save = async (): Promise<void> => {
+    const key = text.trim()
+    if (!SOUND_KEY.test(key)) {
+      setMessage("That doesn't look like an AcoustID key. It's a short mix of letters and numbers, like 8XaBELgH.")
+      return
+    }
+    if (!(await preferences.setSoundKey(key))) return
+    setText('')
+    setMessage(null)
+    setSaved(true)
+  }
+
+  const remove = async (): Promise<void> => {
+    await preferences.removeSoundKey()
+    setSaved(false)
+  }
+
+  return (
+    <Row
+      title="Identify by sound"
+      description="Recognizes songs whose names give nothing to search for, by how they sound. It needs your own free AcoustID key. Only a fingerprint of the song is sent, never the audio."
+      control={
+        saved ? (
+          <>
+            <span className={styles.savedKey}>Key saved</span>
+            <Button size="small" onClick={remove}>
+              Remove
+            </Button>
+          </>
+        ) : (
+          <a className={styles.link} href={SOUND_KEY_URL} target="_blank" rel="noreferrer">
+            Get a free key
+          </a>
+        )
+      }
+    >
+      {saved === false && (
+        <form
+          className={styles.keyForm}
+          onSubmit={(event) => {
+            event.preventDefault()
+            void save()
+          }}
+        >
+          <label className="visually-hidden" htmlFor={inputId}>
+            AcoustID key
+          </label>
+          <input
+            id={inputId}
+            className={styles.textInput}
+            value={text}
+            placeholder="Paste your AcoustID key"
+            autoComplete="off"
+            spellCheck={false}
+            onChange={(event) => {
+              setText(event.target.value)
+              setMessage(null)
+            }}
+          />
+          <Button type="submit" size="small" variant="primary" disabled={!text.trim()}>
+            Save key
+          </Button>
+        </form>
+      )}
+      {message && <p className={styles.note}>{message}</p>}
     </Row>
   )
 }

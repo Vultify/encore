@@ -1,6 +1,6 @@
 import { readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { app, ipcMain } from 'electron'
+import { app, ipcMain, safeStorage } from 'electron'
 import {
   ACCENT_PRESETS,
   Channels,
@@ -31,6 +31,14 @@ interface Settings {
   window?: WindowState
   player?: PlayerPreferences
   preferences?: Partial<Preferences>
+  // Kept apart from the preferences, which every window is sent.
+  soundKey?: SavedKey
+}
+
+// Encrypted by Windows for this account when it can be, so the key can't be read by copying the settings file.
+interface SavedKey {
+  encrypted: boolean
+  value: string
 }
 
 // Changes are saved a moment after they stop, so dragging the window doesn't write the file over and over.
@@ -125,6 +133,24 @@ export function preferences(): Preferences {
 
 export function savePreferences(next: Preferences): void {
   settings.preferences = next
+  saveSoon()
+}
+
+export function soundKey(): string | null {
+  const saved = settings.soundKey
+  if (!saved || typeof saved.value !== 'string') return null
+  try {
+    return saved.encrypted ? safeStorage.decryptString(Buffer.from(saved.value, 'base64')) : saved.value
+  } catch {
+    // Settings copied from another account or computer can't be unlocked here.
+    return null
+  }
+}
+
+export function saveSoundKey(key: string | null): void {
+  if (key === null) delete settings.soundKey
+  else if (safeStorage.isEncryptionAvailable()) settings.soundKey = { encrypted: true, value: safeStorage.encryptString(key).toString('base64') }
+  else settings.soundKey = { encrypted: false, value: key }
   saveSoon()
 }
 

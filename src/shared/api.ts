@@ -310,7 +310,16 @@ export interface PreferenceControls {
   removeMusicFolder: (path: string) => Promise<void>
   // Starting with Windows only works in the installed app, not while developing.
   canStartWithWindows: () => Promise<boolean>
+  // Your own AcoustID key turns on identifying songs by their sound. Once saved it's never sent back to the window,
+  // only whether there is one. Saving returns false for something that can't be a key.
+  hasSoundKey: () => Promise<boolean>
+  setSoundKey: (key: string) => Promise<boolean>
+  removeSoundKey: () => Promise<void>
 }
+
+// AcoustID application keys are short runs of letters and digits.
+export const SOUND_KEY = /^[A-Za-z0-9]{6,64}$/
+export const SOUND_KEY_URL = 'https://acoustid.org/new-application'
 
 export interface SettingsControls {
   getPlayer: () => Promise<PlayerPreferences>
@@ -417,6 +426,9 @@ export const Channels = {
   addMusicFolder: 'preferences:add-folder',
   removeMusicFolder: 'preferences:remove-folder',
   canStartWithWindows: 'preferences:can-start-with-windows',
+  hasSoundKey: 'preferences:has-sound-key',
+  setSoundKey: 'preferences:set-sound-key',
+  removeSoundKey: 'preferences:remove-sound-key',
   savePlayerSettings: 'settings:save-player',
   updateStatus: 'updates:status',
   updateStatusChanged: 'updates:status-changed',

@@ -64,7 +64,10 @@ const api: EncoreApi = {
     pauseMiniPlayerShortcut: (pause) => ipcRenderer.send(Channels.pauseMiniPlayerShortcut, pause),
     addMusicFolder: () => ipcRenderer.invoke(Channels.addMusicFolder),
     removeMusicFolder: (path) => ipcRenderer.invoke(Channels.removeMusicFolder, path),
-    canStartWithWindows: () => ipcRenderer.invoke(Channels.canStartWithWindows)
+    canStartWithWindows: () => ipcRenderer.invoke(Channels.canStartWithWindows),
+    hasSoundKey: () => ipcRenderer.invoke(Channels.hasSoundKey),
+    setSoundKey: (key) => ipcRenderer.invoke(Channels.setSoundKey, key),
+    removeSoundKey: () => ipcRenderer.invoke(Channels.removeSoundKey)
   },
   updates: {
     status: () => ipcRenderer.invoke(Channels.updateStatus),
