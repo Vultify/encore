@@ -80,7 +80,7 @@ function Review({ item, track }: { item: ReviewItem; track: Track }) {
         <h3 className={styles.sectionTitle}>Your song</h3>
         <div className={styles.song}>
           <span className={styles.songArt}>
-            {track.artworkId ? <Artwork id={track.artworkId} /> : <MusicIcon size={22} />}
+            {track.artworkId ? <Artwork id={track.artworkId} thumbnail /> : <MusicIcon size={22} />}
           </span>
           <span className={styles.songText}>
             <span className={styles.songTitle}>{track.title}</span>

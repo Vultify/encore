@@ -75,7 +75,7 @@ test('popping out swaps the window for a floating pill at the bottom center of t
 
   await expect(pill).toContainText('Song B')
   await expect(pill).toContainText('Band')
-  await expect(pill.locator('img')).toHaveAttribute('src', /^encore-art:\/\/local\//)
+  await expect(pill.locator('img')).toHaveAttribute('src', /^encore-art:\/\/thumb\//)
   // A title that fits stays still.
   await expect(pill.locator('[data-scrolling]')).toHaveCount(0)
   await expect.poll(async () => (await windowNamed('Encore mini player'))?.visible).toBe(true)

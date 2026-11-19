@@ -1,6 +1,6 @@
 import { protocol } from 'electron'
 import { ARTWORK_SCHEME, MEDIA_SCHEME } from '../shared/api'
-import { serveArtwork } from './library/artwork'
+import { serveArtwork, serveThumbnail } from './library/artwork'
 import { serveMedia } from './library/media'
 import { servePreview } from './identify'
 
@@ -12,8 +12,14 @@ export function registerSchemes(): void {
   ])
 }
 
-// encore-art://local/<id> is saved cover art. encore-art://preview/<id> is a match's cover while reviewing.
+// encore-art://local/<id> is saved cover art and encore-art://thumb/<id> a small copy of it.
+// encore-art://preview/<id> is a match's cover while reviewing.
 export function handleProtocols(): void {
-  protocol.handle(ARTWORK_SCHEME, (request) => (new URL(request.url).host === 'preview' ? servePreview(request) : serveArtwork(request)))
+  protocol.handle(ARTWORK_SCHEME, (request) => {
+    const { host } = new URL(request.url)
+    if (host === 'preview') return servePreview(request)
+    if (host === 'thumb') return serveThumbnail(request)
+    return serveArtwork(request)
+  })
   protocol.handle(MEDIA_SCHEME, serveMedia)
 }

@@ -449,6 +449,8 @@ export const ARTWORK_SCHEME = 'encore-art'
 export const ARTWORK_ID = /^[a-f0-9]{40}\.(jpg|png|webp|gif|bmp)$/
 
 export const artworkUrl = (id: string): string => `${ARTWORK_SCHEME}://local/${id}`
+// A small copy of the same cover, for rows, tiles, and the player pill.
+export const thumbnailUrl = (id: string): string => `${ARTWORK_SCHEME}://thumb/${id}`
 
 // A match's cover, fetched by the main process so the interface never loads images straight from the internet.
 // Apple matches are "itunes-" and the song's number. Sound matches are "mb-", then the album's and the recording's

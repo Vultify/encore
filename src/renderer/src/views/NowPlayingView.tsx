@@ -139,7 +139,7 @@ function UpNextRow({ track, onPlay, onRemove }: UpNextRowProps) {
     <li className={styles.row}>
       <button className={styles.rowPlay} aria-label={`Play ${track.title}`} onClick={onPlay}>
         <span className={styles.rowArt}>
-          {track.artworkId ? <Artwork id={track.artworkId} lazy /> : <MusicIcon size={16} />}
+          {track.artworkId ? <Artwork id={track.artworkId} lazy thumbnail /> : <MusicIcon size={16} />}
         </span>
         <span className={styles.rowText}>
           <span className={styles.rowTitle}>{track.title}</span>

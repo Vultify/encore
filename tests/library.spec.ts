@@ -221,6 +221,7 @@ test('the artwork scheme only serves artwork files', async () => {
   const status = (url: string): Promise<number> => app.evaluate(({ net }, u) => net.fetch(u).then((r) => r.status), url)
   expect(await status('encore-art://local/..%2F..%2FLocal%20State')).toBe(404)
   expect(await status('encore-art://local/not-an-id.png')).toBe(404)
+  expect(await status('encore-art://thumb/..%2F..%2FLocal%20State')).toBe(404)
 })
 
 test('the window stays on Encore when a drop misses the handler', async () => {

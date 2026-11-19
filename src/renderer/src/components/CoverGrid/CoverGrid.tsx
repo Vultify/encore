@@ -71,7 +71,7 @@ export function CoverGrid({ label, items, round = false, onOpen, onPlay, onReord
               <span className={styles.cover}>
                 {item.cover ??
                   (item.artworkId ? (
-                    <Artwork id={item.artworkId} lazy />
+                    <Artwork id={item.artworkId} lazy thumbnail />
                   ) : (
                     <MusicIcon size={28} />
                   ))}

@@ -20,7 +20,7 @@ export function SongButton({ label, artworkId, title, artist, onClick, disabled,
   return (
     <button className={`${pill.song} ${className}`} aria-label={label} title={tooltip} disabled={disabled} onClick={onClick}>
       <span className={pill.cover} aria-hidden="true">
-        {artworkId ? <Artwork id={artworkId} /> : <span className={pill.coverRing} />}
+        {artworkId ? <Artwork id={artworkId} thumbnail /> : <span className={pill.coverRing} />}
       </span>
       <span className={pill.meta}>
         {scroll ? (

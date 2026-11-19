@@ -144,7 +144,7 @@ function TopSongs({ songs, phrase, mixSize, span }: { songs: SongStat[]; phrase:
                 onClick={() => player.playQueue(mix, i, mixQueue(span), mixName(mixSize))}
               >
                 <span className={styles.rankNumber}>{i + 1}</span>
-                <span className={styles.rankCover}>{song.track.artworkId ? <Artwork id={song.track.artworkId} /> : <MusicIcon size={i === 0 ? 24 : 16} />}</span>
+                <span className={styles.rankCover}>{song.track.artworkId ? <Artwork id={song.track.artworkId} thumbnail /> : <MusicIcon size={i === 0 ? 24 : 16} />}</span>
                 <span className={styles.rankText}>
                   <span className={styles.rankTitle}>{song.track.title}</span>
                   <span className={styles.rankSub}>{song.track.artist ?? 'Unknown artist'}</span>
@@ -171,7 +171,7 @@ function TopArtists({ artists, phrase, onOpen }: { artists: ArtistStat[]; phrase
             <li key={artist.key}>
               <button className={styles.rank} data-lead={i === 0 || undefined} data-round title={`Open ${artist.name}`} onClick={() => onOpen(artist.key)}>
                 <span className={styles.rankNumber}>{i + 1}</span>
-                <span className={styles.rankCover}>{artist.artworkId ? <Artwork id={artist.artworkId} /> : <MusicIcon size={i === 0 ? 24 : 16} />}</span>
+                <span className={styles.rankCover}>{artist.artworkId ? <Artwork id={artist.artworkId} thumbnail /> : <MusicIcon size={i === 0 ? 24 : 16} />}</span>
                 <span className={styles.rankText}>
                   <span className={styles.rankTitle}>{artist.name}</span>
                   <span className={styles.rankSub}>{songCount(artist.tracks.length)} in your library</span>
@@ -205,7 +205,7 @@ function TopMix({ songs, size, span }: { songs: SongStat[]; size: number; span: 
     <section className={`${styles.card} ${styles.wide}`} aria-label={name}>
       <div className={styles.mixHead}>
         <span className={styles.mosaic} data-count={covers.length >= 4 ? 4 : covers.length > 0 ? 1 : 0}>
-          {covers.length >= 4 ? covers.map((id) => <Artwork key={id} id={id} />) : covers[0] ? <Artwork id={covers[0]} /> : <MusicIcon size={26} />}
+          {covers.length >= 4 ? covers.map((id) => <Artwork key={id} id={id} thumbnail />) : covers[0] ? <Artwork id={covers[0]} /> : <MusicIcon size={26} />}
         </span>
         <div className={styles.mixText}>
           <h3 className={styles.mixTitle}>{name}</h3>

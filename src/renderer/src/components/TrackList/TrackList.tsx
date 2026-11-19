@@ -204,7 +204,7 @@ export function TrackList({ label, tracks, queueSource, queueName, numbered = fa
                 {numbered ? (
                   <span className={styles.number}>{track.trackNumber ?? index + 1}</span>
                 ) : track.artworkId ? (
-                  <Artwork id={track.artworkId} lazy />
+                  <Artwork id={track.artworkId} lazy thumbnail />
                 ) : (
                   <MusicIcon size={16} />
                 )}
