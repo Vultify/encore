@@ -1,7 +1,20 @@
 import { stat } from 'node:fs/promises'
 import { ipcMain } from 'electron'
 import { Channels, STATS_BUCKETS, type ImportProgress, type ImportResult, type NewTrack, type Playlist, type SaveToFilesResult } from '../../shared/api'
-import { allTracks, clearMatch, locationKey, removeTracks, saveTracks, setLiked, storedTracks, trackById, trackLocations, type FileStamp } from './database'
+import {
+  allTracks,
+  clearMatch,
+  forgetRemoved,
+  locationKey,
+  removedLocations,
+  removeTracks,
+  saveTracks,
+  setLiked,
+  storedTracks,
+  trackById,
+  trackLocations,
+  type FileStamp
+} from './database'
 import { artworkPath } from './artwork'
 import { writeTags, WriteError } from './writeTags'
 import {
@@ -32,15 +45,28 @@ const sameStamp = (a: FileStamp, b: FileStamp): boolean => a.size === b.size && 
 // Imports run one at a time, so songs dropped while a music folder is being caught up aren't read twice.
 let importQueue: Promise<unknown> = Promise.resolve()
 
+interface ImportOptions {
+  onProgress?: (progress: ImportProgress) => void
+  // Music folder scans skip songs taken out of the library. Anything added by hand brings them back.
+  automatic?: boolean
+}
+
 // Finds the songs in the given files and folders, reads only the new or changed ones, and saves them.
-export function importMusic(paths: string[], onProgress?: (progress: ImportProgress) => void): Promise<ImportResult> {
-  const run = importQueue.then(() => importPaths(paths, onProgress))
+export function importMusic(paths: string[], options: ImportOptions = {}): Promise<ImportResult> {
+  const run = importQueue.then(() => importPaths(paths, options))
   importQueue = run.catch(() => {})
   return run
 }
 
-async function importPaths(paths: string[], onProgress?: (progress: ImportProgress) => void): Promise<ImportResult> {
-  const files = await findAudioFiles(paths)
+async function importPaths(paths: string[], { onProgress, automatic = false }: ImportOptions): Promise<ImportResult> {
+  const found = await findAudioFiles(paths)
+  let files = found
+  if (automatic) {
+    const removed = removedLocations(found.map((file) => file.path))
+    files = found.filter((file) => !removed.has(locationKey(file.path)))
+  } else {
+    forgetRemoved(found.map((file) => file.path))
+  }
   const stored = storedTracks(files.map((file) => file.path))
 
   // Songs already in the library with the same size and modified time are skipped.
@@ -99,11 +125,13 @@ export function registerLibraryHandlers(): void {
     if (!Array.isArray(paths) || !paths.every((p) => typeof p === 'string' && p.length > 0)) {
       return { found: 0, added: [], updated: [] }
     }
-    return importMusic(paths, (progress) => {
-      if (!event.sender.isDestroyed()) event.sender.send(Channels.importProgress, progress)
+    return importMusic(paths, {
+      onProgress: (progress) => {
+        if (!event.sender.isDestroyed()) event.sender.send(Channels.importProgress, progress)
+      }
     })
   })
-  ipcMain.handle(Channels.scanMusicFolders, () => importMusic(preferences().musicFolders))
+  ipcMain.handle(Channels.scanMusicFolders, () => importMusic(preferences().musicFolders, { automatic: true }))
   ipcMain.handle(Channels.startListen, (_event, trackId: unknown, sourceKey: unknown) =>
     isId(trackId) && (sourceKey === null || isText(sourceKey, MAX_KEY)) ? startListen(trackId, sourceKey) : null
   )

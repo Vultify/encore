@@ -64,7 +64,14 @@ const MIGRATIONS = [
   // Each listen keeps how long it lasted, and whether that was long enough to count as a play.
   `ALTER TABLE plays ADD COLUMN listened_seconds REAL NOT NULL DEFAULT 0;
   ALTER TABLE plays ADD COLUMN counted INTEGER NOT NULL DEFAULT 1;
-  CREATE INDEX plays_by_time ON plays (played_at);`
+  CREATE INDEX plays_by_time ON plays (played_at);`,
+  // Songs taken out of the library, so music folder scans don't add them straight back.
+  `CREATE TABLE removed_tracks (
+    source TEXT NOT NULL DEFAULT 'local',
+    location_key TEXT NOT NULL,
+    removed_at INTEGER NOT NULL,
+    PRIMARY KEY (source, location_key)
+  )`
 ]
 
 // The file details used to tell whether a song changed since it was last read.
@@ -239,10 +246,33 @@ export function saveTracks(entries: { track: NewTrack; stamp: FileStamp }[]): Tr
   )
 }
 
-// Takes songs out of the library, along with their spots in playlists. The files are never touched.
+// Takes songs out of the library, along with their spots in playlists. The files are never touched, and each one is
+// remembered so the music folders don't bring it back.
 export function removeTracks(trackIds: number[]): number[] {
-  const remove = library().prepare("DELETE FROM tracks WHERE source = 'local' AND id = ? RETURNING id")
-  return transaction(() => trackIds.flatMap((id) => (remove.get(id) as { id: number } | undefined)?.id ?? []))
+  const database = library()
+  const remove = database.prepare("DELETE FROM tracks WHERE source = 'local' AND id = ? RETURNING id, location_key")
+  const remember = database.prepare('INSERT OR REPLACE INTO removed_tracks (location_key, removed_at) VALUES (?, ?)')
+  const now = Date.now()
+  return transaction(() =>
+    trackIds.flatMap((id) => {
+      const row = remove.get(id) as { id: number; location_key: string } | undefined
+      if (!row) return []
+      remember.run(row.location_key, now)
+      return row.id
+    })
+  )
+}
+
+// Which of these paths belong to songs taken out of the library.
+export function removedLocations(paths: string[]): Set<string> {
+  const statement = library().prepare("SELECT 1 FROM removed_tracks WHERE source = 'local' AND location_key = ?")
+  return new Set(paths.map(locationKey).filter((key) => statement.get(key)))
+}
+
+// Songs added again by hand are welcome back, so the music folders keep them from then on.
+export function forgetRemoved(paths: string[]): void {
+  const forget = library().prepare("DELETE FROM removed_tracks WHERE source = 'local' AND location_key = ?")
+  transaction(() => paths.forEach((path) => forget.run(locationKey(path))))
 }
 
 // Every song's id and file path, for checking which files still exist.

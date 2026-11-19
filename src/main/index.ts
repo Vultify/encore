@@ -42,7 +42,7 @@ const refreshTray = (): void => tray?.update(trayState())
 
 // Reads songs that appeared in a music folder while Encore is open, and hands any new or changed ones to the window.
 async function importFromFolders(paths: string[]): Promise<void> {
-  const result = await importMusic(paths).catch(() => null)
+  const result = await importMusic(paths, { automatic: true }).catch(() => null)
   if (result && (result.added.length > 0 || result.updated.length > 0)) mainWindow?.webContents.send(Channels.folderImport, result)
 }
 

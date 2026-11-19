@@ -6,6 +6,7 @@ import { makeWav } from './fixtures/audio'
 import { dropFiles } from './drop'
 import { startLookupServer, type LookupServer } from './fixtures/lookup-server'
 import { launchEncore, makeDataDir, TempDirs } from './launch'
+import type { EncoreApi } from '../src/shared/api'
 
 let app: ElectronApplication
 let page: Page
@@ -231,6 +232,45 @@ test('music folders: adding one reads its songs, new songs show up by themselves
   await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Library' }).click()
   await page.getByRole('tab', { name: 'Local files' }).click()
   await expect(localFiles()).toHaveCount(3)
+})
+
+test('a song removed from the library stays out of its music folder until it is added again by hand', async () => {
+  const dataDir = temp.keep(makeDataDir())
+  const folder = temp.make('encore-folder-')
+  const first = join(folder, 'Band - First.wav')
+  writeFileSync(first, makeWav(3))
+  writeFileSync(join(folder, 'Band - Second.wav'), makeWav(3))
+
+  await open(dataDir)
+  await pickFolder(folder)
+  const settings = await openSettings()
+  await settings.getByRole('button', { name: 'Add folder' }).click()
+  await expect(page.getByRole('status').filter({ hasText: 'Added 2 songs' })).toBeVisible()
+
+  const titles = (): Promise<string[]> =>
+    page.evaluate(async () => (await (window as unknown as { encore: EncoreApi }).encore.library.getTracks()).map((track) => track.title))
+  await page.evaluate(async () => {
+    const { encore } = window as unknown as { encore: EncoreApi }
+    const song = (await encore.library.getTracks()).find((track) => track.title === 'First')
+    if (song) await encore.library.removeTracks([song.id])
+  })
+  await app.close()
+
+  // Neither the catch-up at launch nor a change to the file brings it back.
+  await open(dataDir)
+  await page.getByRole('tab', { name: 'Local files' }).click()
+  await expect(localFiles()).toHaveCount(1)
+  writeFileSync(first, makeWav(4))
+  await page.waitForTimeout(3500)
+  expect(await titles()).toEqual(['Second'])
+
+  // Dropping it in again does.
+  const added = await page.evaluate(
+    async (path) => (await (window as unknown as { encore: EncoreApi }).encore.library.importPaths([path])).added.length,
+    first
+  )
+  expect(added).toBe(1)
+  expect((await titles()).sort()).toEqual(['First', 'Second'])
 })
 
 test('a whole album folder moved into a music folder at once is read too', async () => {
