@@ -7,20 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-19
+
 ### Added
-- Project plan and roadmap.
-- README and license.
-- Desktop app foundation built on Electron, React, and TypeScript.
+- First public release: a free, open-source music player for the music on your own Windows computer.
 - Frameless window with a custom title bar. Closing it sends Encore to the system tray.
 - Tray icon with Show Encore and Quit Encore.
 - Stage layout: nav pill, now playing stage, glass library panel, and the floating player dock.
 - Home, Library, and Search views with empty states.
 - Encore logo, app icon, and tray icon.
-- Automated app tests with Playwright.
 - Drag and drop songs or whole folders anywhere in the window. Encore finds every MP3, FLAC, WAV, and M4A inside and lists them under Local files.
 - Song tags and cover art: title, artist, album, track number, year, and length, with progress while a big folder is read.
 - Untagged songs get their artist and title from "Artist - Title" file names, and their cover from a cover or folder image beside them.
-- Song recognition planned as its own phase on the roadmap.
 - The library is saved in a local SQLite database and loads when Encore opens.
 - Adding a folder again skips songs that haven't changed and re-reads ones that have.
 - Playback: play a song from the list by double-clicking it or with the play button on its cover. The rest of the list plays after it, including songs added while it plays.
@@ -38,7 +36,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ctrl + F opens search from anywhere.
 - Remove from library in every song's menu, with a confirm step. The song leaves Encore, its playlists, and Liked Songs. The file stays on disk.
 - Songs whose file has moved or been deleted show greyed out with a "File not found" badge. Files are checked when Encore opens and when its window comes back into focus.
-- Roadmap: remove from library and missing file labels added to Phase 3. Song recognition now searches by artist and title first, with sound matching as a backup.
 - Identify songs: looks up songs missing an album or cover on Apple's free music search, by artist and title. A review page shows the top matches with covers, best one first, to pick or skip. Picks are saved inside Encore only, and Restore original tags undoes them.
 - Matching skips live versions, remixes, karaoke, tribute, and instrumental versions, prefers the original album over compilations, and uses song length to tell recordings apart. When the search misses an album, the artist's own song list is checked too.
 - Shuffle and repeat (off, all, one).
@@ -47,7 +44,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The accent color follows the playing album's cover and fades between songs. Covers without real color, or nothing playing, stay teal.
 - Save tags to file: writes an identified song's title, artist, album, track number, year, and cover into the file itself, from the song menu or for a whole review at once. It works on a copy, checks the copy, and only then replaces the original.
 - Identify by sound: when a song's name gives nothing to search for, Encore fingerprints it with Chromaprint and looks it up on AcoustID and MusicBrainz, with covers from the Cover Art Archive. These matches are marked as possibly wrong.
-- `.env.example` showing the optional AcoustID key.
 - Music keeps playing while Encore is hidden in the tray, and moves on to the next song on time.
 - Tray menu with the song playing, Play or Pause, Next, Previous, Show Encore, and Quit Encore. Hovering the tray icon names the song.
 - Media keys, headphone buttons, and the Windows media controls (Win + A) show the song and its cover and control playback.
@@ -74,38 +70,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A privacy note, `PRIVACY.md`, saying what Encore keeps on your computer and exactly when it goes online.
 - In-app updates. The installed Encore looks for a new version on GitHub Releases when it opens and every few hours. A new version shows a dot on the Settings gear, one short notice, an update card at the top of Settings, and an item in the tray menu. Nothing downloads until you click Download, and Restart to update installs it and reopens Encore. A downloaded update also installs the next time Encore quits.
 - Updates in Settings, under About: Check now, whether Encore is on the newest version, and a switch to turn the automatic checks off.
-- The bundled `fpcalc` ships with its LGPL 2.1 license beside it.
 - Identify by sound in Settings, under Music: paste your own free AcoustID key to turn it on. The key is encrypted by Windows for your account, never shown again after saving, and can be removed anytime.
 - A small error log kept on your computer, with an Error log link in Settings under About to attach it to a bug report. The updater writes to it too.
 
-### Removed
-- The "Spotify not connected" badge in the title bar. Encore plays local music only.
-
-### Fixed
-- A late progress message could replace the "Added songs" notice after an import finished.
-- Tall pages could squeeze the title bar shorter.
-- Songs whose files keep their title, artist, and album only in the "sort as" fields, like some iTunes purchases, now show them.
-- The player dock showed a song's old details after it was identified or re-read while playing.
-- Playing a song from search results could blank the whole window.
-- With repeat all, a list where no song could be played skipped through it forever, and pause couldn't stop it. It now stops after trying each song once and says so, and pressing Play tries again once a file is back.
-- When the last songs in a list couldn't be played, the player kept showing Pause with nothing playing.
-- Albums kept in long folder paths lost the spot to pick up from when Encore reopened.
-- Scrolling down on the player's mute button while muted turned the sound back on.
-- With shuffle on, liking a song reshuffled Up next.
-- The mix on Home didn't show a like or an identified song's new details until it changed order.
-- Identifying a song cleared matches still waiting for review, and songs added during a lookup were never looked up. Waiting matches now stay, and new songs are looked up right after as part of the same review.
-- Adding a whole drive, or any folder with a subfolder Windows won't open, found no songs. A drive's Recycle Bin is left out, so deleted songs don't come back.
-- Searching again after playing a search result replaced Up next with the new results.
-- Songs removed from the library came back from the music folders the next time Encore opened. They now stay out until you add them again yourself.
-- A damaged library file left Encore running with no window, and opening it again did nothing. Encore now sets the damaged file aside and starts a new library, and any other problem at startup shows a message instead.
-- Identifying more than 10,000 songs at once did nothing, and playing a list of more than 20,000 songs made Encore forget the last song. Identifying now takes any number of songs, and the last song is remembered for lists of up to 200,000.
-
-### Changed
-- Encore is open source under the MIT license, and the README is written for anyone downloading or building it.
-- Buttons and switches share one style across the app, and the mini player shows covers and colors the same way as the player dock.
-- Big libraries are much quicker: the window no longer redraws every song row while music plays, artists group about 15 times faster, and small covers load a light copy instead of the full-size image.
-
-### Security
-- Updated Electron to 44.10.1 for its fix to trusted website certificates.
-- The mini player can only reach its own controls, not the library or song files.
-- Installers never carry an AcoustID key, and building one stops if any private setting from `.env` shows up inside the app.
+[Unreleased]: https://github.com/Vultify/encore/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/Vultify/encore/releases/tag/v1.0.0
