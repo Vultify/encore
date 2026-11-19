@@ -43,8 +43,9 @@ interface SavedKey {
 
 // Changes are saved a moment after they stop, so dragging the window doesn't write the file over and over.
 const SAVE_DELAY_MS = 500
-// A session never lists more songs than this, so a huge library can't make the settings file huge.
-const MAX_SESSION_SONGS = 20_000
+// A session never lists more songs than this, well past any real library, so a damaged one can't make the settings
+// file huge.
+const MAX_SESSION_SONGS = 200_000
 
 let settings: Settings = {}
 let saveTimer: NodeJS.Timeout | null = null
@@ -219,7 +220,8 @@ export function registerSettingsHandlers(): void {
     settings.player = {
       volume: Math.min(1, Math.max(0, preferences.volume)),
       muted: preferences.muted,
-      session: validSession(preferences.session),
+      // A session that doesn't pass the checks keeps the last good one, instead of forgetting where listening was.
+      session: preferences.session === null ? null : (validSession(preferences.session) ?? settings.player?.session ?? null),
       equalizer: validEqualizer(preferences.equalizer)
     }
     saveSoon()

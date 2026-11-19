@@ -1,8 +1,10 @@
+import { MAX_IDS_PER_REQUEST } from '../shared/api'
+
 // Checks for what the windows send. Anything crossing into the main process is untrusted, so every handler checks
 // its input with these, and the limits live in one place so the handlers can't disagree about them.
 
-// The most ids one request can carry.
-export const MAX_IDS = 10_000
+// The most ids one request can carry. The window sends bigger jobs in batches of this size.
+export const MAX_IDS = MAX_IDS_PER_REQUEST
 // The longest name or title accepted.
 export const MAX_TEXT = 1000
 // The longest key for a list songs play from. An album's key holds its title and its whole folder path, so it gets

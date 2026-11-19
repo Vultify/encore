@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import type { MatchCandidate, Track } from '@shared/api'
+import { MAX_IDS_PER_REQUEST, type MatchCandidate, type Track } from '@shared/api'
 import { library } from './library'
 import { notify } from './notice'
 import { preferences } from './preferences'
@@ -28,6 +28,11 @@ class IdentifyStore {
   private listening = false
   // Songs asked for while a run was going. They're looked up as soon as it finishes.
   private waiting = new Set<number>()
+  // A big run goes to the main process in batches. These keep one progress count across them, and stop the rest
+  // when it's stopped or can't go on.
+  private batchStart = 0
+  private runTotal = 0
+  private cancelled = false
 
   subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener)
@@ -56,9 +61,14 @@ class IdentifyStore {
   // Looks songs up, then any asked for meanwhile, all as part of the same review.
   private async run(trackIds: number[]): Promise<void> {
     this.listen()
+    this.cancelled = false
+    this.runTotal = trackIds.length
     this.update({ running: true, done: 0, total: trackIds.length })
     try {
-      await api().start(trackIds)
+      for (let start = 0; start < trackIds.length && !this.cancelled; start += MAX_IDS_PER_REQUEST) {
+        this.batchStart = start
+        await api().start(trackIds.slice(start, start + MAX_IDS_PER_REQUEST))
+      }
     } catch {
       notify("Couldn't start looking songs up.")
     } finally {
@@ -81,6 +91,7 @@ class IdentifyStore {
   // Stopping also drops songs that were waiting to be looked up next.
   stop(): void {
     this.waiting.clear()
+    this.cancelled = true
     if (this.state.running) api().stop()
   }
 
@@ -114,9 +125,12 @@ class IdentifyStore {
     api().onResult(({ trackId, candidates }) => {
       this.update({ items: [...this.state.items, { trackId, candidates, decision: 'pending' }] })
     })
-    api().onProgress(({ done, total, error }) => {
-      this.update({ done, total })
-      if (error) notify(error)
+    api().onProgress(({ done, error }) => {
+      this.update({ done: this.batchStart + done, total: this.runTotal })
+      if (error) {
+        this.cancelled = true
+        notify(error)
+      }
     })
   }
 

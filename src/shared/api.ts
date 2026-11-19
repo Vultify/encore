@@ -377,6 +377,10 @@ export interface MiniEncoreApi {
 
 export const PLAYLIST_NAME_MAX = 100
 
+// The most song ids one request to the main process can carry. Bigger jobs, like identifying a huge library, are
+// sent in batches of this size.
+export const MAX_IDS_PER_REQUEST = 10_000
+
 // IPC channel names shared by the main process and the preload script.
 export const Channels = {
   minimize: 'window:minimize',
