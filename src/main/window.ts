@@ -75,7 +75,8 @@ export function createMainWindow(shouldQuit: () => boolean, startHidden = false)
 
   // Links open in the default browser, never inside Encore.
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('https://')) shell.openExternal(url)
+    // With no browser to open it in, the click just does nothing.
+    if (url.startsWith('https://')) shell.openExternal(url).catch(() => {})
     return { action: 'deny' }
   })
 

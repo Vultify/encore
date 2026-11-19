@@ -57,12 +57,13 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 - [x] Animations, empty states, and loading states
 - [x] Settings: keybind, accent color, music folders, identify new songs automatically
 - [x] Equalizer: ten bands, presets, and Custom, opened from the player dock
-- [ ] App icon and Windows installer: installs per user with no admin prompt, installs silently with `/S`, and upgrades cleanly over older versions, so it works with winget
+- [x] App icon and Windows installer: installs per user with no admin prompt, installs silently with `/S`, and upgrades cleanly over older versions, so it works with winget
 - [ ] Start with Windows option, tested in the installed app
 - [ ] In-app updates: Encore checks GitHub Releases for new versions and offers to update itself
 - [ ] AcoustID key in Settings, so anyone can turn on identify by sound with their own free key
 - [ ] Open source: MIT license, a README written for everyone, a project audit, then make the repo public
-- [ ] Release 1.0.0 on GitHub Releases
+- [x] About section in Settings and a privacy note (`PRIVACY.md`)
+- [ ] Release 1.0.0 on GitHub Releases. Before publishing, check that what the About section and `PRIVACY.md` promise is all true: update checks work, the repo is public under MIT, vultify.dev/encore/privacy is live, and the License and Source code links open
 - [ ] winget: submit `Vultify.Encore` to Microsoft's winget catalog
 
 ## Later

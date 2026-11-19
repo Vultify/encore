@@ -14,7 +14,7 @@ Encore only changes your song files when you ask it to, with Save tags to file.
 
 Encore only connects to the internet in these cases:
 
-- **Identifying songs.** When you identify a song, Encore searches Apple's iTunes catalog (itunes.apple.com) with the song's artist and title, and loads the cover art Apple returns.
+- **Identifying songs.** When you identify a song, Encore searches Apple's iTunes catalog (itunes.apple.com) with the song's artist and title, and loads the cover art Apple returns. If you turn on Identify new songs automatically, this happens on its own for new songs that are missing an album or cover.
 - **Identifying songs by their sound.** If you turn this on with your own free AcoustID key, Encore makes a fingerprint of the song on your computer and sends only that fingerprint and the song's length to AcoustID (acoustid.org). The audio itself never leaves your computer. Cover art for these matches comes from the Cover Art Archive (coverartarchive.org).
 - **Checking for updates.** Encore asks GitHub (github.com) whether a newer version is out, and downloads it if you choose to update.
 
