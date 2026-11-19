@@ -76,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updates in Settings, under About: Check now, whether Encore is on the newest version, and a switch to turn the automatic checks off.
 - The bundled `fpcalc` ships with its LGPL 2.1 license beside it.
 - Identify by sound in Settings, under Music: paste your own free AcoustID key to turn it on. The key is encrypted by Windows for your account, never shown again after saving, and can be removed anytime.
+- A small error log kept on your computer, with an Error log link in Settings under About to attach it to a bug report. The updater writes to it too.
 
 ### Removed
 - The "Spotify not connected" badge in the title bar. Encore plays local music only.
@@ -94,10 +95,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The mix on Home didn't show a like or an identified song's new details until it changed order.
 - Identifying a song cleared matches still waiting for review, and songs added during a lookup were never looked up. Waiting matches now stay, and new songs are looked up right after as part of the same review.
 - Adding a whole drive, or any folder with a subfolder Windows won't open, found no songs. A drive's Recycle Bin is left out, so deleted songs don't come back.
+- Searching again after playing a search result replaced Up next with the new results.
+- Songs removed from the library came back from the music folders the next time Encore opened. They now stay out until you add them again yourself.
+- A damaged library file left Encore running with no window, and opening it again did nothing. Encore now sets the damaged file aside and starts a new library, and any other problem at startup shows a message instead.
+- Identifying more than 10,000 songs at once did nothing, and playing a list of more than 20,000 songs made Encore forget the last song. Both now work for libraries of any realistic size.
 
 ### Changed
 - Encore is open source under the MIT license, and the README is written for anyone downloading or building it.
 - Buttons and switches share one style across the app, and the mini player shows covers and colors the same way as the player dock.
+- Big libraries are much quicker: the window no longer redraws every song row while music plays, artists group about 15 times faster, and small covers load a light copy instead of the full-size image.
 
 ### Security
 - Updated Electron to 44.10.1 for its fix to trusted website certificates.
