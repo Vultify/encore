@@ -55,7 +55,9 @@ export function groupAlbums(tracks: Track[]): Album[] {
     if (!track.album) continue
     const owner = track.albumArtist ? `artist:${track.albumArtist.toLowerCase()}` : `folder:${folderOf(track.path)}`
     const key = `${track.album.toLowerCase()}|${owner}`
-    groups.set(key, [...(groups.get(key) ?? []), track])
+    const group = groups.get(key)
+    if (group) group.push(track)
+    else groups.set(key, [track])
   }
 
   const albums = [...groups].map(([key, songs]): Album => {
@@ -77,16 +79,29 @@ export function groupAlbums(tracks: Track[]): Album[] {
 
 // Groups songs by artist, with each artist's albums newest first.
 export function groupArtists(tracks: Track[], albums: Album[]): Artist[] {
+  const artistKey = (track: Track): string => (track.artist ?? UNKNOWN_ARTIST).toLowerCase()
   const groups = new Map<string, Track[]>()
   for (const track of tracks) {
-    const key = (track.artist ?? UNKNOWN_ARTIST).toLowerCase()
-    groups.set(key, [...(groups.get(key) ?? []), track])
+    const key = artistKey(track)
+    const group = groups.get(key)
+    if (group) group.push(track)
+    else groups.set(key, [track])
+  }
+
+  // An artist's albums are the ones credited to them, plus any they sing on, found in one pass over the albums.
+  const albumsByArtist = new Map<string, Set<Album>>()
+  for (const album of albums) {
+    for (const key of [album.artist.toLowerCase(), ...album.tracks.map(artistKey)]) {
+      const theirs = albumsByArtist.get(key)
+      if (theirs) theirs.add(album)
+      else albumsByArtist.set(key, new Set([album]))
+    }
   }
 
   const artists = [...groups].map(([key, songs]): Artist => {
-    const theirAlbums = albums
-      .filter((album) => album.artist.toLowerCase() === key || album.tracks.some((track) => (track.artist ?? UNKNOWN_ARTIST).toLowerCase() === key))
-      .sort((a, b) => (b.year ?? 0) - (a.year ?? 0) || compare(a.title, b.title))
+    const theirAlbums = [...(albumsByArtist.get(key) ?? [])].sort(
+      (a, b) => (b.year ?? 0) - (a.year ?? 0) || compare(a.title, b.title)
+    )
     return {
       key,
       name: songs[0].artist ?? UNKNOWN_ARTIST,
