@@ -12,7 +12,7 @@ import {
   toggleMiniPlayer
 } from './miniPlayer'
 import { nowPlaying, onNowPlaying, registerRemote, sendCommand } from './remote'
-import { flushSettings, loadSettings, preferences, registerSettingsHandlers } from './settings'
+import { flushSettings, forgetPlayerSession, loadSettings, preferences, registerSettingsHandlers } from './settings'
 import { registerPreferenceHandlers, STARTED_HIDDEN_FLAG } from './preferences'
 import { importMusic, registerLibraryHandlers, registerPlaylistHandlers } from './library'
 import { createFolderWatcher, type FolderWatcher } from './library/watch'
@@ -63,6 +63,8 @@ function openLibraryOrRecover(): boolean {
   }
   try {
     setAsideLibraryName = setAsideLibrary()
+    // The saved spot points at songs in the old library, whose numbers the new one will hand out again.
+    forgetPlayerSession()
     openLibrary()
     log.warn(`Started a new library. The damaged one was kept as ${setAsideLibraryName}`)
     return true
@@ -101,7 +103,11 @@ if (!app.requestSingleInstanceLock()) {
     log.info(`Encore ${app.getVersion()} starting`)
     loadSettings()
     if (!openLibraryOrRecover()) {
-      failToStart("Your library couldn't be opened. Your music files are fine, and the library file was left as it is.")
+      failToStart(
+        setAsideLibraryName
+          ? `Your library file was damaged and has been kept as ${setAsideLibraryName} in Encore's folder, but a new library couldn't be started. Your music files are fine.`
+          : "Your library couldn't be opened. Your music files are fine, and the library file was left as it is."
+      )
       return
     }
     ipcMain.handle(Channels.setAsideLibrary, () => setAsideLibraryName)

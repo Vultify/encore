@@ -37,7 +37,9 @@ test('covers shown small load a light copy, made once and kept', async () => {
   expect(track.artworkId).toBeTruthy()
 
   expect(await widthOf(page, thumbnailUrl(track.artworkId!))).toBe(320)
-  expect(readdirSync(join(dataDir, 'artwork', 'thumbs'))).toEqual([track.artworkId!.replace(/\.\w+$/, '.jpg')])
+  // The cover is a PNG, so its small copy stays one and keeps any see-through parts.
+  expect(track.artworkId).toMatch(/\.png$/)
+  expect(readdirSync(join(dataDir, 'artwork', 'thumbs'))).toEqual([track.artworkId!])
   // Asked for again, the same copy is used.
   expect(await widthOf(page, thumbnailUrl(track.artworkId!))).toBe(320)
   expect(readdirSync(join(dataDir, 'artwork', 'thumbs'))).toHaveLength(1)

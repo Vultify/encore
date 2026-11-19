@@ -175,18 +175,21 @@ export function openLibrary(): void {
   }
 }
 
-// SQLite's words for a file that isn't a readable database anymore, as opposed to one that's locked or busy.
+// SQLite's words for a file that isn't a readable database anymore. A locked or busy file, or a schema an older
+// Encore can't read, doesn't count, since that library is still fine.
 export const isDamagedLibrary = (error: unknown): boolean =>
-  error instanceof Error && /not a database|malformed/i.test(error.message)
+  error instanceof Error && /file is not a database|database disk image is malformed/i.test(error.message)
 
 // Moves a damaged library out of the way, along with its journal files, so a new one can start. Returns the name the
-// old file was kept under.
+// old file was kept under. If the library itself can't be moved, nothing is, so the file and its journal stay together.
 export function setAsideLibrary(): string {
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')
   const kept = `library.damaged-${stamp}.db`
-  for (const suffix of ['', '-wal', '-shm']) {
+  const keptPath = join(app.getPath('userData'), kept)
+  renameSync(libraryPath(), keptPath)
+  for (const suffix of ['-wal', '-shm']) {
     try {
-      renameSync(`${libraryPath()}${suffix}`, join(app.getPath('userData'), `${kept}${suffix}`))
+      renameSync(`${libraryPath()}${suffix}`, `${keptPath}${suffix}`)
     } catch {
       // The journal files only exist sometimes.
     }

@@ -39,18 +39,29 @@ const THUMBNAIL_WIDTH = 320
 const thumbnailDir = (): string => join(artworkDir(), 'thumbs')
 // The file each cover's small copy is served from, worked out once per cover per session.
 const thumbnails = new Map<string, Promise<string>>()
+// PNG covers stay PNG, so a see-through cover doesn't turn black. Everything else becomes a JPEG.
+const thumbnailPath = (id: string): string => join(thumbnailDir(), id.endsWith('.png') ? id : id.replace(/\.\w+$/, '.jpg'))
 
-// Makes the small copy of a cover the first time it's asked for and keeps it on disk. Covers already small, or in a
-// format Windows can't resize, are served as they are.
-async function thumbnailFor(id: string): Promise<string> {
+// Resizing blocks the main process, which also streams the music, so copies are made one at a time with a breath
+// in between rather than all at once when a grid of covers first opens.
+let makingCopies: Promise<unknown> = Promise.resolve()
+function inTurn<T>(work: () => Promise<T>): Promise<T> {
+  const run = makingCopies.then(() => new Promise((resolve) => setImmediate(resolve))).then(work)
+  makingCopies = run.catch(() => {})
+  return run
+}
+
+// Makes the small copy of a cover and keeps it on disk. Covers already small, or in a format Windows can't resize,
+// are served as they are.
+async function makeThumbnail(id: string): Promise<string> {
   const original = artworkPath(id)
-  const thumbnail = join(thumbnailDir(), id.replace(/\.\w+$/, '.jpg'))
-  if (existsSync(thumbnail)) return thumbnail
+  const thumbnail = thumbnailPath(id)
   const image = nativeImage.createFromPath(original)
   if (image.isEmpty() || image.getSize().width <= THUMBNAIL_WIDTH) return original
   try {
+    const small = image.resize({ width: THUMBNAIL_WIDTH, quality: 'good' })
     await mkdir(thumbnailDir(), { recursive: true })
-    await writeFile(`${thumbnail}.tmp`, image.resize({ width: THUMBNAIL_WIDTH, quality: 'good' }).toJPEG(85))
+    await writeFile(`${thumbnail}.tmp`, id.endsWith('.png') ? small.toPNG() : small.toJPEG(85))
     await rename(`${thumbnail}.tmp`, thumbnail)
     return thumbnail
   } catch {
@@ -61,7 +72,10 @@ async function thumbnailFor(id: string): Promise<string> {
 export async function serveThumbnail(request: Request): Promise<Response> {
   const id = new URL(request.url).pathname.slice(1)
   if (!ARTWORK_ID.test(id)) return new Response(null, { status: 404 })
-  if (!thumbnails.has(id)) thumbnails.set(id, thumbnailFor(id))
+  if (!thumbnails.has(id)) {
+    const kept = thumbnailPath(id)
+    thumbnails.set(id, existsSync(kept) ? Promise.resolve(kept) : inTurn(() => makeThumbnail(id)))
+  }
   const file = await net.fetch(pathToFileURL(await thumbnails.get(id)!).toString())
   return new Response(file.body, { status: file.status, headers: file.headers })
 }

@@ -132,6 +132,13 @@ export function preferences(): Preferences {
   }
 }
 
+// For when the library starts over, since the saved spot names songs by their old numbers.
+export function forgetPlayerSession(): void {
+  if (!settings.player) return
+  settings.player = { ...settings.player, session: null }
+  saveSoon()
+}
+
 export function savePreferences(next: Preferences): void {
   settings.preferences = next
   saveSoon()

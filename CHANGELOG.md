@@ -98,7 +98,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Searching again after playing a search result replaced Up next with the new results.
 - Songs removed from the library came back from the music folders the next time Encore opened. They now stay out until you add them again yourself.
 - A damaged library file left Encore running with no window, and opening it again did nothing. Encore now sets the damaged file aside and starts a new library, and any other problem at startup shows a message instead.
-- Identifying more than 10,000 songs at once did nothing, and playing a list of more than 20,000 songs made Encore forget the last song. Both now work for libraries of any realistic size.
+- Identifying more than 10,000 songs at once did nothing, and playing a list of more than 20,000 songs made Encore forget the last song. Identifying now takes any number of songs, and the last song is remembered for lists of up to 200,000.
 
 ### Changed
 - Encore is open source under the MIT license, and the README is written for anyone downloading or building it.
