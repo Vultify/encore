@@ -57,11 +57,16 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 - [x] Animations, empty states, and loading states
 - [x] Settings: keybind, accent color, music folders, identify new songs automatically
 - [x] Equalizer: ten bands, presets, and Custom, opened from the player dock
-- [ ] App icon and Windows installer
-- [ ] Start with Windows option
-- [ ] Release 1.0.0
+- [ ] App icon and Windows installer: installs per user with no admin prompt, installs silently with `/S`, and upgrades cleanly over older versions, so it works with winget
+- [ ] Start with Windows option, tested in the installed app
+- [ ] In-app updates: Encore checks GitHub Releases for new versions and offers to update itself
+- [ ] AcoustID key in Settings, so anyone can turn on identify by sound with their own free key
+- [ ] Open source: MIT license, a README written for everyone, a project audit, then make the repo public
+- [ ] Release 1.0.0 on GitHub Releases
+- [ ] winget: submit `Vultify.Encore` to Microsoft's winget catalog
 
 ## Later
+- [ ] Code signing (Azure Trusted Signing, about $10 a month), so Windows stops warning about an unknown publisher
 - [ ] Apple Music source (needs the $99/year Apple developer account)
 - [ ] Lyrics
 
