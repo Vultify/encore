@@ -2,11 +2,14 @@ import { useEffect, useId, useState, type ReactNode } from 'react'
 import {
   ACCENT_PRESETS,
   DEFAULT_MINI_PLAYER_SHORTCUT,
+  hasNewVersion,
   roundMixSize,
   TOP_MIX,
   type AccentChoice,
   type MotionChoice,
-  type PreferenceChanges
+  type NewVersion,
+  type PreferenceChanges,
+  type UpdateStatus
 } from '@shared/api'
 import { shortcutFor, shortcutLabel } from '@shared/shortcut'
 import { Button } from '@/components/Button/Button'
@@ -17,6 +20,7 @@ import { CloseIcon, FolderIcon } from '@/components/icons'
 import { identify } from '@/store/identify'
 import { library } from '@/store/library'
 import { usePreferences } from '@/store/preferences'
+import { useUpdateStatus } from '@/store/updates'
 import views from '../views.module.css'
 import styles from './settings.module.css'
 
@@ -26,11 +30,14 @@ const MODIFIER_KEYS = ['Control', 'Alt', 'Shift', 'Meta']
 
 // Everything Encore lets you set, in a few short groups.
 export function SettingsView() {
-  const { miniPlayerShortcut, accent, motion, musicFolders, identifyNewSongs, startWithWindows, topMixSize } = usePreferences()
+  const { miniPlayerShortcut, accent, motion, musicFolders, identifyNewSongs, startWithWindows, topMixSize, checkForUpdates } =
+    usePreferences()
+  const updateStatus = useUpdateStatus()
 
   return (
     <Panel label="Settings" header={<h2 className={views.heading}>Settings</h2>}>
       <div className={styles.page}>
+        {hasNewVersion(updateStatus) && <UpdateCard update={updateStatus} />}
         <Section title="Mini player">
           <ShortcutSetting shortcut={miniPlayerShortcut} />
         </Section>
@@ -55,6 +62,13 @@ export function SettingsView() {
         </Section>
         <Section title="About">
           <AboutRow />
+          <UpdatesRow update={updateStatus} />
+          <SwitchSetting
+            title="Check for updates automatically"
+            description="Looks for a new version when Encore opens and every few hours. Nothing downloads until you say so."
+            checked={checkForUpdates}
+            onChange={(on) => update({ checkForUpdates: on })}
+          />
         </Section>
       </div>
     </Panel>
@@ -362,6 +376,77 @@ function AboutRow() {
             </a>
           ))}
         </nav>
+      }
+    />
+  )
+}
+
+const releaseNotesUrl = (version: string): string => `https://github.com/Vultify/encore/releases/tag/v${version}`
+
+// The new version waiting at the top of Settings: download it, watch it come in, then restart into it.
+function UpdateCard({ update }: { update: NewVersion }) {
+  const { updates } = window.encore
+  const title = {
+    available: `Encore ${update.version} is available`,
+    downloading: `Downloading Encore ${update.version}`,
+    ready: `Encore ${update.version} is ready`
+  }[update.state]
+  const description =
+    update.state === 'ready'
+      ? 'Restart Encore to finish. Music stops for a moment, and your library and settings stay just as they are. It also installs the next time you quit Encore.'
+      : 'Download it now and restart Encore when it suits you. Your library and settings stay just as they are.'
+
+  return (
+    <section className={styles.updateCard} aria-label="Update">
+      <div className={styles.rowText}>
+        <span className={styles.rowTitle}>{title}</span>
+        <span className={styles.rowDescription}>{description}</span>
+        {update.state === 'available' && update.error && <p className={styles.note}>{update.error}</p>}
+      </div>
+      <div className={styles.control}>
+        <a className={styles.link} href={releaseNotesUrl(update.version)} target="_blank" rel="noreferrer">
+          What's new
+        </a>
+        {update.state === 'available' && (
+          <Button variant="primary" size="small" onClick={updates.download}>
+            {update.error ? 'Try again' : 'Download'}
+          </Button>
+        )}
+        {update.state === 'downloading' && (
+          <span className={styles.progress} role="progressbar" aria-label="Download" aria-valuenow={update.percent} aria-valuemin={0} aria-valuemax={100}>
+            <span className={styles.progressFill} style={{ width: `${update.percent}%` }} />
+          </span>
+        )}
+        {update.state === 'ready' && (
+          <Button variant="primary" size="small" onClick={updates.install}>
+            Restart to update
+          </Button>
+        )}
+      </div>
+    </section>
+  )
+}
+
+const UPDATE_NOTES: Record<Exclude<UpdateStatus['state'], NewVersion['state']>, string> = {
+  off: 'Updates work once Encore is installed.',
+  idle: 'Encore checks GitHub for new versions.',
+  checking: 'Checking for a new version…',
+  current: "You're on the newest version.",
+  error: "Couldn't reach GitHub to check. Try again in a bit."
+}
+
+// Where updating stands, with a way to check right now.
+function UpdatesRow({ update }: { update: UpdateStatus }) {
+  const description = hasNewVersion(update) ? `Encore ${update.version} is waiting at the top of Settings.` : UPDATE_NOTES[update.state]
+  const busy = update.state === 'off' || update.state === 'checking' || hasNewVersion(update)
+  return (
+    <Row
+      title="Updates"
+      description={description}
+      control={
+        <Button size="small" disabled={busy} onClick={window.encore.updates.check}>
+          Check now
+        </Button>
       }
     />
   )

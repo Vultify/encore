@@ -118,7 +118,8 @@ export function preferences(): Preferences {
     musicFolders: Array.isArray(saved.musicFolders) ? saved.musicFolders.filter(isFolder) : DEFAULT_PREFERENCES.musicFolders,
     identifyNewSongs: typeof saved.identifyNewSongs === 'boolean' ? saved.identifyNewSongs : DEFAULT_PREFERENCES.identifyNewSongs,
     startWithWindows: typeof saved.startWithWindows === 'boolean' ? saved.startWithWindows : DEFAULT_PREFERENCES.startWithWindows,
-    topMixSize: isMixSize(saved.topMixSize) ? saved.topMixSize : DEFAULT_PREFERENCES.topMixSize
+    topMixSize: isMixSize(saved.topMixSize) ? saved.topMixSize : DEFAULT_PREFERENCES.topMixSize,
+    checkForUpdates: typeof saved.checkForUpdates === 'boolean' ? saved.checkForUpdates : DEFAULT_PREFERENCES.checkForUpdates
   }
 }
 

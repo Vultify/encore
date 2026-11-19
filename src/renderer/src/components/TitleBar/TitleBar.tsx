@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { hasNewVersion } from '@shared/api'
+import { useUpdateStatus } from '@/store/updates'
 import { CloseIcon, LogoMark, MaximizeIcon, MinimizeIcon, RestoreIcon, SearchIcon, SettingsIcon } from '../icons'
 import styles from './TitleBar.module.css'
 
@@ -11,6 +13,8 @@ interface TitleBarProps {
 
 // The top bar doubles as the window's drag area: logo on the left, nav pill in the middle, window buttons on the right.
 export function TitleBar({ view, onViewChange }: TitleBarProps) {
+  // A small dot on the gear says a new version is waiting, without interrupting anything.
+  const updateWaiting = hasNewVersion(useUpdateStatus())
   return (
     <header className={styles.bar}>
       <div className={styles.brand}>
@@ -33,11 +37,12 @@ export function TitleBar({ view, onViewChange }: TitleBarProps) {
         </button>
         <button
           className={styles.tab}
-          aria-label="Settings"
+          aria-label={updateWaiting ? 'Settings, update available' : 'Settings'}
           aria-current={view === 'settings' ? 'page' : undefined}
           onClick={() => onViewChange('settings')}
         >
           <SettingsIcon size={17} strokeWidth={2} />
+          {updateWaiting && <span className={styles.dot} />}
         </button>
       </nav>
 

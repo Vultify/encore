@@ -274,6 +274,8 @@ export interface Preferences {
   identifyNewSongs: boolean
   startWithWindows: boolean
   topMixSize: number
+  // Looks for a new version when Encore opens and every few hours. Nothing downloads until asked.
+  checkForUpdates: boolean
 }
 
 // What Settings starts with, and what anything missing or damaged in the settings file falls back to.
@@ -284,10 +286,13 @@ export const DEFAULT_PREFERENCES: Preferences = {
   musicFolders: [],
   identifyNewSongs: false,
   startWithWindows: false,
-  topMixSize: TOP_MIX.default
+  topMixSize: TOP_MIX.default,
+  checkForUpdates: true
 }
 
-export type PreferenceChanges = Partial<Pick<Preferences, 'accent' | 'motion' | 'identifyNewSongs' | 'startWithWindows' | 'topMixSize'>>
+export type PreferenceChanges = Partial<
+  Pick<Preferences, 'accent' | 'motion' | 'identifyNewSongs' | 'startWithWindows' | 'topMixSize' | 'checkForUpdates'>
+>
 
 export interface PreferenceControls {
   get: () => Promise<Preferences>
@@ -309,6 +314,33 @@ export interface SettingsControls {
   savePlayer: (preferences: PlayerPreferences) => void
 }
 
+// Where updating stands. Only the installed app updates, so while developing it's always off.
+export type UpdateStatus =
+  | { state: 'off' }
+  | { state: 'idle' }
+  | { state: 'checking' }
+  | { state: 'current' }
+  | { state: 'error' }
+  // A download that failed goes back to available, with the reason.
+  | { state: 'available'; version: string; error?: string }
+  | { state: 'downloading'; version: string; percent: number }
+  | { state: 'ready'; version: string }
+
+export type NewVersion = Extract<UpdateStatus, { version: string }>
+
+export const hasNewVersion = (status: UpdateStatus): status is NewVersion => 'version' in status
+
+export interface UpdateControls {
+  status: () => Promise<UpdateStatus>
+  onStatus: (listener: (status: UpdateStatus) => void) => () => void
+  check: () => void
+  download: () => void
+  // Restarts Encore into the downloaded version.
+  install: () => void
+  // The tray asks the window to bring up the update in Settings.
+  onShowUpdate: (listener: () => void) => () => void
+}
+
 export interface EncoreApi {
   window: WindowControls
   library: LibraryControls
@@ -317,6 +349,7 @@ export interface EncoreApi {
   remote: RemoteControls
   settings: SettingsControls
   preferences: PreferenceControls
+  updates: UpdateControls
 }
 
 // The mini player's much smaller set: its own controls, the accent color, and the preferences it follows.
@@ -379,7 +412,13 @@ export const Channels = {
   addMusicFolder: 'preferences:add-folder',
   removeMusicFolder: 'preferences:remove-folder',
   canStartWithWindows: 'preferences:can-start-with-windows',
-  savePlayerSettings: 'settings:save-player'
+  savePlayerSettings: 'settings:save-player',
+  updateStatus: 'updates:status',
+  updateStatusChanged: 'updates:status-changed',
+  checkForUpdate: 'updates:check',
+  downloadUpdate: 'updates:download',
+  installUpdate: 'updates:install',
+  showUpdate: 'updates:show'
 } as const
 
 // Cover art is served to the interface through this private scheme, one file per unique image.

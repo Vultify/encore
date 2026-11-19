@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test'
 import type { MenuItemConstructorOptions } from 'electron'
-import type { NowPlaying } from '../src/shared/api'
+import type { NowPlaying, UpdateStatus } from '../src/shared/api'
 import { trayMenuTemplate, trayTooltip, type TrayState } from '../src/main/trayMenu'
 
 const noop = (): void => {}
-const actions = { show: noop, toggleMiniPlayer: noop, toggle: noop, next: noop, previous: noop, quit: noop }
+const actions = { show: noop, toggleMiniPlayer: noop, toggle: noop, next: noop, previous: noop, showUpdate: noop, installUpdate: noop, quit: noop }
 
 const playing: NowPlaying = {
   trackId: 1,
@@ -19,8 +19,12 @@ const playing: NowPlaying = {
   muted: false
 }
 
-const menuFor = (now: NowPlaying | null, miniPlayerOpen = false, shortcut = 'Control+Alt+Space'): MenuItemConstructorOptions[] =>
-  trayMenuTemplate({ now, miniPlayerOpen, shortcut } satisfies TrayState, actions)
+const menuFor = (
+  now: NowPlaying | null,
+  miniPlayerOpen = false,
+  shortcut = 'Control+Alt+Space',
+  update: UpdateStatus = { state: 'current' }
+): MenuItemConstructorOptions[] => trayMenuTemplate({ now, miniPlayerOpen, shortcut, update } satisfies TrayState, actions)
 
 const item = (menu: MenuItemConstructorOptions[], label: string): MenuItemConstructorOptions | undefined =>
   menu.find((entry) => entry.label === label)
@@ -70,4 +74,23 @@ test('the tooltip names the song and is cut to fit', () => {
   const long = trayTooltip({ ...playing, title: 'x'.repeat(300) })
   expect(long).toHaveLength(127)
   expect(long.endsWith('…')).toBe(true)
+})
+
+test('a new version gets its own item above Quit, which restarts into it once downloaded', () => {
+  const labels = (update: UpdateStatus): string[] => menuFor(null, false, 'Control+Alt+Space', update).map((entry) => entry.label ?? '-')
+  expect(labels({ state: 'available', version: '1.1.0' }).slice(-3)).toEqual(['Update to Encore 1.1.0', '-', 'Quit Encore'])
+  expect(item(menuFor(null, false, 'Control+Alt+Space', { state: 'available', version: '1.1.0' }), 'Update to Encore 1.1.0')?.click).toBe(
+    actions.showUpdate
+  )
+
+  const downloading = menuFor(null, false, 'Control+Alt+Space', { state: 'downloading', version: '1.1.0', percent: 40 })
+  expect(item(downloading, 'Downloading Encore 1.1.0…')?.enabled).toBe(false)
+
+  const ready = menuFor(null, false, 'Control+Alt+Space', { state: 'ready', version: '1.1.0' })
+  expect(item(ready, 'Restart to update Encore')?.click).toBe(actions.installUpdate)
+
+  for (const state of ['off', 'idle', 'checking', 'current', 'error'] as const) {
+    expect(labels({ state }).slice(-2)).toEqual(['-', 'Quit Encore'])
+    expect(labels({ state })).not.toContain('Restart to update Encore')
+  }
 })

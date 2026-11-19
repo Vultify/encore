@@ -19,10 +19,12 @@ import { createFolderWatcher, type FolderWatcher } from './library/watch'
 import { registerIdentifyHandlers } from './identify'
 import { handleProtocols, registerSchemes } from './protocols'
 import { closeLibrary, openLibrary } from './library/database'
+import { registerUpdates, type Updates } from './updates'
 
 let mainWindow: BrowserWindow | null = null
 let tray: EncoreTray | null = null
 let folderWatcher: FolderWatcher | null = null
+let updates: Updates | null = null
 let quitting = false
 
 // Tests point Encore at a throwaway data folder so they never touch the real library.
@@ -30,7 +32,12 @@ if (process.env.ENCORE_DATA_DIR) app.setPath('userData', process.env.ENCORE_DATA
 
 registerSchemes()
 
-const trayState = (): TrayState => ({ now: nowPlaying(), miniPlayerOpen: isMiniPlayerOpen(), shortcut: preferences().miniPlayerShortcut })
+const trayState = (): TrayState => ({
+  now: nowPlaying(),
+  miniPlayerOpen: isMiniPlayerOpen(),
+  shortcut: preferences().miniPlayerShortcut,
+  update: updates?.status() ?? { state: 'off' }
+})
 const refreshTray = (): void => tray?.update(trayState())
 
 // Reads songs that appeared in a music folder while Encore is open, and hands any new or changed ones to the window.
@@ -73,9 +80,12 @@ if (!app.requestSingleInstanceLock()) {
       getMainWindow: () => mainWindow,
       onChange: (next) => {
         folderWatcher?.watch(next.musicFolders)
+        updates?.setAutomatic(next.checkForUpdates)
         refreshTray()
       }
     })
+    updates = registerUpdates({ getMainWindow: () => mainWindow, onChange: refreshTray })
+    updates.setAutomatic(preferences().checkForUpdates)
     registerLibraryHandlers()
     registerPlaylistHandlers()
     registerIdentifyHandlers()
@@ -90,6 +100,11 @@ if (!app.requestSingleInstanceLock()) {
       toggle: command('toggle'),
       next: command('next'),
       previous: command('previous'),
+      showUpdate: () => {
+        revealWindow(mainWindow)
+        mainWindow?.webContents.send(Channels.showUpdate)
+      },
+      installUpdate: () => updates?.install(),
       quit: () => app.quit()
     }, trayState())
     onNowPlaying((now) => {

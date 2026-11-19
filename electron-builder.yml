@@ -33,3 +33,10 @@ nsis:
   # The same name every release, so a site can always link to the newest one at
   # github.com/Vultify/encore/releases/latest/download/Encore-Setup.exe. The version is in the file's details.
   artifactName: Encore-Setup.exe
+
+# Where installed copies look for new versions. Building also writes latest.yml beside the installer, which goes
+# up to the release with it, so Encore can tell what the newest version is.
+publish:
+  provider: github
+  owner: Vultify
+  repo: encore

@@ -16,6 +16,7 @@ import { connectRemote } from './player/remote'
 import { library, useLibrary } from './store/library'
 import { identify, useIdentify } from './store/identify'
 import { clearNotice, notify, useNotice } from './store/notice'
+import { shouldAnnounce, useUpdateStatus } from './store/updates'
 import { songCount } from './lib/format'
 import { HomeView } from './views/home/HomeView'
 import type { StatsSpan } from './lib/stats'
@@ -64,6 +65,16 @@ export default function App() {
     setView(next)
   }, [])
   const closeNowPlaying = useCallback(() => setNowPlayingOpen(false), [])
+
+  // A new version gets one short notice, and the tray's update item opens Settings, where the update card is.
+  const update = useUpdateStatus()
+  const newVersion = update.state === 'available' ? update.version : null
+  useEffect(() => {
+    if (newVersion && shouldAnnounce(newVersion)) {
+      notify(`Encore ${newVersion} is out`, { action: { label: 'See update', run: () => showView('settings') } })
+    }
+  }, [newVersion, showView])
+  useEffect(() => window.encore.updates.onShowUpdate(() => showView('settings')), [showView])
 
   useEffect(() => {
     if (!failed) return
@@ -176,7 +187,7 @@ export default function App() {
         </main>
       )}
       <PlayerDock compact={nowPlayingOpen} onOpenNowPlaying={() => setNowPlayingOpen(true)} />
-      <Toast message={notice.message} persist={notice.persist} onDone={clearNotice} />
+      <Toast notice={notice} onDone={clearNotice} />
       <DropOverlay visible={dragging} />
     </div>
   )

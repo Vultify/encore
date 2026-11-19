@@ -58,7 +58,19 @@
 }
 
 .tab:has(svg) {
+  position: relative;
   padding: 0;
+}
+
+.dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--surface-raised);
 }
 
 .tab:hover {

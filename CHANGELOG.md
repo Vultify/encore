@@ -72,6 +72,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A Windows installer, `Encore-Setup.exe`. It installs for the current user without an admin prompt, can install silently with `/S`, and installs new versions over old ones in place. Uninstalling also turns off Start with Windows.
 - About section at the bottom of Settings, with the version and links to the privacy note, the license, and the source code.
 - A privacy note, `PRIVACY.md`, saying what Encore keeps on your computer and exactly when it goes online.
+- In-app updates. The installed Encore looks for a new version on GitHub Releases when it opens and every few hours. A new version shows a dot on the Settings gear, one short notice, an update card at the top of Settings, and an item in the tray menu. Nothing downloads until you click Download, and Restart to update installs it and reopens Encore. A downloaded update also installs the next time Encore quits.
+- Updates in Settings, under About: Check now, whether Encore is on the newest version, and a switch to turn the automatic checks off.
 
 ### Removed
 - The "Spotify not connected" badge in the title bar. Encore plays local music only.

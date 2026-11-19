@@ -59,7 +59,7 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 - [x] Equalizer: ten bands, presets, and Custom, opened from the player dock
 - [x] App icon and Windows installer: installs per user with no admin prompt, installs silently with `/S`, and upgrades cleanly over older versions, so it works with winget
 - [ ] Start with Windows option, tested in the installed app
-- [ ] In-app updates: Encore checks GitHub Releases for new versions and offers to update itself
+- [x] In-app updates: Encore checks GitHub Releases for new versions and offers to update itself
 - [ ] AcoustID key in Settings, so anyone can turn on identify by sound with their own free key
 - [ ] Open source: MIT license, a README written for everyone, a project audit, then make the repo public
 - [x] About section in Settings and a privacy note (`PRIVACY.md`)

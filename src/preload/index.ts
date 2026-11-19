@@ -63,6 +63,14 @@ const api: EncoreApi = {
     addMusicFolder: () => ipcRenderer.invoke(Channels.addMusicFolder),
     removeMusicFolder: (path) => ipcRenderer.invoke(Channels.removeMusicFolder, path),
     canStartWithWindows: () => ipcRenderer.invoke(Channels.canStartWithWindows)
+  },
+  updates: {
+    status: () => ipcRenderer.invoke(Channels.updateStatus),
+    onStatus: (listener) => listen(Channels.updateStatusChanged, listener),
+    check: () => ipcRenderer.send(Channels.checkForUpdate),
+    download: () => ipcRenderer.send(Channels.downloadUpdate),
+    install: () => ipcRenderer.send(Channels.installUpdate),
+    onShowUpdate: (listener) => listen(Channels.showUpdate, listener)
   }
 }
 

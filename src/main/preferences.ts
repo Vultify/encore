@@ -40,6 +40,7 @@ export function registerPreferenceHandlers({ getMainWindow, onChange }: Preferen
     if (isAccentChoice(changes.accent)) next.accent = changes.accent
     if (isMotionChoice(changes.motion)) next.motion = changes.motion
     if (typeof changes.identifyNewSongs === 'boolean') next.identifyNewSongs = changes.identifyNewSongs
+    if (typeof changes.checkForUpdates === 'boolean') next.checkForUpdates = changes.checkForUpdates
     if (isMixSize(changes.topMixSize)) next.topMixSize = changes.topMixSize
     if (typeof changes.startWithWindows === 'boolean') {
       next.startWithWindows = changes.startWithWindows

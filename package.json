@@ -19,6 +19,7 @@
     "test:packaged": "npm run dist && playwright test packaged"
   },
   "dependencies": {
+    "electron-updater": "6.8.11",
     "music-metadata": "11.16.1",
     "node-taglib-sharp": "6.0.3"
   },
