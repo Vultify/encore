@@ -1,0 +1,35 @@
+# The Windows installer. It installs for the current user without an admin prompt, installs silently with /S, and
+# installs a newer version over an older one in place, which is what winget expects.
+appId: com.vultify.encore
+productName: Encore
+copyright: Copyright (c) 2026 Vultify
+
+directories:
+  output: dist
+
+files:
+  - out/**
+  - resources/**
+  - package.json
+
+# fpcalc is a program Encore runs, and Windows can't run a program from inside the app archive.
+asarUnpack:
+  - resources/**
+
+win:
+  icon: resources/icon.png
+  target:
+    - target: nsis
+      arch: x64
+
+nsis:
+  include: build/installer.nsh
+  oneClick: true
+  perMachine: false
+  shortcutName: Encore
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  runAfterFinish: true
+  # The same name every release, so a site can always link to the newest one at
+  # github.com/Vultify/encore/releases/latest/download/Encore-Setup.exe. The version is in the file's details.
+  artifactName: Encore-Setup.exe
