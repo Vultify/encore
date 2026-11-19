@@ -132,6 +132,19 @@ test('play straight from the results', async () => {
   await expect(page.getByRole('region', { name: 'Player' })).toContainText('In the End')
 })
 
+test('searching again keeps playing the results a song was started from', async () => {
+  const player = page.getByRole('region', { name: 'Player' })
+  await search('hybrid')
+  await searchPanel().getByRole('list', { name: 'Song results' }).getByRole('listitem').first().dblclick()
+  await expect(player.getByRole('button', { name: 'Pause' })).toBeVisible()
+
+  await searchBox().fill('beyonce')
+  await expect(searchPanel().getByRole('list', { name: 'Song results' })).toContainText('Halo')
+  await player.getByRole('button', { name: 'Next' }).click()
+  await expect(player).toContainText(/Crawling|Papercut|In the End/)
+  await expect(player).not.toContainText('Halo')
+})
+
 test('no matches, Escape to clear, and the search is kept when coming back', async () => {
   await search('zzzz')
   await expect(searchPanel().getByText('No matches')).toBeVisible()

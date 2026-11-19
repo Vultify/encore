@@ -46,6 +46,9 @@ export function SearchView({ query, onQueryChange, onNavigate, focusRequest }: S
     [results.songs, showAllSongs]
   )
 
+  // Each search is its own list, so typing a new one never takes over the songs already playing.
+  const songsQueue = `search:${showAllSongs ? 'all' : 'top'}:${deferredQuery.trim().toLowerCase().slice(0, 200)}`
+
   useEffect(() => input.current?.focus(), [focusRequest])
   useEffect(() => setShowAllSongs(false), [deferredQuery])
 
@@ -115,7 +118,7 @@ export function SearchView({ query, onQueryChange, onNavigate, focusRequest }: S
                 </button>
               )}
             </div>
-            <TrackList label="Song results" tracks={shownSongs} queueSource="search" queueName="Search results" contained={false} />
+            <TrackList label="Song results" tracks={shownSongs} queueSource={songsQueue} queueName="Search results" contained={false} />
           </section>
         )}
 
