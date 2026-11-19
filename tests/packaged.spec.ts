@@ -3,7 +3,7 @@ import { existsSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { _electron as electron, expect, test } from '@playwright/test'
 import { makeWav } from './fixtures/audio'
-import { importFolder, TempDirs } from './launch'
+import { importFolder, OFFLINE_ENV, TempDirs } from './launch'
 
 // Checks the app as the installer ships it. Runs only with `npm run test:packaged`, which builds it first, so it never
 // tests an old build.
@@ -13,12 +13,16 @@ const temp = new TempDirs()
 test.skip(process.env.npm_lifecycle_event !== 'test:packaged' || !existsSync(EXE), 'Run npm run test:packaged')
 test.afterEach(() => temp.removeAll())
 
-test('the packaged app opens, plays a song, and can start with Windows', async () => {
+test('the packaged app opens, plays a song, and offers Start with Windows', async () => {
   const music = temp.make('encore-packaged-')
   writeFileSync(join(music, 'Band - Tone.wav'), makeWav(4))
-  const app = await electron.launch({ executablePath: EXE, env: { ...process.env, ENCORE_DATA_DIR: temp.make('encore-data-') } })
+  const app = await electron.launch({
+    executablePath: EXE,
+    env: { ...process.env, ...OFFLINE_ENV, ENCORE_DATA_DIR: temp.make('encore-data-') }
+  })
   try {
     const page = await app.firstWindow()
+    await page.waitForLoadState('domcontentloaded')
     expect(await app.evaluate(({ app }) => app.isPackaged)).toBe(true)
 
     // fpcalc has to sit outside the app archive, where Windows can run it.

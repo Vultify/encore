@@ -10,9 +10,9 @@ const run = promisify(execFile)
 // Tests point these at stand-ins so they never depend on AcoustID or the Cover Art Archive.
 const LOOKUP_URL = process.env.ENCORE_ACOUSTID_URL ?? 'https://api.acoustid.org/v2/lookup'
 const COVER_ART_URL = process.env.ENCORE_COVERART_URL ?? 'https://coverartarchive.org'
-// The free key from acoustid.org, read from .env when Encore is built. Tests supply their own, or none to keep
-// matching by sound off. Without a key, it stays off.
-const KEY = process.env.ENCORE_ACOUSTID_KEY ?? import.meta.env.MAIN_VITE_ACOUSTID_KEY ?? ''
+// A free key from acoustid.org. While developing it comes from .env; built apps never carry one, since anyone
+// could pull it out of the installer. Tests supply their own, or none to keep matching by sound off.
+const KEY = process.env.ENCORE_ACOUSTID_KEY ?? (import.meta.env.DEV ? import.meta.env.MAIN_VITE_ACOUSTID_KEY : '') ?? ''
 // AcoustID allows three lookups a second.
 const REQUEST_GAP_MS = 400
 // Two minutes of a song is plenty to recognize it, and keeps fingerprinting quick.

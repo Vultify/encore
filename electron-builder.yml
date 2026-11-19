@@ -7,9 +7,6 @@ copyright: Copyright (c) 2026 Vultify
 directories:
   output: dist
 
-# Packs the Electron already installed for development instead of downloading another copy.
-electronDist: node_modules/electron/dist
-
 files:
   - out/**
   - resources/**
@@ -26,6 +23,7 @@ win:
       arch: x64
 
 nsis:
+  include: build/installer.nsh
   oneClick: true
   perMachine: false
   shortcutName: Encore
