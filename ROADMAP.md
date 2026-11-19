@@ -72,7 +72,7 @@ Build order for Encore. Each phase ends with a working, tested checkpoint that g
 - [ ] Lyrics
 
 ## Notes
-- **Music sources are plug-ins.** Local files, and later Apple Music, follow one shared source interface, so adding a source never touches the rest of the app.
+- **Local files are the only music source for now.** The library already records where each song comes from, so a second source like Apple Music has a place to go. Its shared source interface gets designed when that work starts, with the second source in hand, since playing protected streams likely needs a different path than local files.
 - **Spotify was left out on purpose.** A test in November 2026 showed Spotify can play inside Encore using the castlabs build of Electron, signed through castlabs. But it needs a Premium subscription, re-signing after every Electron update, and Spotify's API keeps shrinking, so Encore stays local music only.
 - **Song recognition never overwrites files on its own.** Matches are reviewed first and saved inside Encore. Writing tags into the file is a separate choice per song.
 - **Recognition searches by name first, sound second.** Picard's sound matching got 4 out of 4 of my songs wrong (a mashup, a tribute cover, two compilations), likely because lyric-video downloads are slightly altered. Searching the iTunes catalog by artist and title is far more accurate when the name is known.
