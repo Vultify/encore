@@ -11,7 +11,8 @@ export interface NameGuess {
 // Video site leftovers like "(Official Video)" or "[Lyrics]" that aren't part of the real title.
 const JUNK = /\s*[([][^)\]]*\b(official|video|audio|lyrics?|visualizer|hd|hq|4k)\b[^)\]]*[)\]]/gi
 const LEADING_TRACK = /^(\d{1,2})(?:\s*[.\-_)]\s*|\s+)(?=\S)/
-const ARTIST_SEPARATOR = /\s+[-–—]\s+/
+// A hyphen, en dash, or em dash between spaces.
+const ARTIST_SEPARATOR = /\s+[-\u2013\u2014]\s+/
 
 // Guesses artist, title, and track number from names like "03 - Artist - Title (Official Video)".
 export function guessFromName(name: string): NameGuess {

@@ -12,7 +12,7 @@ release/
 .env.*
 !.env.example
 
-# Local notes for Claude
+# Local notes
 CLAUDE.md
 
 # Logs and system files
